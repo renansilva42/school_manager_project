@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Alunos por Série{% endblock %}
+
+{% block content %}
+<h1>Alunos por Série</h1>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Série</th>
+            <th>Total de Alunos</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in alunos_por_serie %}
+        <tr>
+            <td>{{ item.serie }}</td>
+            <td>{{ item.total }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{% url 'relatorios' %}" class="btn btn-secondary">Voltar</a>
+<a href="{% url 'exportar_alunos_por_serie_pdf' %}" class="btn btn-primary">Exportar para PDF</a>
+{% endblock %}

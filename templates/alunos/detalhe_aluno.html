@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes do Aluno{% endblock %}
+
+{% block content %}
+<h1>Detalhes do Aluno</h1>
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">{{ aluno.nome }}</h5>
+        <p class="card-text">
+            <strong>Matrícula:</strong> {{ aluno.matricula }}<br>
+            <strong>Data de Nascimento:</strong> {{ aluno.data_nascimento }}<br>
+            <strong>Série:</strong> {{ aluno.serie }}<br>
+            <strong>E-mail:</strong> {{ aluno.email|default:"Não informado" }}<br>
+            <strong>Telefone:</strong> {{ aluno.telefone|default:"Não informado" }}<br>
+            <strong>Endereço:</strong> {{ aluno.endereco|default:"Não informado" }}
+        </p>
+        {% if aluno.foto %}
+            <img src="{{ aluno.foto.url }}" alt="Foto do aluno" class="img-fluid mb-3" style="max-width: 200px;">
+        {% endif %}
+        <h6>Dados Adicionais:</h6>
+        <pre>{{ aluno.dados_adicionais|default:"Nenhum dado adicional" }}</pre>
+    </div>
+</div>
+
+<h2 class="mt-4">Notas</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Disciplina</th>
+            <th>Nota</th>
+            <th>Data</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for nota in aluno.notas.all %}
+        <tr>
+            <td>{{ nota.disciplina }}</td>
+            <td>{{ nota.valor }}</td>
+            <td>{{ nota.data }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">Nenhuma nota registrada.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'adicionar_nota' aluno.pk %}" class="btn btn-primary">Adicionar Nota</a>
+{% if user.groups.all.0.name == 'Administradores' %}
+    <a href="{% url 'editar_aluno' aluno.pk %}" class="btn btn-warning">Editar Aluno</a>
+{% endif %}
+<a href="{% url 'lista_alunos' %}" class="btn btn-secondary">Voltar para Lista</a>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Média por Série{% endblock %}
+
+{% block content %}
+<h1>Média por Série</h1>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Série</th>
+            <th>Média</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in media_por_serie %}
+        <tr>
+            <td>{{ item.aluno__serie }}</td>
+            <td>{{ item.media|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{% url 'relatorios' %}" class="btn btn-secondary">Voltar</a>
+<a href="{% url 'exportar_media_por_serie_pdf' %}" class="btn btn-primary">Exportar para PDF</a>
+{% endblock %}

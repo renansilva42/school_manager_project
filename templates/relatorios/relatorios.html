@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatórios{% endblock %}
+
+{% block content %}
+<h1>Relatórios</h1>
+<div class="list-group">
+    <a href="{% url 'relatorio_media_por_serie' %}" class="list-group-item list-group-item-action">Média por Série</a>
+    <a href="{% url 'relatorio_alunos_por_serie' %}" class="list-group-item list-group-item-action">Alunos por Série</a>
+    <a href="{% url 'relatorio_notas_baixas' %}" class="list-group-item list-group-item-action">Notas Baixas</a>
+</div>
+{% endblock %}

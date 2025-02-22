@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Notas Baixas{% endblock %}
+
+{% block content %}
+<h1>Notas Baixas</h1>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Aluno</th>
+            <th>Série</th>
+            <th>Disciplina</th>
+            <th>Nota</th>
+            <th>Data</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for nota in notas_baixas %}
+        <tr>
+            <td>{{ nota.aluno.nome }}</td>
+            <td>{{ nota.aluno.serie }}</td>
+            <td>{{ nota.disciplina }}</td>
+            <td>{{ nota.valor }}</td>
+            <td>{{ nota.data }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{% url 'relatorios' %}" class="btn btn-secondary">Voltar</a>
+<a href="{% url 'exportar_notas_baixas_pdf' %}" class="btn btn-primary">Exportar para PDF</a>
+{% endblock %}

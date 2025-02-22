@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Chatbot Escolar{% endblock %}
+
+{% block extra_css %}
+<style>
+    #chat-container {
+        height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    .message {
+        margin-bottom: 10px;
+        padding: 5px 10px;
+        border-radius: 5px;
+    }
+    .user-message {
+        background-color: #e6f2ff;
+        text-align: right;
+    }
+    .bot-message {
+        background-color: #f0f0f0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Chatbot Escolar</h1>
+<div id="chat-container"></div>
+<form id="chat-form">
+    {% csrf_token %}
+    <div class="input-group mb-3">
+        <input type="text" id="user-input" class="form-control" placeholder="Digite sua mensagem...">
+        <button class="btn btn-primary" type="submit">Enviar</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const chatContainer = document.getElementById('chat-container');
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const message = userInput.value.trim();
+        if (message) {
+            addMessage(message, 'user-message');
+            userInput.value = '';
+            const response = await sendMessage(message);
+            addMessage(response, 'bot-message');
+        }
+    });
+
+    function addMessage(message, className) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', className);
+        messageElement.textContent = message;
+        chatContainer.appendChild(messageElement);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    async function sendMessage(message) {
+        const response = await fetch('{% url "chatbot_response" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `message=${encodeURIComponent(message)}`
+        });
+        const data = await response.json();
+        return data.response;
+    }
+</script>
+{% endblock %}
