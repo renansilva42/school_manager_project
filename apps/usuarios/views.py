@@ -13,7 +13,8 @@ def login_view(request):
     next_url = request.GET.get('next') or request.POST.get('next') or 'home'
     
     if request.method == 'POST':
-        email = request.POST.get('username', '').strip()  # Alterado de 'email' para 'username'
+        print("POST data:", request.POST)  # Adicione esta linha para debug
+        email = request.POST.get('email', '').strip()  # Alterado de 'username' para 'email'
         password = request.POST.get('password', '').strip()
         
         if not email or not password:
