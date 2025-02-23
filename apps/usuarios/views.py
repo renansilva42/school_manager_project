@@ -1,4 +1,3 @@
-# apps/usuarios/views.py
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib import messages
@@ -13,8 +12,7 @@ def login_view(request):
     next_url = request.GET.get('next') or request.POST.get('next') or 'home'
     
     if request.method == 'POST':
-        print("POST data:", request.POST)  # Adicione esta linha para debug
-        email = request.POST.get('email', '').strip()  # Alterado de 'username' para 'email'
+        email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '').strip()
         
         if not email or not password:
@@ -22,15 +20,14 @@ def login_view(request):
             return render(request, 'registration/login.html', {'next': next_url})
         
         try:
-            # Usar o cliente diretamente do settings
             response = settings.SUPABASE_CLIENT.auth.sign_in_with_password({
                 "email": email,
                 "password": password
             })
             
-            # Verificação correta do usuário
             user = response.user
             session = response.session
+            
             if user and session:
                 django_user, created = User.objects.update_or_create(
                     username=email,
@@ -46,36 +43,34 @@ def login_view(request):
                 messages.success(request, 'Login realizado com sucesso!')
                 return redirect(next_url)
             
-            messages.error(request, 'Autenticação falhou.')
-        
+            messages.error(request, 'Credenciais inválidas.')
+            
         except Exception as error:
-            messages.error(request, f'Erro no login: {str(error)}')
+            print(f"Erro de login: {error}")  # Para debug
+            messages.error(request, 'Erro ao realizar login. Verifique suas credenciais.')
             return render(request, 'registration/login.html', {
                 'email': email,
                 'next': next_url
             })
     
     return render(request, 'registration/login.html', {
-        'next': next_url,
-        'messages': messages.get_messages(request)
+        'next': next_url
     })
 
+@login_required
 def logout_view(request):
     try:
-        # Logout no Supabase
-        supabase.auth.sign_out()
+        settings.SUPABASE_CLIENT.auth.sign_out()
     except Exception as error:
-        messages.error(request, f'Erro no logout: {str(error)}')
+        print(f"Erro no logout Supabase: {error}")  # Para debug
     
-    # Logout no Django
     logout(request)
-    messages.success(request, 'Você foi desconectado com sucesso.')
+    messages.success(request, 'Logout realizado com sucesso.')
     return redirect('login')
 
 @login_required(login_url='login')
 def home(request):
     context = {
-        'user': request.user,
-        'supabase_user': supabase.auth.get_user() if supabase.auth else None
+        'user': request.user
     }
     return render(request, 'home.html', context)
