@@ -84,9 +84,9 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Configurações de autenticação
-LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/'  # Redireciona para a página inicial após login
-LOGOUT_REDIRECT_URL = '/'  # Adicionado para redirecionar após logout
+LOGIN_REDIRECT_URL = 'home'  # Usar nome da URL
+LOGIN_URL = 'login'
+LOGOUT_REDIRECT_URL = 'login'
 
 # Se você tem um modelo de usuário personalizado em 'usuarios', descomente e ajuste o nome:
 # AUTH_USER_MODEL = 'usuarios.NomeDoModelo'

@@ -2,9 +2,31 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Escola Manager</title>
+    <!-- Adicione links para CSS e JS se necessário -->
 </head>
 <body>
-    <h1>Bem-vindo!</h1>
+    <header>
+        <h1>Bem-vindo, {{ user.username }}!</h1>
+        <a href="{% url 'logout' %}">Sair</a>
+    </header>
+    
+    <!-- Conteúdo principal da página -->
+    <main>
+        <section>
+            <h2>Funcionalidades do Sistema</h2>
+            <ul>
+                <li>Gestão de Alunos</li>
+                <li>Relatórios Acadêmicos</li>
+                <li>Chatbot Educacional</li>
+            </ul>
+        </section>
+    </main>
+
+    <!-- Rodapé -->
+    <footer>
+        <p>Sistema Escola Manager © 2024</p>
+    </footer>
 </body>
 </html>
