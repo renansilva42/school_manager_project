@@ -3,10 +3,9 @@ from django.contrib.auth import login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from supabase import create_client, Client
 from django.conf import settings
-
-supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+import postgrest
+from supabase import create_client
 
 def login_view(request):
     next_url = request.GET.get('next') or request.POST.get('next') or 'home'
@@ -20,15 +19,17 @@ def login_view(request):
             return render(request, 'registration/login.html', {'next': next_url})
         
         try:
-            response = settings.SUPABASE_CLIENT.auth.sign_in_with_password({
+            # Create a new Supabase client for each request
+            supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+            
+            # Try to sign in
+            response = supabase.auth.sign_in_with_password({
                 "email": email,
                 "password": password
             })
             
-            user = response.user
-            session = response.session
-            
-            if user and session:
+            if response.user:
+                # Create or update Django user
                 django_user, created = User.objects.update_or_create(
                     username=email,
                     defaults={
@@ -36,33 +37,32 @@ def login_view(request):
                         'is_active': True
                     }
                 )
-                django_user.set_unusable_password()
-                django_user.save()
                 
                 login(request, django_user)
                 messages.success(request, 'Login realizado com sucesso!')
                 return redirect(next_url)
             
+        except postgrest.exceptions.APIError as e:
+            print(f"Supabase API Error: {e}")
+            messages.error(request, 'Erro de API do Supabase.')
+        except Exception as e:
+            print(f"Login error: {e}")
             messages.error(request, 'Credenciais inválidas.')
-            
-        except Exception as error:
-            print(f"Erro de login: {error}")  # Para debug
-            messages.error(request, 'Erro ao realizar login. Verifique suas credenciais.')
-            return render(request, 'registration/login.html', {
-                'email': email,
-                'next': next_url
-            })
+        
+        return render(request, 'registration/login.html', {
+            'email': email,
+            'next': next_url
+        })
     
-    return render(request, 'registration/login.html', {
-        'next': next_url
-    })
+    return render(request, 'registration/login.html', {'next': next_url})
 
 @login_required
 def logout_view(request):
     try:
-        settings.SUPABASE_CLIENT.auth.sign_out()
-    except Exception as error:
-        print(f"Erro no logout Supabase: {error}")  # Para debug
+        supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        supabase.auth.sign_out()
+    except Exception as e:
+        print(f"Supabase logout error: {e}")
     
     logout(request)
     messages.success(request, 'Logout realizado com sucesso.')
@@ -70,7 +70,4 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def home(request):
-    context = {
-        'user': request.user
-    }
-    return render(request, 'home.html', context)
+    return render(request, 'home.html', {'user': request.user})
