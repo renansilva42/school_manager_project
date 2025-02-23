@@ -83,7 +83,13 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
+# Configurações de autenticação
 LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/'  # Redireciona para a página inicial após login
+LOGOUT_REDIRECT_URL = '/'  # Adicionado para redirecionar após logout
+
+# Se você tem um modelo de usuário personalizado em 'usuarios', descomente e ajuste o nome:
+# AUTH_USER_MODEL = 'usuarios.NomeDoModelo'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
