@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.postgres.fields import JSONField
 
 class Aluno(models.Model):
     nome = models.CharField(max_length=100)
@@ -10,7 +9,7 @@ class Aluno(models.Model):
     email = models.EmailField(blank=True, null=True)
     telefone = models.CharField(max_length=20, blank=True, null=True)
     endereco = models.TextField(blank=True, null=True)
-    dados_adicionais = JSONField(blank=True, null=True)
+    dados_adicionais = models.JSONField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.nome} - {self.matricula}"
