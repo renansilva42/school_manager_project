@@ -9,12 +9,11 @@ from django.conf import settings
 
 supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
-# apps/usuarios/views.py
 def login_view(request):
     next_url = request.GET.get('next') or request.POST.get('next') or 'home'
     
     if request.method == 'POST':
-        email = request.POST.get('email', '').strip()
+        email = request.POST.get('username', '').strip()  # Alterado de 'email' para 'username'
         password = request.POST.get('password', '').strip()
         
         if not email or not password:
@@ -27,7 +26,6 @@ def login_view(request):
                 "email": email,
                 "password": password
             })
-        
             
             # Verificação correta do usuário
             user = response.user
@@ -60,7 +58,7 @@ def login_view(request):
         'next': next_url,
         'messages': messages.get_messages(request)
     })
-    
+
 def logout_view(request):
     try:
         # Logout no Supabase
