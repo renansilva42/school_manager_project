@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from supabase import create_client
+
 
 load_dotenv()
 
@@ -102,3 +104,6 @@ SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
+# Adicione no final do settings.py
+SUPABASE_CLIENT = create_client(SUPABASE_URL, SUPABASE_KEY)

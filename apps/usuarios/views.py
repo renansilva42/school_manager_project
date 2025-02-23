@@ -22,11 +22,12 @@ def login_view(request):
             return render(request, 'registration/login.html', {'next': next_url})
         
         try:
-            # Autenticação atualizada com Supabase v2+
-            response = supabase.auth.sign_in_with_password({
+            # Usar o cliente diretamente do settings
+            response = settings.SUPABASE_CLIENT.auth.sign_in_with_password({
                 "email": email,
                 "password": password
             })
+        
             
             # Verificação correta do usuário
             user = response.user
