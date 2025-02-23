@@ -7,7 +7,6 @@
     <hr class="my-4">
     <p>Você está logado como {{ user.email }}</p>
     
-    <!-- Adicione uma seção de links -->
     <div class="row mt-4">
         <div class="col-md-4">
             <div class="card">
@@ -24,7 +23,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Gerenciar Usuários</h5>
                     <p class="card-text">Gerencie os usuários do sistema.</p>
-                    <a href="#" class="btn btn-primary">Gerenciar Usuários</a>
+                    <a href="{% url 'user_management' %}" class="btn btn-primary">Gerenciar Usuários</a>
                 </div>
             </div>
         </div>
@@ -34,7 +33,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Configurações</h5>
                     <p class="card-text">Configure as opções do sistema.</p>
-                    <a href="#" class="btn btn-primary">Configurações</a>
+                    <a href="{% url 'settings' %}" class="btn btn-primary">Configurações</a>
                 </div>
             </div>
         </div>
