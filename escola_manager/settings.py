@@ -38,6 +38,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'apps.usuarios.auth_backends.EmailBackend',
+]
+
 ROOT_URLCONF = 'escola_manager.urls'
 
 TEMPLATES = [
