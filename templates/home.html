@@ -1,39 +1,41 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="jumbotron">
-    <h1 class="display-4">Bem-vindo ao Escola Manager</h1>
-    <p class="lead">Sistema de gerenciamento escolar</p>
-    <hr class="my-4">
-    <p>Você está logado como {{ user.email }}</p>
-    
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Área Administrativa</h5>
-                    <p class="card-text">Acesse o painel administrativo do sistema.</p>
-                    <a href="{% url 'admin:index' %}" class="btn btn-primary">Acessar Admin</a>
+<div class="container">
+    <div class="jumbotron">
+        <h1 class="display-4">Bem-vindo ao Escola Manager</h1>
+        <p class="lead">Sistema de gerenciamento escolar</p>
+        <hr class="my-4">
+        <p>Você está logado como {{ user.email }}</p>
+        
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Área Administrativa</h5>
+                        <p class="card-text">Acesse o painel administrativo do sistema.</p>
+                        <a href="{% url 'admin:index' %}" class="btn btn-primary">Acessar Admin</a>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Gerenciar Usuários</h5>
-                    <p class="card-text">Gerencie os usuários do sistema.</p>
-                    <a href="{% url 'user_management' %}" class="btn btn-primary">Gerenciar Usuários</a>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Gerenciar Usuários</h5>
+                        <p class="card-text">Gerencie os usuários do sistema.</p>
+                        <a href="{% url 'user_management' %}" class="btn btn-primary">Gerenciar Usuários</a>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Configurações</h5>
-                    <p class="card-text">Configure as opções do sistema.</p>
-                    <a href="{% url 'settings' %}" class="btn btn-primary">Configurações</a>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Configurações</h5>
+                        <p class="card-text">Configure as opções do sistema.</p>
+                        <a href="{% url 'settings' %}" class="btn btn-primary">Configurações</a>
+                    </div>
                 </div>
             </div>
         </div>
