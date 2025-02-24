@@ -8,7 +8,7 @@ class Aluno(models.Model):
     email = models.EmailField(blank=True, null=True)
     telefone = models.CharField(max_length=20, blank=True, null=True)
     endereco = models.TextField(blank=True, null=True)
-    foto = models.ImageField(upload_to='fotos_alunos/', blank=True, null=True)
+    foto = models.ImageField(upload_to='fotos_alunos', blank=True, null=True)
     dados_adicionais = models.TextField(blank=True, null=True)
 
 class Nota(models.Model):
