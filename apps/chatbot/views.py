@@ -1,10 +1,9 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Q, Avg
-from apps.alunos.models import Aluno, Nota  # Ajuste o caminho conforme necessário
-from apps.chatbot.utils import get_openai_response  # Ajuste conforme a localização da função
+from apps.alunos.models import Aluno, Nota
+from apps.chatbot.utils import get_openai_response, get_student_info
 from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
 
 @login_required
 def chatbot(request):
@@ -20,6 +19,27 @@ def chatbot_response(request):
             message = request.POST.get('message', '').strip()
             if not message:
                 return JsonResponse({'response': 'Por favor, digite uma mensagem.'})
+
+            # Verifica se a mensagem contém pedido de foto
+            if 'foto' in message.lower() or 'imagem' in message.lower():
+                info_aluno = None
+                palavras = message.lower().split()
+                for palavra in palavras:
+                    info_aluno = get_student_info(palavra)
+                    if info_aluno and info_aluno.get('foto_url'):
+                        return JsonResponse({
+                            'response': [
+                                f"Aqui está a foto de {info_aluno['nome']}:",
+                                {'type': 'image', 'url': info_aluno['foto_url']}
+                            ]
+                        })
+                    elif info_aluno:
+                        return JsonResponse({
+                            'response': f"Desculpe, não encontrei uma foto cadastrada para {info_aluno['nome']}."
+                        })
+                return JsonResponse({
+                    'response': "Desculpe, não encontrei o aluno mencionado."
+                })
 
             response = get_openai_response(message)
             return JsonResponse({'response': response})

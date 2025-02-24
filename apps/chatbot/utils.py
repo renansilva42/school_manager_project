@@ -30,7 +30,8 @@ def get_student_info(nome_ou_serie):
                 "telefone": aluno.telefone,  
                 "endereco": aluno.endereco,  
                 "notas": notas_info,
-                "responsavel": aluno.dados_adicionais
+                "responsavel": aluno.dados_adicionais,
+                "foto_url": aluno.foto.url if aluno.foto else None
             }
             return aluno_info
         return None
@@ -73,7 +74,7 @@ def get_openai_response(user_message, context=""):
         }
 
         response = openai.ChatCompletion.create(
-            model="gpt-4o-mini-2024-07-18",
+            model="gpt-4-mini-2024-07-18",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Contexto: {context_with_data}\n\nPergunta: {user_message}"}
