@@ -52,4 +52,6 @@
     <a href="{% url 'editar_aluno' aluno.pk %}" class="btn btn-warning">Editar Aluno</a>
 {% endif %}
 <a href="{% url 'lista_alunos' %}" class="btn btn-secondary">Voltar para Lista</a>
+
+<a href="{% url 'exportar_detalhes_aluno_pdf' aluno.pk %}" class="btn btn-primary">Exportar para PDF</a>
 {% endblock %}
