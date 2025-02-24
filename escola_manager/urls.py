@@ -11,4 +11,8 @@ urlpatterns = [
     path('chatbot/', include('apps.chatbot.urls')),
     path('usuarios/', include('apps.usuarios.urls')),
     path('relatorios/', include('apps.relatorios.urls')),  # Adicione esta linha
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
