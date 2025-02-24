@@ -24,14 +24,14 @@ class AlunoForm(forms.ModelForm):
             raise ValidationError("Este e-mail já está em uso.")
         return email
 
-    def clean_dados_adicionais(self):
-        dados_adicionais = self.cleaned_data.get('dados_adicionais')
-        if dados_adicionais:
-            try:
-                return json.loads(dados_adicionais)
-            except json.JSONDecodeError:
-                raise ValidationError("Dados adicionais devem estar em formato JSON válido.")
-        return dados_adicionais
+    # def clean_dados_adicionais(self):
+    #     dados_adicionais = self.cleaned_data.get('dados_adicionais')
+    #     if dados_adicionais:
+    #         try:
+    #             return json.loads(dados_adicionais)
+    #         except json.JSONDecodeError:
+    #             raise ValidationError("Dados adicionais devem estar em formato JSON válido.")
+    #     return dados_adicionais
 
 class NotaForm(forms.ModelForm):
     class Meta:

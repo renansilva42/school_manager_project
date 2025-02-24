@@ -34,12 +34,12 @@ body {
 
 .btn-primary {
     background: #417690;
-    color: white;
+    color: #ffffff !important;  /* Força o texto a ser branco */
 }
 
 .btn-secondary {
     background: #79aec8;
-    color: white;
+    color: white !important;
 }
 
 /* Admin specific */
