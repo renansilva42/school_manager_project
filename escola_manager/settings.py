@@ -27,7 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'crispy_forms',
-    'apps.core',
+    'core',  # não é apps.core
     'apps.alunos',
     'apps.usuarios',
     'apps.chatbot',
