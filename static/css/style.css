@@ -1,0 +1,16 @@
+/* static/css/style.css */
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    padding: 20px;
+}
+
+/* Estilo para o botão voltar */
+.back-button {
+    margin: 20px 0;
+}

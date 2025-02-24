@@ -2,7 +2,13 @@
 
 {% block content %}
 <div class="container">
-    <h2 class="mb-4">Configurações do Sistema</h2>
+    <div class="back-button">
+        <a href="{% url 'home' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar para Home
+        </a>
+    </div>
+    
+        <h2 class="mb-4">Configurações do Sistema</h2>
     
     {% if messages %}
     {% for message in messages %}

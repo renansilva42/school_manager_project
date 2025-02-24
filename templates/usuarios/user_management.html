@@ -2,6 +2,12 @@
 
 {% block content %}
 <div class="container">
+    <div class="back-button">
+        <a href="{% url 'home' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar para Home
+        </a>
+    </div>
+
     <h2 class="mb-4">Gerenciamento de Usuários</h2>
     
     {% if messages %}
