@@ -20,12 +20,12 @@
             <td>{{ nota.aluno.nome }}</td>
             <td>{{ nota.aluno.serie }}</td>
             <td>{{ nota.disciplina }}</td>
-            <td>{{ nota.valor }}</td>
-            <td>{{ nota.data }}</td>
+            <td>{{ nota.valor|floatformat:2 }}</td>
+            <td>{{ nota.data|date:"d/m/Y" }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+<a href="{% url 'exportar_notas_baixas_pdf' %}" class="btn btn-primary">Exportar PDF</a>
 <a href="{% url 'relatorios' %}" class="btn btn-secondary">Voltar</a>
-<a href="{% url 'exportar_notas_baixas_pdf' %}" class="btn btn-primary">Exportar para PDF</a>
 {% endblock %}
