@@ -1,125 +1,24 @@
 {% extends "admin/base.html" %}
 {% load static %}
 
-{% block title %}{{ title }} | Escola Manager{% endblock %}
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
 {% block extrastyle %}
-<!-- CSS Principal -->
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/css/base.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/css/nav_sidebar.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/css/responsive.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/css/forms.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/css/widgets.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/css/dashboard.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/css/changelists.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/css/autocomplete.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/css/responsive_rtl.css">
-
-<!-- JavaScript necessário -->
-<script src="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/js/vendor/jquery/jquery.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/js/jquery.init.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/js/core.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/js/admin/RelatedObjectLookups.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/js/actions.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/js/urlify.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/js/prepopulate.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/django/django@main/django/contrib/admin/static/admin/js/nav_sidebar.js"></script>
-
-<style>
-    #header {
-        background: #417690;
-        color: #fff;
-        overflow: hidden;
-        padding: 15px 40px;
-        width: 100%;
-        box-sizing: border-box;
-    }
-    
-    #branding h1 {
-        margin: 0;
-        font-weight: 300;
-        font-size: 24px;
-        color: #f5dd5d;
-    }
-
-    #user-tools {
-        float: right;
-        padding: 0;
-        margin: 0 0 0 20px;
-        font-weight: 300;
-        font-size: 11px;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        text-align: right;
-    }
-
-    #user-tools a {
-        color: #fff;
-        text-decoration: none;
-    }
-
-    #user-tools a:hover {
-        text-decoration: underline;
-    }
-
-    div.breadcrumbs {
-        background: #79aec8;
-        padding: 10px 40px;
-        border: none;
-        color: #c4dce8;
-        text-align: left;
-    }
-
-    div.breadcrumbs a {
-        color: #fff;
-    }
-
-    div.breadcrumbs a:focus, div.breadcrumbs a:hover {
-        color: #c4dce8;
-    }
-
-    /* Corrige o retângulo estranho */
-    .toggle-nav-sidebar {
-        display: none;
-    }
-
-    #nav-sidebar {
-        width: 100%;
-        display: block !important;
-    }
-
-    /* Ajustes para a lista de usuários */
-    #changelist {
-        width: 100%;
-    }
-
-    .change-list .filtered .results, .change-list .filtered .paginator, 
-    .filtered #toolbar, .filtered .actions, .filtered div.xfull {
-        margin-right: 0 !important;
-    }
-
-    #changelist-filter {
-        width: 240px !important;
-    }
-
-    #changelist-form .results {
-        width: auto !important;
-    }
-
-    .submit-row {
-        padding: 12px 14px;
-        margin: 0 0 20px;
-        background: #f8f8f8;
-        border: 1px solid #eee;
-        border-radius: 4px;
-        text-align: right;
-        overflow: hidden;
-    }
-</style>
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/base.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/responsive.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/widgets.css' %}">
 {% endblock %}
 
 {% block branding %}
 <h1 id="site-name"><a href="{% url 'admin:index' %}">Escola Manager</a></h1>
 {% endblock %}
 
-{% block nav-global %}{% endblock %}
+{% block nav-global %}
+<div style="margin: 20px;">
+    <a href="{% url 'home' %}" class="button" style="padding: 10px; background: #79aec8; color: white; text-decoration: none; border-radius: 4px;">
+        Voltar para Home
+    </a>
+</div>
+{% endblock %}
