@@ -2,6 +2,13 @@ import openai
 from django.conf import settings
 from apps.alunos.models import Aluno, Nota
 from django.db.models import Q
+from datetime import datetime
+import pytz
+
+def get_current_datetime():
+    fuso_belem = pytz.timezone("America/Belem")
+    agora = datetime.now(fuso_belem)
+    return agora.strftime("%d/%m/%Y %H:%M:%S")
 
 def get_student_info(nome_ou_serie):
     try:
@@ -20,8 +27,8 @@ def get_student_info(nome_ou_serie):
                 "data_nascimento": aluno.data_nascimento,
                 "serie": aluno.serie,
                 "email": aluno.email,
-                "telefone": aluno.telefone,  # Adicionado telefone
-                "endereco": aluno.endereco,  # Adicionado endereço
+                "telefone": aluno.telefone,  
+                "endereco": aluno.endereco,  
                 "notas": notas_info,
                 "responsavel": aluno.dados_adicionais
             }
@@ -33,15 +40,12 @@ def get_student_info(nome_ou_serie):
 
 def get_openai_response(user_message, context=""):
     try:
-        # Verifica se é uma saudação
         saudacoes = ["oi", "olá", "ola", "bom dia", "boa tarde", "boa noite", "hi", "hello"]
         mensagem_lower = user_message.lower()
         
-        # Se for apenas uma saudação, retorna uma resposta amigável
         if any(saudacao in mensagem_lower for saudacao in saudacoes) and len(mensagem_lower.split()) <= 3:
             return "Olá! Que bom ter você por aqui! Como posso ajudar hoje? Posso fornecer informações sobre qualquer aluno da escola."
 
-        # Processamento normal para outras mensagens
         palavras_chave = mensagem_lower.split()
         info_aluno = None
         
@@ -50,7 +54,7 @@ def get_openai_response(user_message, context=""):
             if info_aluno:
                 break
 
-        system_prompt = """
+        system_prompt = f"""
         Você é um assistente escolar amigável e prestativo que tem acesso aos dados dos alunos.
         Regras importantes:
         1. Sempre mantenha um tom amigável e acolhedor
@@ -59,6 +63,8 @@ def get_openai_response(user_message, context=""):
         4. Se não tiver certeza sobre alguma informação, seja honesto e diga que não tem acesso
         5. Termine suas respostas se colocando à disposição para mais perguntas
         6. Se o usuário pedir informações específicas (como telefone ou endereço), forneça exatamente o que foi pedido
+        
+        A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3).
         """
 
         context_with_data = {
