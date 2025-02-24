@@ -28,6 +28,21 @@ def cadastrar_aluno(request):
     return render(request, 'alunos/cadastrar_aluno.html', {'form': form})
 
 @login_required
+@user_passes_test(is_admin)
+def editar_aluno(request, pk):
+    aluno = get_object_or_404(Aluno, pk=pk)
+    
+    if request.method == 'POST':
+        form = AlunoForm(request.POST, request.FILES, instance=aluno)
+        if form.is_valid():
+            form.save()
+            return redirect('detalhe_aluno', pk=pk)
+    else:
+        form = AlunoForm(instance=aluno)
+    
+    return render(request, 'alunos/editar_aluno.html', {'form': form, 'aluno': aluno})
+
+@login_required
 def adicionar_nota(request, aluno_pk):
     aluno = get_object_or_404(Aluno, pk=aluno_pk)
     if request.method == 'POST':

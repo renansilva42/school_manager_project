@@ -3,6 +3,15 @@ from django.http import JsonResponse
 from django.db.models import Q, Avg
 from apps.alunos.models import Aluno, Nota  # Ajuste o caminho conforme necessário
 from apps.chatbot.utils import get_openai_response  # Ajuste conforme a localização da função
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def chatbot(request):
+    """
+    View function para renderizar a página principal do chatbot
+    """
+    return render(request, 'chatbot/chatbot.html')
 
 @login_required
 def chatbot_response(request):

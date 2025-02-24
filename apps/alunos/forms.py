@@ -36,11 +36,8 @@ class AlunoForm(forms.ModelForm):
 class NotaForm(forms.ModelForm):
     class Meta:
         model = Nota
-        fields = ['disciplina', 'valor', 'data']
-        widgets = {
-            'data': forms.DateInput(attrs={'type': 'date'}),
-        }
-
+        fields = ['disciplina', 'valor']  # Remova 'data' daqui
+        
     def clean_valor(self):
         valor = self.cleaned_data.get('valor')
         if valor < 0 or valor > 10:
