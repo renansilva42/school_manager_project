@@ -9,5 +9,6 @@ urlpatterns = [
     path('', home, name='home'),
     path('alunos/', include('apps.alunos.urls')),
     path('chatbot/', include('apps.chatbot.urls')),
-    path('usuarios/', include('apps.usuarios.urls')),  # Add this line
+    path('usuarios/', include('apps.usuarios.urls')),
+    path('relatorios/', include('apps.relatorios.urls')),  # Adicione esta linha
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
