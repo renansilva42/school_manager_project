@@ -1,79 +1,78 @@
+<!-- templates/chatbot/chatbot.html -->
 {% extends 'base.html' %}
 
-{% block title %}Chatbot Escolar{% endblock %}
-
-{% block extra_css %}
-<style>
-    #chat-container {
-        height: 400px;
-        overflow-y: auto;
-        border: 1px solid #ccc;
-        padding: 10px;
-        margin-bottom: 10px;
-    }
-    .message {
-        margin-bottom: 10px;
-        padding: 5px 10px;
-        border-radius: 5px;
-    }
-    .user-message {
-        background-color: #e6f2ff;
-        text-align: right;
-    }
-    .bot-message {
-        background-color: #f0f0f0;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<h1>Chatbot Escolar</h1>
-<div id="chat-container"></div>
-<form id="chat-form">
-    {% csrf_token %}
-    <div class="input-group mb-3">
-        <input type="text" id="user-input" class="form-control" placeholder="Digite sua mensagem...">
-        <button class="btn btn-primary" type="submit">Enviar</button>
-    </div>
-</form>
-{% endblock %}
+<div class="container">
+    <div id="chat-container"></div>
+    <form id="chat-form">
+        {% csrf_token %}
+        <div class="input-group">
+            <input type="text" id="user-input" class="form-control" placeholder="Digite sua mensagem...">
+            <button type="submit" class="btn btn-primary">Enviar</button>
+        </div>
+    </form>
+</div>
 
-{% block extra_js %}
 <script>
-    const chatContainer = document.getElementById('chat-container');
-    const chatForm = document.getElementById('chat-form');
+document.getElementById('chat-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
     const userInput = document.getElementById('user-input');
+    const message = userInput.value;
+    
+    // Adiciona mensagem do usuário
+    addMessage(message, 'user');
+    userInput.value = '';
 
-    chatForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const message = userInput.value.trim();
-        if (message) {
-            addMessage(message, 'user-message');
-            userInput.value = '';
-            const response = await sendMessage(message);
-            addMessage(response, 'bot-message');
-        }
-    });
-
-    function addMessage(message, className) {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message', className);
-        messageElement.textContent = message;
-        chatContainer.appendChild(messageElement);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-
-    async function sendMessage(message) {
+    try {
         const response = await fetch('{% url "chatbot_response" %}', {
             method: 'POST',
             headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': '{{ csrf_token }}'
             },
             body: `message=${encodeURIComponent(message)}`
         });
+
         const data = await response.json();
-        return data.response;
+        addMessage(data.response, 'bot');
+    } catch (error) {
+        addMessage('Erro ao processar mensagem', 'bot');
     }
+});
+
+function addMessage(message, sender) {
+    const chatContainer = document.getElementById('chat-container');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    messageDiv.textContent = message;
+    chatContainer.appendChild(messageDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
 </script>
+
+<style>
+#chat-container {
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.message {
+    margin: 5px;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.user-message {
+    background-color: #e3f2fd;
+    text-align: right;
+}
+
+.bot-message {
+    background-color: #f5f5f5;
+    text-align: left;
+}
+</style>
 {% endblock %}

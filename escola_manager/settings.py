@@ -1,5 +1,15 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Carrega as variáveis do arquivo .env
+load_dotenv()
+
+# Obtém as variáveis de ambiente
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -16,8 +26,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'core',
+    'crispy_forms',
+    'apps.core',
+    'apps.alunos',
+    'apps.usuarios',
+    'apps.chatbot',
 ]
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

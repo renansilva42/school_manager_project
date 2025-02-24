@@ -1,53 +1,60 @@
-from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Q, Avg
-from .utils import get_openai_response
-from apps.alunos.models import Aluno, Nota
-
-@login_required
-def chatbot(request):
-    return render(request, 'chatbot/chatbot.html')
+from apps.alunos.models import Aluno, Nota  # Ajuste o caminho conforme necessário
+from apps.chatbot.utils import get_openai_response  # Ajuste conforme a localização da função
 
 @login_required
 def chatbot_response(request):
     if request.method == 'POST':
-        user_message = request.POST.get('message').lower()
+        message = request.POST.get('message')
         
-        if 'buscar aluno' in user_message:
-            termo_busca = user_message.split('buscar aluno')[-1].strip()
+        # Busca de aluno
+        if "buscar aluno" in message.lower():
+            search_term = message.lower().replace("buscar aluno", "").strip()
             alunos = Aluno.objects.filter(
-                Q(nome__icontains=termo_busca) |
-                Q(matricula__icontains=termo_busca) |
-                Q(serie__icontains=termo_busca)
+                Q(nome__icontains=search_term) |
+                Q(matricula__icontains=search_term)
             )
             if alunos:
-                context = "Alunos encontrados:\n"
+                response = "Alunos encontrados:\n"
                 for aluno in alunos:
-                    context += f"- {aluno.nome} (Matrícula: {aluno.matricula}, Série: {aluno.serie})\n"
+                    response += f"Nome: {aluno.nome}, Matrícula: {aluno.matricula}\n"
             else:
-                context = f"Nenhum aluno encontrado com o termo '{termo_busca}'"
-        
-        elif 'média da turma' in user_message:
-            serie = user_message.split('média da turma')[-1].strip()
-            media_turma = Nota.objects.filter(aluno__serie=serie).aggregate(Avg('valor'))['valor__avg']
-            context = f"A média da turma {serie} é {media_turma:.2f}" if media_turma else f"Sem dados para a turma {serie}"
-        
-        elif 'relatório de notas' in user_message:
-            nome_aluno = user_message.split('relatório de notas')[-1].strip()
+                response = "Nenhum aluno encontrado."
+
+        # Média da turma
+        elif "média da turma" in message.lower():
+            serie = message.lower().replace("média da turma", "").strip()
+            media = Nota.objects.filter(aluno__serie=serie).aggregate(media=Avg('valor'))
+            if media['media']:
+                response = f"A média da turma {serie} é {media['media']:.2f}"
+            else:
+                response = f"Não há notas registradas para a turma {serie}"
+
+        # Relatório de notas
+        elif "relatório de notas" in message.lower():
+            nome_aluno = message.lower().replace("relatório de notas", "").strip()
             aluno = Aluno.objects.filter(nome__icontains=nome_aluno).first()
             if aluno:
                 notas = Nota.objects.filter(aluno=aluno)
-                context = f"Relatório de notas de {aluno.nome}:\n"
+                response = f"Relatório de notas de {aluno.nome}:\n"
                 for nota in notas:
-                    context += f"- {nota.disciplina}: {nota.valor} ({nota.data})\n"
+                    response += f"{nota.disciplina}: {nota.valor}\n"
             else:
-                context = f"Aluno '{nome_aluno}' não encontrado"
-        
-        else:
-            context = "Comandos disponíveis:\n- Buscar aluno [nome ou matrícula]\n- Média da turma [série]\n- Relatório de notas [nome do aluno]"
+                response = "Aluno não encontrado."
 
-        response = get_openai_response(user_message, context)
-        return JsonResponse({'response': response})
-    
-    return JsonResponse({'error': 'Método não permitido'}, status=405)
+        # Resposta padrão
+        else:
+            response = """
+            Comandos disponíveis:
+            - buscar aluno [nome ou matrícula]
+            - média da turma [série]
+            - relatório de notas [nome do aluno]
+            """
+
+        # Integração com OpenAI
+        context = f"Dados do sistema:\n{response}"
+        final_response = get_openai_response(message, context)
+        
+        return JsonResponse({'response': final_response})
