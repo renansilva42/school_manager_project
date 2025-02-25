@@ -1,0 +1,525 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}Editar Aluno{% else %}Cadastrar Aluno{% endif %}
+{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .form-header {
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--accent-color);
+        padding-bottom: 1rem;
+    }
+    
+    .form-header h2 {
+        color: var(--primary-color);
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .form-header h2 i {
+        margin-right: 0.8rem;
+        color: var(--accent-color);
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+    }
+    
+    .form-section-title {
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #eee;
+        font-size: 1.2rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: #555;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        padding: 0.8rem;
+        border: 1px solid #ddd;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    
+    .form-control:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 0.2rem rgba(121, 174, 200, 0.25);
+    }
+    
+    .form-text {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin-top: 0.3rem;
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #eee;
+    }
+    
+    .form-actions .btn {
+        padding: 0.6rem 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .form-actions .btn i {
+        margin-right: 0.5rem;
+    }
+    
+    .required-field::after {
+        content: '*';
+        color: #dc3545;
+        margin-left: 0.2rem;
+    }
+    
+    .form-photo-preview {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background-color: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        border: 2px dashed #ddd;
+        overflow: hidden;
+    }
+    
+    .form-photo-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .form-photo-preview i {
+        font-size: 3rem;
+        color: #ddd;
+    }
+    
+    /* Animações */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animated {
+        animation: fadeInUp 0.5s ease forwards;
+    }
+    
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+</style>
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb" class="animated">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'lista_alunos' %}">Alunos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {% if form.instance.pk %}Editar Aluno{% else %}Cadastrar Aluno{% endif %}
+            </li>
+        </ol>
+    </nav>
+    
+    <div class="form-container animated">
+        <div class="form-header">
+            <h2>
+                {% if form.instance.pk %}
+                <i class="fas fa-user-edit"></i> Editar Aluno
+                {% else %}
+                <i class="fas fa-user-plus"></i> Cadastrar Novo Aluno
+                {% endif %}
+            </h2>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="alert alert-danger animated delay-1">
+                <i class="fas fa-exclamation-circle"></i> Por favor, corrija os erros abaixo.
+            </div>
+            {% endif %}
+            
+            <div class="form-section animated delay-1">
+                <h3 class="form-section-title">
+                    <i class="fas fa-id-card"></i> Dados Pessoais
+                </h3>
+                
+                <div class="row">
+                    <div class="col-md-3 mb-4">
+                        <div class="form-photo-preview" id="photoPreview">
+                            {% if form.instance.foto %}
+                            <img src="{{ form.instance.foto.url }}" alt="Foto do aluno">
+                            {% else %}
+                            <i class="fas fa-user-graduate"></i>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.foto.id_for_label }}" class="form-label">Foto</label>
+                            {{ form.foto }}
+                            {% if form.foto.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.foto.errors }}
+                            </div>
+                            {% endif %}
+                            <small class="form-text">Formatos aceitos: JPG, PNG. Tamanho máximo: 2MB.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-9">
+                        <div class="row">
+                            <div class="col-md-8 form-group">
+                                <label for="{{ form.nome.id_for_label }}" class="form-label required-field">Nome Completo</label>
+                                {{ form.nome }}
+                                {% if form.nome.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.nome.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 form-group">
+                                <label for="{{ form.data_nascimento.id_for_label }}" class="form-label required-field">Data de Nascimento</label>
+                                {{ form.data_nascimento }}
+                                {% if form.data_nascimento.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.data_nascimento.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 form-group">
+                                <label for="{{ form.cpf.id_for_label }}" class="form-label required-field">CPF</label>
+                                {{ form.cpf }}
+                                {% if form.cpf.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.cpf.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 form-group">
+                                <label for="{{ form.rg.id_for_label }}" class="form-label required-field">RG</label>
+                                {{ form.rg }}
+                                {% if form.rg.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.rg.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section animated delay-2">
+                <h3 class="form-section-title">
+                    <i class="fas fa-phone"></i> Contato
+                </h3>
+                
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label for="{{ form.telefone.id_for_label }}" class="form-label required-field">Telefone</label>
+                        {{ form.telefone }}
+                        {% if form.telefone.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.telefone.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 form-group">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">E-mail</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.email.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-12 form-group">
+                        <label for="{{ form.endereco.id_for_label }}" class="form-label required-field">Endereço</label>
+                        {{ form.endereco }}
+                        {% if form.endereco.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.endereco.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-8 form-group">
+                        <label for="{{ form.cidade.id_for_label }}" class="form-label required-field">Cidade</label>
+                        {{ form.cidade }}
+                        {% if form.cidade.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.cidade.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 form-group">
+                        <label for="{{ form.uf.id_for_label }}" class="form-label required-field">UF</label>
+                        {{ form.uf }}
+                        {% if form.uf.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.uf.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section animated delay-2">
+                <h3 class="form-section-title">
+                    <i class="fas fa-users"></i> Responsáveis
+                </h3>
+                
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label for="{{ form.nome_responsavel1.id_for_label }}" class="form-label required-field">Nome do Responsável 1</label>
+                        {{ form.nome_responsavel1 }}
+                        {% if form.nome_responsavel1.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.nome_responsavel1.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 form-group">
+                        <label for="{{ form.telefone_responsavel1.id_for_label }}" class="form-label required-field">Telefone do Responsável 1</label>
+                        {{ form.telefone_responsavel1 }}
+                        {% if form.telefone_responsavel1.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.telefone_responsavel1.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 form-group">
+                        <label for="{{ form.nome_responsavel2.id_for_label }}" class="form-label">Nome do Responsável 2</label>
+                        {{ form.nome_responsavel2 }}
+                        {% if form.nome_responsavel2.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.nome_responsavel2.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 form-group">
+                        <label for="{{ form.telefone_responsavel2.id_for_label }}" class="form-label">Telefone do Responsável 2</label>
+                        {{ form.telefone_responsavel2 }}
+                        {% if form.telefone_responsavel2.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.telefone_responsavel2.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section animated delay-3">
+                <h3 class="form-section-title">
+                    <i class="fas fa-graduation-cap"></i> Dados Acadêmicos
+                </h3>
+                
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label for="{{ form.matricula.id_for_label }}" class="form-label required-field">Matrícula</label>
+                        {{ form.matricula }}
+                        {% if form.matricula.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.matricula.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 form-group">
+                        <label for="{{ form.data_matricula.id_for_label }}" class="form-label required-field">Data de Matrícula</label>
+                        {{ form.data_matricula }}
+                        {% if form.data_matricula.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.data_matricula.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 form-group">
+                        <label for="{{ form.nivel.id_for_label }}" class="form-label required-field">Nível de Ensino</label>
+                        {{ form.nivel }}
+                        {% if form.nivel.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.nivel.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 form-group">
+                        <label for="{{ form.ano.id_for_label }}" class="form-label required-field">Ano</label>
+                        {{ form.ano }}
+                        {% if form.ano.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.ano.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 form-group">
+                        <label for="{{ form.turno.id_for_label }}" class="form-label required-field">Turno</label>
+                        {{ form.turno }}
+                        {% if form.turno.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.turno.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 form-group">
+                        <label for="{{ form.turma.id_for_label }}" class="form-label required-field">Turma</label>
+                        {{ form.turma }}
+                        {% if form.turma.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.turma.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-12 form-group">
+                        <label for="{{ form.observacoes.id_for_label }}" class="form-label">Observações</label>
+                        {{ form.observacoes }}
+                        {% if form.observacoes.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.observacoes.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{% url 'lista_alunos' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> 
+                    {% if form.instance.pk %}Salvar Alterações{% else %}Cadastrar Aluno{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Garantir que as animações sejam executadas corretamente
+        const elements = document.querySelectorAll('.animated');
+        elements.forEach(element => {
+            element.style.opacity = '0';
+        });
+        
+        setTimeout(() => {
+            elements.forEach(element => {
+                element.style.opacity = '1';
+            });
+        }, 100);
+        
+        // Visualização prévia da foto
+        const photoInput = document.getElementById('{{ form.foto.id_for_label }}');
+        const photoPreview = document.getElementById('photoPreview');
+        
+        photoInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    photoPreview.innerHTML = `<img src="${e.target.result}" alt="Prévia da foto">`;
+                }
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+        
+        // Aplicar máscaras nos campos
+        const cpfInput = document.getElementById('{{ form.cpf.id_for_label }}');
+        const telefoneInput = document.getElementById('{{ form.telefone.id_for_label }}');
+        const telefoneResp1Input = document.getElementById('{{ form.telefone_responsavel1.id_for_label }}');
+        const telefoneResp2Input = document.getElementById('{{ form.telefone_responsavel2.id_for_label }}');
+        
+        // Função para aplicar máscara de CPF
+        function maskCPF(input) {
+            input.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+                
+                if (value.length > 9) {
+                    value = value.replace(/^(\d{3})(\d{3})(\d{3})(\d{2}).*/, '$1.$2.$3-$4');
+                } else if (value.length > 6) {
+                    value = value.replace(/^(\d{3})(\d{3})(\d{0,3}).*/, '$1.$2.$3');
+                } else if (value.length > 3) {
+                    value = value.replace(/^(\d{3})(\d{0,3}).*/, '$1.$2');
+                }
+                
+                e.target.value = value;
+            });
+        }
+        
+        // Função para aplicar máscara de telefone
+        function maskPhone(input) {
+            input.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+                
+                if (value.length > 10) {
+                    value = value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
+                } else if (value.length > 6) {
+                    value = value.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, '($1) $2-$3');
+                } else if (value.length > 2) {
+                    value = value.replace(/^(\d{2})(\d{0,5}).*/, '($1) $2');
+                }
+                
+                e.target.value = value;
+            });
+        }
+        
+        // Aplicar as máscaras
+        if (cpfInput) maskCPF(cpfInput);
+        if (telefoneInput) maskPhone(telefoneInput);
+        if (telefoneResp1Input) maskPhone(telefoneResp1Input);
+        if (telefoneResp2Input) maskPhone(telefoneResp2Input);
+    });
+</script>
+{% endblock %}

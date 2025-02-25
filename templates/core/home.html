@@ -5,55 +5,255 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Escola Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #417690;
+            --secondary-color: #79aec8;
+            --accent-color: #f5dd5d;
+            --text-color: #333;
+            --text-light: #ffffff;
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2.5rem;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            --transition-speed: 0.3s;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background-color: #f5f5f5;
+            color: var(--text-color);
+            line-height: 1.6;
         }
+        
         .container {
-            max-width: 800px;
-            margin: 0 auto;
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: var(--spacing-xl);
             background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
         }
+        
         h1 {
-            color: #333;
-            margin-bottom: 30px;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-xl);
             text-align: center;
+            font-size: 2.5rem;
+            position: relative;
+            padding-bottom: var(--spacing-md);
         }
+        
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background-color: var(--accent-color);
+            border-radius: 2px;
+        }
+        
         .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #79aec8;
-            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-md) var(--spacing-lg);
+            background-color: var(--secondary-color);
+            color: var(--text-light);
             text-decoration: none;
-            border-radius: 4px;
-            margin: 10px 10px;
-            transition: background-color 0.3s ease;
+            border-radius: var(--border-radius);
+            margin: var(--spacing-md);
+            transition: all var(--transition-speed) ease;
+            font-weight: 500;
+            min-width: 180px;
+            min-height: 48px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+        
         .button:hover {
-            background-color: #417690;
+            background-color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
-        .buttons-container {
+        
+        .button i {
+            margin-right: var(--spacing-sm);
+            font-size: 1.2rem;
+        }
+        
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: var(--spacing-xl);
+        }
+        
+        .feature-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-xl);
+        }
+        
+        .feature-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: var(--spacing-lg);
+            box-shadow: var(--box-shadow);
+            transition: transform var(--transition-speed);
+            border-top: 4px solid var(--secondary-color);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-card h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-card h3 i {
+            margin-right: var(--spacing-sm);
+            color: var(--accent-color);
+        }
+        
+        .feature-card p {
+            margin-bottom: 0;
+        }
+        
+        .logo {
             text-align: center;
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .logo i {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        /* Animações */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animated {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+        
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--spacing-md);
+                margin: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .button {
+                width: 100%;
+                margin: var(--spacing-sm) 0;
+            }
+            
+            .button-container {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Bem-vindo ao Escola Manager</h1>
-        <div class="buttons-container">
-            <a href="{% url 'admin:index' %}" class="button">Acessar Administração</a>
-            <a href="{% url 'user_management' %}" class="button">Gerenciar Usuários</a>
-            <a href="{% url 'settings' %}" class="button">Configurações</a>
-            <a href="{% url 'chatbot' %}" class="button">Chatbot</a>
-            <a href="{% url 'lista_alunos' %}" class="button">Alunos</a>
-            <a href="{% url 'relatorios' %}" class="button">Relatórios</a>
+        <div class="logo animated">
+            <i class="fas fa-school"></i>
+            <h1>Escola Manager</h1>
+        </div>
+        
+        <div class="feature-section">
+            <div class="feature-card animated delay-1">
+                <h3><i class="fas fa-user-graduate"></i> Gestão de Alunos</h3>
+                <p>Cadastre, edite e visualize informações detalhadas dos alunos, organizadas por nível de ensino, turno e ano.</p>
+            </div>
+            
+            <div class="feature-card animated delay-2">
+                <h3><i class="fas fa-robot"></i> Assistente Virtual</h3>
+                <p>Utilize nosso chatbot inteligente para obter informações rápidas e tirar dúvidas sobre o sistema.</p>
+            </div>
+            
+            <div class="feature-card animated delay-3">
+                <h3><i class="fas fa-chart-bar"></i> Relatórios</h3>
+                <p>Acesse relatórios detalhados e estatísticas sobre o desempenho escolar e distribuição de alunos.</p>
+            </div>
+            
+            <div class="feature-card animated delay-4">
+                <h3><i class="fas fa-cog"></i> Administração</h3>
+                <p>Configure o sistema de acordo com as necessidades da sua instituição de ensino.</p>
+            </div>
+        </div>
+        
+        <div class="button-container">
+            <a href="{% url 'lista_alunos' %}" class="button animated delay-1">
+                <i class="fas fa-user-graduate"></i> Gerenciar Alunos
+            </a>
+            <a href="{% url 'chatbot' %}" class="button animated delay-2">
+                <i class="fas fa-robot"></i> Acessar Chatbot
+            </a>
+            {% if user.is_authenticated %}
+            <a href="{% url 'admin:index' %}" class="button animated delay-3">
+                <i class="fas fa-cog"></i> Área Admin
+            </a>
+            <a href="{% url 'relatorios' %}" class="button animated delay-4">
+                <i class="fas fa-chart-bar"></i> Ver Relatórios
+            </a>
+            {% else %}
+            <a href="{% url 'login' %}" class="button animated delay-3">
+                <i class="fas fa-sign-in-alt"></i> Entrar
+            </a>
+            {% endif %}
         </div>
     </div>
+
+    <script>
+        // Garantir que as animações sejam executadas corretamente
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.animated');
+            elements.forEach(element => {
+                element.style.opacity = '0';
+            });
+            
+            setTimeout(() => {
+                elements.forEach(element => {
+                    element.style.opacity = '1';
+                });
+            }, 100);
+            
+            // Melhorar acessibilidade para leitores de tela
+            const buttons = document.querySelectorAll('.button');
+            buttons.forEach(button => {
+                if (!button.getAttribute('aria-label') && button.textContent.trim()) {
+                    button.setAttribute('aria-label', button.textContent.trim());
+                }
+            });
+        });
+    </script>
 </body>
 </html>

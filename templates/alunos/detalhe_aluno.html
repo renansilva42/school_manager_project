@@ -3,59 +3,473 @@
 {% block title %}Detalhes do Aluno{% endblock %}
 
 {% block content %}
-<h1>Detalhes do Aluno</h1>
-<div class="card">
-    <div class="card-body">
-        <h5 class="card-title">{{ aluno.nome }}</h5>
-        <p class="card-text">
-            </p>
+<style>
+    .student-profile {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    
+    .profile-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 2rem;
+        position: relative;
+    }
+    
+    .profile-img {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 5px solid white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        object-fit: cover;
+        margin-right: 2rem;
+    }
+    
+    .profile-name {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .profile-matricula {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    .profile-badge {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        font-weight: bold;
+    }
+    
+    .badge-efi {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .badge-eff {
+        background-color: #17a2b8;
+        color: white;
+    }
+    
+    .profile-content {
+        padding: 2rem;
+    }
+    
+    .info-section {
+        margin-bottom: 2rem;
+    }
+    
+    .info-section h3 {
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--accent-color);
+    }
+    
+    .info-item {
+        margin-bottom: 1rem;
+    }
+    
+    .info-label {
+        font-weight: bold;
+        color: #666;
+    }
+    
+    .info-value {
+        color: #333;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .action-buttons .btn {
+        padding: 0.6rem 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .action-buttons .btn i {
+        margin-right: 0.5rem;
+    }
+    
+    .tab-content {
+        padding: 1.5rem;
+        background-color: white;
+        border-radius: 0 0 10px 10px;
+    }
+    
+    .nav-tabs {
+        border-bottom: none;
+    }
+    
+    .nav-tabs .nav-link {
+        color: #666;
+        border: none;
+        padding: 1rem 1.5rem;
+        border-radius: 10px 10px 0 0;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: var(--primary-color);
+        background-color: white;
+        font-weight: 500;
+        border-top: 3px solid var(--accent-color);
+    }
+    
+    .nav-tabs .nav-link i {
+        margin-right: 0.5rem;
+    }
+    
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #ddd;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -2rem;
+        top: 0.3rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        border: 2px solid white;
+    }
+    
+    .timeline-date {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.3rem;
+    }
+    
+    .timeline-content {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+    }
+    
+    .timeline-title {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: var(--primary-color);
+    }
+    
+    /* Animações */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animated {
+        animation: fadeInUp 0.5s ease forwards;
+    }
+    
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+</style>
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb" class="animated">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'lista_alunos' %}">Alunos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ aluno.nome }}</li>
+        </ol>
+    </nav>
+    
+    <div class="student-profile animated">
+        <div class="profile-header d-flex align-items-center">
             {% if aluno.foto %}
-                <img src="{{ aluno.foto.url }}" alt="Foto do aluno" class="img-fluid mb-3" style="max-width: 200px;"></p>
-            <!-- Adicione isso na seção de informações do aluno no template detalhe_aluno.html -->
-            <p><strong>Nível de Ensino:</strong> {{ aluno.get_nivel_display }}</p>
-            <p><strong>Turno:</strong> {{ aluno.get_turno_display }}</p>
-            <p><strong>Ano:</strong> {{ aluno.get_ano_display }}</p>
-            <strong>Matrícula:</strong> {{ aluno.matricula }}<br>
-            <strong>Data de Nascimento:</strong> {{ aluno.data_nascimento }}<br>
-            <strong>Série:</strong> {{ aluno.serie }}<br>
-            <strong>E-mail:</strong> {{ aluno.email|default:"Não informado" }}<br>
-            <strong>Telefone:</strong> {{ aluno.telefone|default:"Não informado" }}<br>
-            <strong>Endereço:</strong> {{ aluno.endereco|default:"Não informado" }}
-        {% endif %}
-        <h6>Dados Adicionais:</h6>
-        <pre>{{ aluno.dados_adicionais|default:"Nenhum dado adicional" }}</pre>
+            <img src="{{ aluno.foto.url }}" alt="Foto do aluno" class="profile-img">
+            {% else %}
+            <div class="profile-img d-flex align-items-center justify-content-center bg-light text-dark">
+                <i class="fas fa-user-graduate" style="font-size: 3rem;"></i>
+            </div>
+            {% endif %}
+            
+            <div>
+                <h1 class="profile-name">{{ aluno.nome }}</h1>
+                <div class="profile-matricula">Matrícula: {{ aluno.matricula }}</div>
+            </div>
+            
+            <span class="profile-badge badge-{{ aluno.nivel|lower }}">
+                {{ aluno.get_nivel_display }}
+            </span>
+        </div>
+        
+        <div class="profile-content">
+            <ul class="nav nav-tabs" id="studentTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab" aria-controls="info" aria-selected="true">
+                        <i class="fas fa-info-circle"></i> Informações Pessoais
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="academic-tab" data-bs-toggle="tab" data-bs-target="#academic" type="button" role="tab" aria-controls="academic" aria-selected="false">
+                        <i class="fas fa-graduation-cap"></i> Dados Acadêmicos
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false">
+                        <i class="fas fa-history"></i> Histórico
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="studentTabsContent">
+                <div class="tab-pane fade show active" id="info" role="tabpanel" aria-labelledby="info-tab">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-section">
+                                <h3>Dados Pessoais</h3>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Nome Completo</div>
+                                    <div class="info-value">{{ aluno.nome }}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Data de Nascimento</div>
+                                    <div class="info-value">{{ aluno.data_nascimento|date:"d/m/Y" }}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">CPF</div>
+                                    <div class="info-value">{{ aluno.cpf }}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">RG</div>
+                                    <div class="info-value">{{ aluno.rg }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="info-section">
+                                <h3>Contato</h3>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Telefone</div>
+                                    <div class="info-value">{{ aluno.telefone }}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">E-mail</div>
+                                    <div class="info-value">{{ aluno.email }}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Endereço</div>
+                                    <div class="info-value">{{ aluno.endereco }}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Cidade/UF</div>
+                                    <div class="info-value">{{ aluno.cidade }}/{{ aluno.uf }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <h3>Responsáveis</h3>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">Nome do Responsável 1</div>
+                                    <div class="info-value">{{ aluno.nome_responsavel1 }}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Telefone do Responsável 1</div>
+                                    <div class="info-value">{{ aluno.telefone_responsavel1 }}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-label">Nome do Responsável 2</div>
+                                    <div class="info-value">{{ aluno.nome_responsavel2|default:"Não informado" }}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Telefone do Responsável 2</div>
+                                    <div class="info-value">{{ aluno.telefone_responsavel2|default:"Não informado" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-pane fade" id="academic" role="tabpanel" aria-labelledby="academic-tab">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-section">
+                                <h3>Informações Acadêmicas</h3>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Matrícula</div>
+                                    <div class="info-value">{{ aluno.matricula }}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Nível de Ensino</div>
+                                    <div class="info-value">{{ aluno.get_nivel_display }}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Ano</div>
+                                    <div class="info-value">{{ aluno.get_ano_display }}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Turno</div>
+                                    <div class="info-value">{{ aluno.get_turno_display }}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Turma</div>
+                                    <div class="info-value">{{ aluno.turma }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="info-section">
+                                <h3>Dados Complementares</h3>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Data de Matrícula</div>
+                                    <div class="info-value">{{ aluno.data_matricula|date:"d/m/Y" }}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Situação</div>
+                                    <div class="info-value">
+                                        <span class="badge bg-success">Ativo</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">Observações</div>
+                                    <div class="info-value">{{ aluno.observacoes|default:"Nenhuma observação registrada" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+                    <div class="info-section">
+                        <h3>Histórico do Aluno</h3>
+                        
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-date">{{ aluno.data_matricula|date:"d/m/Y" }}</div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">Matrícula Realizada</div>
+                                    <p>Aluno matriculado no {{ aluno.get_ano_display }} do {{ aluno.get_nivel_display }}.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Exemplo de outros eventos no histórico -->
+                            <div class="timeline-item">
+                                <div class="timeline-date">15/03/2023</div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">Início do Ano Letivo</div>
+                                    <p>Aluno iniciou as aulas na turma {{ aluno.turma }}.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="timeline-item">
+                                <div class="timeline-date">30/06/2023</div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">Fechamento do 1º Semestre</div>
+                                    <p>Aluno concluiu o primeiro semestre com aproveitamento satisfatório.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'lista_alunos' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+                
+                {% if user.groups.all.0.name == 'Administradores' %}
+                <a href="{% url 'editar_aluno' aluno.pk %}" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+                
+                <a href="{% url 'excluir_aluno' aluno.pk %}" class="btn btn-danger">
+                    <i class="fas fa-trash-alt"></i> Excluir
+                </a>
+                {% endif %}
+                
+                <button class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
-<h2 class="mt-4">Notas</h2>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Disciplina</th>
-            <th>Nota</th>
-            <th>Data</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for nota in aluno.notas.all %}
-        <tr>
-            <td>{{ nota.disciplina }}</td>
-            <td>{{ nota.valor }}</td>
-            <td>{{ nota.data }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="3">Nenhuma nota registrada.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<a href="{% url 'adicionar_nota' aluno.pk %}" class="btn btn-primary">Adicionar Nota</a>
-{% if user.groups.all.0.name == 'Administradores' %}
-    <a href="{% url 'editar_aluno' aluno.pk %}" class="btn btn-warning">Editar Aluno</a>
-{% endif %}
-<a href="{% url 'lista_alunos' %}" class="btn btn-secondary">Voltar para Lista</a>
-
-<a href="{% url 'exportar_detalhes_aluno_pdf' aluno.pk %}" class="btn btn-primary">Exportar para PDF</a>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Garantir que as animações sejam executadas corretamente
+        const elements = document.querySelectorAll('.animated');
+        elements.forEach(element => {
+            element.style.opacity = '0';
+        });
+        
+        setTimeout(() => {
+            elements.forEach(element => {
+                element.style.opacity = '1';
+            });
+        }, 100);
+    });
+</script>
 {% endblock %}

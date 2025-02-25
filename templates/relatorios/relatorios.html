@@ -3,10 +3,381 @@
 {% block title %}Relatórios{% endblock %}
 
 {% block content %}
-<h1>Relatórios</h1>
-<div class="list-group">
-    <a href="{% url 'relatorio_media_por_serie' %}" class="list-group-item list-group-item-action">Média por Série</a>
-    <a href="{% url 'relatorio_alunos_por_serie' %}" class="list-group-item list-group-item-action">Alunos por Série</a>
-    <a href="{% url 'relatorio_notas_baixas' %}" class="list-group-item list-group-item-action">Notas Baixas</a>
+<style>
+    .report-container {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .report-header {
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--accent-color);
+        padding-bottom: 1rem;
+    }
+    
+    .report-header h2 {
+        color: var(--primary-color);
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .report-header h2 i {
+        margin-right: 0.8rem;
+        color: var(--accent-color);
+    }
+    
+    .chart-container {
+        height: 400px;
+        margin: 1.5rem 0;
+        position: relative;
+    }
+    
+    .report-filters {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .report-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .report-card {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .report-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .report-card h3 {
+        color: var(--primary-color);
+        margin-top: 0;
+    }
+    
+    .report-card p {
+        margin-bottom: 0;
+    }
+    
+    .stat-card {
+        background-color: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin: 0.5rem 0;
+    }
+    
+    .stat-label {
+        color: #666;
+        font-size: 1rem;
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+        color: var(--accent-color);
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Animações */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animated {
+        animation: fadeInUp 0.5s ease forwards;
+    }
+    
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+</style>
+
+<div class="container mt-4">
+    <h1 class="mb-4">Relatórios e Estatísticas</h1>
+    
+    <!-- Estatísticas Gerais -->
+    <div class="report-container animated">
+        <div class="report-header">
+            <h2><i class="fas fa-chart-pie"></i> Estatísticas Gerais</h2>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-3 mb-4">
+                <div class="stat-card animated delay-1">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="stat-value">{{ total_alunos }}</div>
+                    <div class="stat-label">Total de Alunos</div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="stat-card animated delay-2">
+                    <div class="stat-icon">
+                        <i class="fas fa-school"></i>
+                    </div>
+                    <div class="stat-value">{{ total_turmas }}</div>
+                    <div class="stat-label">Turmas</div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="stat-card animated delay-3">
+                    <div class="stat-icon">
+                        <i class="fas fa-sun"></i>
+                    </div>
+                    <div class="stat-value">{{ alunos_manha }}</div>
+                    <div class="stat-label">Alunos (Manhã)</div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="stat-card animated delay-4">
+                    <div class="stat-icon">
+                        <i class="fas fa-moon"></i>
+                    </div>
+                    <div class="stat-value">{{ alunos_tarde }}</div>
+                    <div class="stat-label">Alunos (Tarde)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Distribuição por Nível de Ensino -->
+    <div class="report-container animated delay-1">
+        <div class="report-header">
+            <h2><i class="fas fa-graduation-cap"></i> Distribuição por Nível de Ensino</h2>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="nivelChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Distribuição por Ano -->
+    <div class="report-container animated delay-2">
+        <div class="report-header">
+            <h2><i class="fas fa-calendar-alt"></i> Distribuição por Ano</h2>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="anoChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Relatórios Disponíveis -->
+    <div class="report-container animated delay-3">
+        <div class="report-header">
+            <h2><i class="fas fa-file-alt"></i> Relatórios Disponíveis</h2>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="report-card">
+                    <h3>Relatório de Frequência</h3>
+                    <p>Visualize a frequência dos alunos por turma, período ou aluno específico.</p>
+                    <div class="report-actions">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-download"></i> Exportar PDF
+                        </button>
+                        <button class="btn btn-secondary">
+                            <i class="fas fa-eye"></i> Visualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="report-card">
+                    <h3>Relatório de Desempenho</h3>
+                    <p>Analise o desempenho acadêmico dos alunos por disciplina, turma ou período.</p>
+                    <div class="report-actions">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-download"></i> Exportar PDF
+                        </button>
+                        <button class="btn btn-secondary">
+                            <i class="fas fa-eye"></i> Visualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="report-card">
+                    <h3>Relatório de Matrículas</h3>
+                    <p>Acompanhe as matrículas realizadas por período, nível de ensino ou turno.</p>
+                    <div class="report-actions">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-download"></i> Exportar PDF
+                        </button>
+                        <button class="btn btn-secondary">
+                            <i class="fas fa-eye"></i> Visualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="report-card">
+                    <h3>Relatório de Turmas</h3>
+                    <p>Visualize a distribuição de alunos por turma, com detalhes sobre cada grupo.</p>
+                    <div class="report-actions">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-download"></i> Exportar PDF
+                        </button>
+                        <button class="btn btn-secondary">
+                            <i class="fas fa-eye"></i> Visualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dados para os gráficos (normalmente viriam do backend)
+        const nivelData = {
+            labels: ['Ensino Fundamental Anos Iniciais', 'Ensino Fundamental Anos Finais'],
+            datasets: [{
+                label: 'Número de Alunos',
+                data: [{{ alunos_efi }}, {{ alunos_eff }}],
+                backgroundColor: [
+                    'rgba(121, 174, 200, 0.7)',
+                    'rgba(65, 118, 144, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(121, 174, 200, 1)',
+                    'rgba(65, 118, 144, 1)'
+                ],
+                borderWidth: 1
+            }]
+        };
+        
+        const anoData = {
+            labels: ['3º Ano', '4º Ano', '5º Ano', '6º Ano', '7º Ano', '8º Ano', '9º Ano'],
+            datasets: [{
+                label: 'Número de Alunos',
+                data: [
+                    {{ alunos_3ano }}, 
+                    {{ alunos_4ano }}, 
+                    {{ alunos_5ano }}, 
+                    {{ alunos_6ano }}, 
+                    {{ alunos_7ano }}, 
+                    {{ alunos_8ano }}, 
+                    {{ alunos_9ano }}
+                ],
+                backgroundColor: 'rgba(121, 174, 200, 0.7)',
+                borderColor: 'rgba(121, 174, 200, 1)',
+                borderWidth: 1
+            }]
+        };
+        
+        // Configuração dos gráficos
+        const nivelCtx = document.getElementById('nivelChart').getContext('2d');
+        const nivelChart = new Chart(nivelCtx, {
+            type: 'pie',
+            data: nivelData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} alunos (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        const anoCtx = document.getElementById('anoChart').getContext('2d');
+        const anoChart = new Chart(anoCtx, {
+            type: 'bar',
+            data: anoData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Número de Alunos'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Ano Escolar'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Animações para elementos
+        const elements = document.querySelectorAll('.animated');
+        elements.forEach(element => {
+            element.style.opacity = '0';
+        });
+        
+        setTimeout(() => {
+            elements.forEach(element => {
+                element.style.opacity = '1';
+            });
+        }, 100);
+    });
+</script>
 {% endblock %}
