@@ -1,6 +1,7 @@
 import io
 from django.http import FileResponse
 from reportlab.pdfgen import canvas
+from django.contrib import messages
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from django.shortcuts import get_object_or_404, render, redirect
@@ -49,6 +50,21 @@ def lista_alunos(request):
 def detalhe_aluno(request, pk):
     aluno = get_object_or_404(Aluno, pk=pk)
     return render(request, 'alunos/detalhe_aluno.html', {'aluno': aluno})
+
+@login_required
+@user_passes_test(is_admin)
+def excluir_aluno(request, pk):
+    aluno = get_object_or_404(Aluno, pk=pk)
+    nome_aluno = aluno.nome
+    
+    # Exclui o aluno
+    aluno.delete()
+    
+    # Adiciona mensagem de sucesso
+    messages.success(request, f'Aluno "{nome_aluno}" excluído com sucesso!')
+    
+    # Redireciona para a lista de alunos
+    return redirect('lista_alunos')
 
 @login_required
 @user_passes_test(is_admin)
