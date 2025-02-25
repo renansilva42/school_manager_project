@@ -74,7 +74,7 @@ def get_openai_response(user_message, context=""):
         }
 
         response = openai.ChatCompletion.create(
-            model="gpt-4-mini-2024-07-18",
+            model="gpt-4o-mini-2024-07-18",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Contexto: {context_with_data}\n\nPergunta: {user_message}"}
