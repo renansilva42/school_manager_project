@@ -11,6 +11,9 @@
             </p>
             {% if aluno.foto %}
                 <img src="{{ aluno.foto.url }}" alt="Foto do aluno" class="img-fluid mb-3" style="max-width: 200px;"></p>
+            <!-- Adicione isso na seção de informações do aluno no template detalhe_aluno.html -->
+            <p><strong>Turno:</strong> {{ aluno.get_turno_display }}</p>
+            <p><strong>Ano:</strong> {{ aluno.get_ano_display }}</p>
             <strong>Matrícula:</strong> {{ aluno.matricula }}<br>
             <strong>Data de Nascimento:</strong> {{ aluno.data_nascimento }}<br>
             <strong>Série:</strong> {{ aluno.serie }}<br>

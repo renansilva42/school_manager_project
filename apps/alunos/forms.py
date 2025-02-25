@@ -6,7 +6,7 @@ from .models import Aluno, Nota
 class AlunoForm(forms.ModelForm):
     class Meta:
         model = Aluno
-        fields = ['nome', 'data_nascimento', 'foto', 'serie', 'matricula', 'email', 'telefone', 'endereco', 'dados_adicionais']
+        fields = ['nome', 'data_nascimento', 'foto', 'serie', 'turno', 'ano', 'matricula', 'email', 'telefone', 'endereco', 'dados_adicionais']
         widgets = {
             'data_nascimento': forms.DateInput(attrs={'type': 'date'}),
             'dados_adicionais': forms.Textarea(attrs={'rows': 4}),
