@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from core.views import home
+from django.contrib.auth import views as auth_views  # Adicione esta linha
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -10,7 +11,10 @@ urlpatterns = [
     path('alunos/', include('apps.alunos.urls')),
     path('chatbot/', include('apps.chatbot.urls')),
     path('usuarios/', include('apps.usuarios.urls')),
-    path('relatorios/', include('apps.relatorios.urls')),  # Adicione esta linha
+    path('relatorios/', include('apps.relatorios.urls')),
+    
+    # Adicione estas linhas para incluir as URLs de autenticação do Django
+    path('accounts/', include('django.contrib.auth.urls')),
 ]
 
 if settings.DEBUG:
