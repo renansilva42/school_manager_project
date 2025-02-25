@@ -272,13 +272,25 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // @ts-nocheck
     document.addEventListener('DOMContentLoaded', function() {
-        // Dados para os gráficos (normalmente viriam do backend)
+        // Define variables from Django context
+        const alunosEfi = JSON.parse('{{ alunos_efi|escapejs }}');
+        const alunosEff = JSON.parse('{{ alunos_eff|escapejs }}');
+        const alunos3Ano = JSON.parse('{{ alunos_3ano|escapejs }}');
+        const alunos4Ano = JSON.parse('{{ alunos_4ano|escapejs }}');
+        const alunos5Ano = JSON.parse('{{ alunos_5ano|escapejs }}');
+        const alunos6Ano = JSON.parse('{{ alunos_6ano|escapejs }}');
+        const alunos7Ano = JSON.parse('{{ alunos_7ano|escapejs }}');
+        const alunos8Ano = JSON.parse('{{ alunos_8ano|escapejs }}');
+        const alunos9Ano = JSON.parse('{{ alunos_9ano|escapejs }}');
+        
+        // Dados para os gráficos
         const nivelData = {
             labels: ['Ensino Fundamental Anos Iniciais', 'Ensino Fundamental Anos Finais'],
             datasets: [{
                 label: 'Número de Alunos',
-                data: [{{ alunos_efi }}, {{ alunos_eff }}],
+                data: [alunosEfi, alunosEff],
                 backgroundColor: [
                     'rgba(121, 174, 200, 0.7)',
                     'rgba(65, 118, 144, 0.7)'
@@ -296,13 +308,13 @@
             datasets: [{
                 label: 'Número de Alunos',
                 data: [
-                    {{ alunos_3ano }}, 
-                    {{ alunos_4ano }}, 
-                    {{ alunos_5ano }}, 
-                    {{ alunos_6ano }}, 
-                    {{ alunos_7ano }}, 
-                    {{ alunos_8ano }}, 
-                    {{ alunos_9ano }}
+                    alunos3Ano, 
+                    alunos4Ano, 
+                    alunos5Ano, 
+                    alunos6Ano, 
+                    alunos7Ano, 
+                    alunos8Ano, 
+                    alunos9Ano
                 ],
                 backgroundColor: 'rgba(121, 174, 200, 0.7)',
                 borderColor: 'rgba(121, 174, 200, 1)',
