@@ -4,39 +4,107 @@
 {% block title %}Cadastrar Aluno{% endblock %}
 
 {% block content %}
-<h1>Cadastrar Aluno</h1>
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form|crispy }}
-    <button type="submit" class="btn btn-primary">Cadastrar</button>
-    <a href="{% url 'lista_alunos' %}" class="btn btn-secondary">Cancelar</a>
-</form>
+<div class="container mt-4">
+    <h1>Cadastrar Aluno</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">Cadastrar</button>
+            <a href="{% url 'lista_alunos' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
 
 <script>
+// Função para atualizar as opções de turno com base no nível selecionado
+function updateTurnoChoices(nivel) {
+    const turnoSelect = document.getElementById('id_turno');
+    // Limpar opções atuais
+    turnoSelect.innerHTML = '';
+    
+    if (nivel === 'EFI') {
+        // Para Ensino Fundamental Anos Iniciais, apenas turno da manhã é disponível
+        const optElement = document.createElement('option');
+        optElement.value = 'M';
+        optElement.textContent = 'Manhã';
+        turnoSelect.appendChild(optElement);
+        
+        // Selecionar automaticamente
+        turnoSelect.value = 'M';
+        
+        // Desabilitar o select para evitar alterações
+        turnoSelect.disabled = true;
+    } else {
+        // Para Ensino Fundamental Anos Finais, ambos os turnos são disponíveis
+        turnoSelect.disabled = false;
+        
+        // Adicionar opção padrão
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = 'Selecione um Turno';
+        turnoSelect.appendChild(defaultOpt);
+        
+        // Adicionar opções de turno
+        const options = [
+            {value: 'M', text: 'Manhã'},
+            {value: 'T', text: 'Tarde'}
+        ];
+        
+        options.forEach(option => {
+            const optElement = document.createElement('option');
+            optElement.value = option.value;
+            optElement.textContent = option.text;
+            turnoSelect.appendChild(optElement);
+        });
+        
+        // Selecionar a opção padrão
+        turnoSelect.value = '';
+    }
+    
+    // Atualizar as opções de ano após atualizar o turno
+    updateAnoChoices(turnoSelect.value, nivel);
+}
+
+// Função para atualizar as opções de ano com base no turno e nível selecionados
 function updateAnoChoices(turno, nivel) {
     const anoSelect = document.getElementById('id_ano');
     // Limpar opções atuais
     anoSelect.innerHTML = '';
     
+    // Adicionar opção padrão se não for EFI
+    if (nivel !== 'EFI' && turno === '') {
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = 'Selecione um Ano';
+        anoSelect.appendChild(defaultOpt);
+        
+        // Desabilitar o select até que um turno seja selecionado
+        anoSelect.disabled = true;
+        return;
+    }
+    
+    // Habilitar o select
+    anoSelect.disabled = false;
+    
     let options = [];
     
     if (nivel === 'EFI') {
         // Ensino Fundamental Anos Iniciais - apenas turno da manhã
-        if (turno === 'M') {
-            options = [
-                {value: '3', text: '3º Ano'},
-                {value: '4', text: '4º Ano'},
-                {value: '5', text: '5º Ano'},
-            ];
-        }
-    } else {  // EFF - Ensino Fundamental Anos Finais
+        options = [
+            {value: '3', text: '3º Ano'},
+            {value: '4', text: '4º Ano'},
+            {value: '5', text: '5º Ano'},
+        ];
+    } else if (nivel === 'EFF') {
+        // Ensino Fundamental Anos Finais
         if (turno === 'M') {
             options = [
                 {value: '6', text: '6º Ano'},
                 {value: '7', text: '7º Ano'},
                 {value: '8', text: '8º Ano'},
             ];
-        } else {  // Turno da tarde
+        } else if (turno === 'T') {
             options = [
                 {value: '6', text: '6º Ano'},
                 {value: '7', text: '7º Ano'},
@@ -58,10 +126,20 @@ function updateAnoChoices(turno, nivel) {
 
 // Inicializar as opções quando a página carrega
 document.addEventListener('DOMContentLoaded', function() {
-    const turnoSelect = document.getElementById('id_turno');
     const nivelSelect = document.getElementById('id_nivel');
+    const turnoSelect = document.getElementById('id_turno');
     
-    updateAnoChoices(turnoSelect.value, nivelSelect.value);
+    // Configurar os event listeners
+    nivelSelect.addEventListener('change', function() {
+        updateTurnoChoices(this.value);
+    });
+    
+    turnoSelect.addEventListener('change', function() {
+        updateAnoChoices(this.value, nivelSelect.value);
+    });
+    
+    // Inicializar os campos com base nos valores atuais
+    updateTurnoChoices(nivelSelect.value);
 });
 </script>
 {% endblock %}

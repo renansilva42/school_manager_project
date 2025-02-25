@@ -2,7 +2,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import Aluno, Nota
-
+# apps/alunos/forms.py
 class AlunoForm(forms.ModelForm):
     class Meta:
         model = Aluno
@@ -14,41 +14,49 @@ class AlunoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        # Remover os event handlers que estavam sendo adicionados anteriormente
+        # pois agora usamos addEventListener no JavaScript
+        
         # Configurar os campos inicialmente
-        self.fields['ano'].widget = forms.Select(choices=[])
-        self.update_ano_choices()
+        instance = kwargs.get('instance')
         
-        # Adicionar JavaScript para atualizar dinamicamente as opções de ano
-        self.fields['turno'].widget.attrs.update({
-            'onchange': 'updateAnoChoices(this.value, document.getElementById("id_nivel").value)'
-        })
-        self.fields['nivel'].widget.attrs.update({
-            'onchange': 'updateAnoChoices(document.getElementById("id_turno").value, this.value)'
-        })
-
-    def update_ano_choices(self):
-        """Atualiza as opções de ano com base no turno e nível selecionados"""
-        turno = self.data.get('turno') if self.data else self.initial.get('turno', 'M')
-        nivel = self.data.get('nivel') if self.data else self.initial.get('nivel', 'EFF')
-        
+        if instance:
+            # Se estamos editando um aluno existente
+            nivel = instance.nivel
+            turno = instance.turno
+            
+            # Configurar as opções de ano com base no nível e turno do aluno
+            self.set_ano_choices(nivel, turno)
+            
+            # Se for EFI, desabilitar o campo de turno
+            if nivel == 'EFI':
+                self.fields['turno'].widget.attrs['disabled'] = 'disabled'
+        else:
+            # Para um novo aluno, inicializar com listas vazias
+            # O JavaScript cuidará de preencher as opções
+            self.fields['ano'].choices = []
+    
+    def set_ano_choices(self, nivel, turno):
+        """Define as opções de ano com base no nível e turno"""
         choices = []
         
         if nivel == 'EFI':
             # Ensino Fundamental Anos Iniciais - apenas turno da manhã
-            if turno == 'M':
-                choices = [
-                    ('3', '3º Ano'),
-                    ('4', '4º Ano'),
-                    ('5', '5º Ano'),
-                ]
-        else:  # EFF - Ensino Fundamental Anos Finais
+            choices = [
+                ('3', '3º Ano'),
+                ('4', '4º Ano'),
+                ('5', '5º Ano'),
+            ]
+        elif nivel == 'EFF':
+            # Ensino Fundamental Anos Finais
             if turno == 'M':
                 choices = [
                     ('6', '6º Ano'),
                     ('7', '7º Ano'),
                     ('8', '8º Ano'),
                 ]
-            else:  # Turno da tarde
+            elif turno == 'T':
                 choices = [
                     ('6', '6º Ano'),
                     ('7', '7º Ano'),
@@ -57,19 +65,20 @@ class AlunoForm(forms.ModelForm):
                     ('902', '9º Ano - Turma 902'),
                 ]
         
-        self.fields['ano'].widget.choices = choices
-        
+        self.fields['ano'].choices = choices
+    
     def clean(self):
         cleaned_data = super().clean()
-        turno = cleaned_data.get('turno')
         nivel = cleaned_data.get('nivel')
+        turno = cleaned_data.get('turno')
         ano = cleaned_data.get('ano')
         
         # Validar combinações de turno, nível e ano
-        if nivel == 'EFI' and turno == 'T':
-            raise ValidationError("Ensino Fundamental Anos Iniciais só está disponível no turno da manhã.")
+        if nivel == 'EFI' and turno != 'M':
+            # Forçar o turno para manhã para EFI
+            cleaned_data['turno'] = 'M'
         
-        if nivel == 'EFI' and ano in ['6', '7', '8', '901', '902']:
+        if nivel == 'EFI' and ano not in ['3', '4', '5']:
             raise ValidationError("Este ano não está disponível para Ensino Fundamental Anos Iniciais.")
         
         if nivel == 'EFF' and turno == 'M' and ano in ['901', '902']:

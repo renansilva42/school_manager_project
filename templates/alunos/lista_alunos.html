@@ -119,4 +119,141 @@
         </div>
     {% endfor %}
 </div>
+
+<!-- Adicione este script ao final do template lista_alunos.html -->
+<script>
+    // Função para atualizar as opções de turno com base no nível selecionado
+    function updateFilterTurnoChoices(nivel) {
+        const turnoSelect = document.getElementById('turno');
+        // Preservar a opção "Todos os Turnos"
+        const allOption = turnoSelect.querySelector('option[value=""]');
+        
+        // Limpar opções atuais, exceto a opção "Todos"
+        turnoSelect.innerHTML = '';
+        turnoSelect.appendChild(allOption);
+        
+        if (nivel === 'EFI') {
+            // Para Ensino Fundamental Anos Iniciais, apenas turno da manhã é disponível
+            const optElement = document.createElement('option');
+            optElement.value = 'M';
+            optElement.textContent = 'Manhã';
+            turnoSelect.appendChild(optElement);
+        } else if (nivel === 'EFF') {
+            // Para Ensino Fundamental Anos Finais, ambos os turnos são disponíveis
+            const options = [
+                {value: 'M', text: 'Manhã'},
+                {value: 'T', text: 'Tarde'}
+            ];
+            
+            options.forEach(option => {
+                const optElement = document.createElement('option');
+                optElement.value = option.value;
+                optElement.textContent = option.text;
+                turnoSelect.appendChild(optElement);
+            });
+        } else {
+            // Se "Todos os Níveis" estiver selecionado, mostrar todos os turnos
+            const options = [
+                {value: 'M', text: 'Manhã'},
+                {value: 'T', text: 'Tarde'}
+            ];
+            
+            options.forEach(option => {
+                const optElement = document.createElement('option');
+                optElement.value = option.value;
+                optElement.textContent = option.text;
+                turnoSelect.appendChild(optElement);
+            });
+        }
+        
+        // Atualizar as opções de ano
+        updateFilterAnoChoices(turnoSelect.value, nivel);
+    }
+    
+    // Função para atualizar as opções de ano com base no turno e nível selecionados
+    function updateFilterAnoChoices(turno, nivel) {
+        const anoSelect = document.getElementById('ano');
+        // Preservar a opção "Todos os Anos"
+        const allOption = anoSelect.querySelector('option[value=""]');
+        
+        // Limpar opções atuais, exceto a opção "Todos"
+        anoSelect.innerHTML = '';
+        anoSelect.appendChild(allOption);
+        
+        let options = [];
+        
+        if (nivel === 'EFI') {
+            // Ensino Fundamental Anos Iniciais
+            options = [
+                {value: '3', text: '3º Ano'},
+                {value: '4', text: '4º Ano'},
+                {value: '5', text: '5º Ano'},
+            ];
+        } else if (nivel === 'EFF') {
+            // Ensino Fundamental Anos Finais
+            if (turno === 'M') {
+                options = [
+                    {value: '6', text: '6º Ano'},
+                    {value: '7', text: '7º Ano'},
+                    {value: '8', text: '8º Ano'},
+                ];
+            } else if (turno === 'T') {
+                options = [
+                    {value: '6', text: '6º Ano'},
+                    {value: '7', text: '7º Ano'},
+                    {value: '8', text: '8º Ano'},
+                    {value: '901', text: '9º Ano - Turma 901'},
+                    {value: '902', text: '9º Ano - Turma 902'},
+                ];
+            } else {
+                // Se nenhum turno específico estiver selecionado
+                options = [
+                    {value: '6', text: '6º Ano'},
+                    {value: '7', text: '7º Ano'},
+                    {value: '8', text: '8º Ano'},
+                    {value: '901', text: '9º Ano - Turma 901'},
+                    {value: '902', text: '9º Ano - Turma 902'},
+                ];
+            }
+        } else {
+            // Se "Todos os Níveis" estiver selecionado, mostrar todos os anos
+            options = [
+                {value: '3', text: '3º Ano'},
+                {value: '4', text: '4º Ano'},
+                {value: '5', text: '5º Ano'},
+                {value: '6', text: '6º Ano'},
+                {value: '7', text: '7º Ano'},
+                {value: '8', text: '8º Ano'},
+                {value: '901', text: '9º Ano - Turma 901'},
+                {value: '902', text: '9º Ano - Turma 902'},
+            ];
+        }
+        
+        // Adicionar novas opções
+        options.forEach(option => {
+            const optElement = document.createElement('option');
+            optElement.value = option.value;
+            optElement.textContent = option.text;
+            anoSelect.appendChild(optElement);
+        });
+    }
+    
+    // Inicializar as opções quando a página carrega
+    document.addEventListener('DOMContentLoaded', function() {
+        const nivelSelect = document.getElementById('nivel');
+        const turnoSelect = document.getElementById('turno');
+        
+        // Configurar os event listeners
+        nivelSelect.addEventListener('change', function() {
+            updateFilterTurnoChoices(this.value);
+        });
+        
+        turnoSelect.addEventListener('change', function() {
+            updateFilterAnoChoices(this.value, nivelSelect.value);
+        });
+        
+        // Inicializar os campos com base nos valores atuais
+        updateFilterTurnoChoices(nivelSelect.value);
+    });
+    </script>
 {% endblock %}
