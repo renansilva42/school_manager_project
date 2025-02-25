@@ -11,10 +11,10 @@ from .forms import AlunoForm, NotaForm
 def is_admin(user):
     return user.groups.filter(name='Administradores').exists()
 
-# apps/alunos/views.py
 @login_required
 def lista_alunos(request):
     # Parâmetros de filtro da URL
+    nivel_filter = request.GET.get('nivel')
     turno_filter = request.GET.get('turno')
     ano_filter = request.GET.get('ano')
     
@@ -22,19 +22,23 @@ def lista_alunos(request):
     alunos = Aluno.objects.all()
     
     # Aplicar filtros se fornecidos
+    if nivel_filter:
+        alunos = alunos.filter(nivel=nivel_filter)
     if turno_filter:
         alunos = alunos.filter(turno=turno_filter)
     if ano_filter:
         alunos = alunos.filter(ano=ano_filter)
     
-    # Organizar por turno, ano e nome
-    alunos = alunos.order_by('turno', 'ano', 'nome')
+    # Organizar por nível, turno, ano e nome
+    alunos = alunos.order_by('nivel', 'turno', 'ano', 'nome')
     
     # Contexto para o template
     context = {
         'alunos': alunos,
+        'nivel_choices': Aluno.NIVEL_CHOICES,
         'turno_choices': Aluno.TURNO_CHOICES,
         'ano_choices': Aluno.ANO_CHOICES,
+        'nivel_filter': nivel_filter,
         'turno_filter': turno_filter,
         'ano_filter': ano_filter,
     }
@@ -115,6 +119,8 @@ def exportar_detalhes_aluno_pdf(request, aluno_pk):
     p.drawString(100, y, f"Matrícula: {aluno.matricula}")
     y -= 20
     p.drawString(100, y, f"Data de Nascimento: {aluno.data_nascimento.strftime('%d/%m/%Y')}")
+    y -= 20
+    p.drawString(100, y, f"Nível: {aluno.get_nivel_display()}")
     y -= 20
     p.drawString(100, y, f"Série: {aluno.serie}")
     y -= 20

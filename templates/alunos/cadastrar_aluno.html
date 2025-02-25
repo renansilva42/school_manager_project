@@ -11,4 +11,57 @@
     <button type="submit" class="btn btn-primary">Cadastrar</button>
     <a href="{% url 'lista_alunos' %}" class="btn btn-secondary">Cancelar</a>
 </form>
+
+<script>
+function updateAnoChoices(turno, nivel) {
+    const anoSelect = document.getElementById('id_ano');
+    // Limpar opções atuais
+    anoSelect.innerHTML = '';
+    
+    let options = [];
+    
+    if (nivel === 'EFI') {
+        // Ensino Fundamental Anos Iniciais - apenas turno da manhã
+        if (turno === 'M') {
+            options = [
+                {value: '3', text: '3º Ano'},
+                {value: '4', text: '4º Ano'},
+                {value: '5', text: '5º Ano'},
+            ];
+        }
+    } else {  // EFF - Ensino Fundamental Anos Finais
+        if (turno === 'M') {
+            options = [
+                {value: '6', text: '6º Ano'},
+                {value: '7', text: '7º Ano'},
+                {value: '8', text: '8º Ano'},
+            ];
+        } else {  // Turno da tarde
+            options = [
+                {value: '6', text: '6º Ano'},
+                {value: '7', text: '7º Ano'},
+                {value: '8', text: '8º Ano'},
+                {value: '901', text: '9º Ano - Turma 901'},
+                {value: '902', text: '9º Ano - Turma 902'},
+            ];
+        }
+    }
+    
+    // Adicionar novas opções
+    options.forEach(option => {
+        const optElement = document.createElement('option');
+        optElement.value = option.value;
+        optElement.textContent = option.text;
+        anoSelect.appendChild(optElement);
+    });
+}
+
+// Inicializar as opções quando a página carrega
+document.addEventListener('DOMContentLoaded', function() {
+    const turnoSelect = document.getElementById('id_turno');
+    const nivelSelect = document.getElementById('id_nivel');
+    
+    updateAnoChoices(turnoSelect.value, nivelSelect.value);
+});
+</script>
 {% endblock %}

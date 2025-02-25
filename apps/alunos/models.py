@@ -7,7 +7,15 @@ class Aluno(models.Model):
         ('T', 'Tarde'),
     ]
     
+    NIVEL_CHOICES = [
+        ('EFI', 'Ensino Fundamental Anos Iniciais'),
+        ('EFF', 'Ensino Fundamental Anos Finais'),
+    ]
+    
     ANO_CHOICES = [
+        ('3', '3º Ano'),
+        ('4', '4º Ano'),
+        ('5', '5º Ano'),
         ('6', '6º Ano'),
         ('7', '7º Ano'),
         ('8', '8º Ano'),
@@ -18,9 +26,8 @@ class Aluno(models.Model):
     nome = models.CharField(max_length=100)
     matricula = models.CharField(max_length=20, unique=True)
     data_nascimento = models.DateField()
-    # Manteremos o campo série para compatibilidade com dados existentes
     serie = models.CharField(max_length=20)
-    # Novos campos para organização
+    nivel = models.CharField(max_length=3, choices=NIVEL_CHOICES, default='EFF')
     turno = models.CharField(max_length=1, choices=TURNO_CHOICES, default='M')
     ano = models.CharField(max_length=4, choices=ANO_CHOICES, default='6')
     email = models.EmailField(blank=True, null=True)
