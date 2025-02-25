@@ -8,7 +8,38 @@
     <h1>Cadastrar Aluno</h1>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form|crispy }}
+        
+        <!-- Substituir o campo de foto original por nossa versão personalizada -->
+        <div class="form-group">
+            <label for="id_foto">Foto do Aluno</label>
+            <div class="custom-file-container">
+                <input type="file" name="foto" id="id_foto" accept="image/*" class="custom-file-input" style="display: none;">
+                <div class="btn-group w-100 mb-2">
+                    <button type="button" id="upload-photo-btn" class="btn btn-outline-primary">Escolher Arquivo</button>
+                    <button type="button" id="take-photo-btn" class="btn btn-outline-success">Tirar Foto</button>
+                </div>
+                <div id="preview-container" class="text-center mb-3" style="display: none;">
+                    <img id="photo-preview" class="img-thumbnail" style="max-height: 200px;">
+                    <button type="button" id="remove-photo-btn" class="btn btn-sm btn-danger mt-2">Remover Foto</button>
+                </div>
+                <video id="camera-preview" style="display: none; width: 100%; max-height: 300px;" autoplay></video>
+                <canvas id="photo-canvas" style="display: none;"></canvas>
+                <div id="camera-controls" style="display: none;" class="text-center mt-2">
+                    <button type="button" id="capture-photo-btn" class="btn btn-primary">Capturar</button>
+                    <button type="button" id="cancel-camera-btn" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Renderizar todos os outros campos do formulário, exceto o campo de foto -->
+        {% for field in form %}
+            {% if field.name != 'foto' %}
+                <div class="form-group">
+                    {{ field|as_crispy_field }}
+                </div>
+            {% endif %}
+        {% endfor %}
+        
         <div class="mt-3">
             <button type="submit" class="btn btn-primary">Cadastrar</button>
             <a href="{% url 'lista_alunos' %}" class="btn btn-secondary">Cancelar</a>
@@ -16,6 +47,127 @@
     </form>
 </div>
 
+<!-- Script para captura de foto -->
+<script>
+// Variáveis para os elementos da interface
+const fileInput = document.getElementById('id_foto');
+const uploadBtn = document.getElementById('upload-photo-btn');
+const takePhotoBtn = document.getElementById('take-photo-btn');
+const previewContainer = document.getElementById('preview-container');
+const photoPreview = document.getElementById('photo-preview');
+const removePhotoBtn = document.getElementById('remove-photo-btn');
+const cameraPreview = document.getElementById('camera-preview');
+const photoCanvas = document.getElementById('photo-canvas');
+const cameraControls = document.getElementById('camera-controls');
+const capturePhotoBtn = document.getElementById('capture-photo-btn');
+const cancelCameraBtn = document.getElementById('cancel-camera-btn');
+
+let stream = null;
+
+// Evento para o botão de upload de arquivo
+uploadBtn.addEventListener('click', () => {
+    fileInput.click();
+});
+
+// Evento para quando um arquivo é selecionado
+fileInput.addEventListener('change', (e) => {
+    if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            photoPreview.src = e.target.result;
+            previewContainer.style.display = 'block';
+            
+            // Esconder a câmera se estiver ativa
+            stopCamera();
+        };
+        
+        reader.readAsDataURL(fileInput.files[0]);
+    }
+});
+
+// Evento para o botão de remover foto
+removePhotoBtn.addEventListener('click', () => {
+    fileInput.value = '';
+    photoPreview.src = '';
+    previewContainer.style.display = 'none';
+});
+
+// Evento para o botão de tirar foto
+takePhotoBtn.addEventListener('click', async () => {
+    try {
+        // Esconder o preview de imagem se estiver visível
+        previewContainer.style.display = 'none';
+        
+        // Iniciar a câmera
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'user',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            } 
+        });
+        
+        cameraPreview.srcObject = stream;
+        cameraPreview.style.display = 'block';
+        cameraControls.style.display = 'block';
+    } catch (err) {
+        console.error('Erro ao acessar a câmera:', err);
+        alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.');
+    }
+});
+
+// Evento para o botão de capturar foto
+capturePhotoBtn.addEventListener('click', () => {
+    // Configurar o canvas para capturar a imagem
+    const context = photoCanvas.getContext('2d');
+    photoCanvas.width = cameraPreview.videoWidth;
+    photoCanvas.height = cameraPreview.videoHeight;
+    
+    // Desenhar o frame atual do vídeo no canvas
+    context.drawImage(cameraPreview, 0, 0, photoCanvas.width, photoCanvas.height);
+    
+    // Converter o canvas para uma URL de dados (formato base64)
+    const dataUrl = photoCanvas.toDataURL('image/jpeg');
+    
+    // Exibir a imagem capturada no preview
+    photoPreview.src = dataUrl;
+    previewContainer.style.display = 'block';
+    
+    // Converter a URL de dados para um arquivo Blob e adicionar ao input de arquivo
+    fetch(dataUrl)
+        .then(res => res.blob())
+        .then(blob => {
+            const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+            
+            // Criar um DataTransfer para simular a seleção de arquivo
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+        });
+    
+    // Parar a câmera
+    stopCamera();
+});
+
+// Evento para o botão de cancelar câmera
+cancelCameraBtn.addEventListener('click', () => {
+    stopCamera();
+});
+
+// Função para parar a câmera
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    
+    cameraPreview.style.display = 'none';
+    cameraControls.style.display = 'none';
+}
+</script>
+
+<!-- Script para seleção dinâmica de turmas e turnos -->
 <script>
 // Função para atualizar as opções de turno com base no nível selecionado
 function updateTurnoChoices(nivel) {
