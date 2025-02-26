@@ -81,7 +81,6 @@ def get_student_info(student_id=None, name=None):
     except Exception as e:
         return {"error": f"Erro ao buscar informações do aluno: {str(e)}"}
 
-# And modify the get_student_grades function
 def get_student_grades(student_id=None, name=None):
     """
     Busca as notas de um aluno pelo ID ou nome.
