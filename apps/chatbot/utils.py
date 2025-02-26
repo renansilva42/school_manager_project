@@ -189,14 +189,16 @@ def get_openai_response(user_message: str, context: str = "") -> str:
         2. Comece suas respostas com uma saudação apropriada, como "Olá!" ou "Oi!".
         3. Se o usuário pedir informações sobre um aluno, use a função get_student_info para buscar os dados.
         4. Se o usuário pedir a foto de um aluno, use a função get_student_photo.
-        5. Termine suas respostas com: "Estou à disposição para mais perguntas!"
-        6. Inclua a data e hora atuais (horário de Belém, Pará - GMT-3) em todas as respostas.
+        5. IMPORTANTE: Quando receber dados de um aluno, SEMPRE inclua as informações específicas solicitadas pelo usuário (como data de nascimento, responsável, etc.) na sua resposta.
+        6. Se você receber informações de um aluno através da função, SEMPRE use essas informações na sua resposta, não diga que está buscando informações que já foram encontradas.
+        7. Termine suas respostas com: "Estou à disposição para mais perguntas!"
+        8. Inclua a data e hora atuais (horário de Belém, Pará - GMT-3) em todas as respostas.
 
         A data e hora atuais são: {get_current_datetime()}.
         """
         
         # Verificar se a mensagem do usuário parece estar solicitando informações de um aluno
-        aluno_keywords = ["aluno", "estudante", "nota", "notas", "informações", "dados", "foto", "telefone", "endereço"]
+        aluno_keywords = ["aluno", "estudante", "nota", "notas", "informações", "dados", "foto", "telefone", "endereço", "responsável", "responsavel", "data de nascimento"]
         is_student_query = any(keyword in user_message.lower() for keyword in aluno_keywords)
         
         # Chamada à API com function calling
@@ -243,8 +245,14 @@ def get_openai_response(user_message: str, context: str = "") -> str:
                 print(f"Buscando informações para o aluno: {student_name}")
                 student_info = get_student_info(student_name)
                 
+                # Adicionar log para depuração
+                if student_info:
+                    print(f"Informações encontradas para o aluno: {json.dumps(student_info, ensure_ascii=False)}")
+                else:
+                    print(f"Nenhuma informação encontrada para o aluno: {student_name}")
+                
                 if not student_info:
-                    return f"Desculpe, não consegui encontrar informações para o aluno '{student_name}'. Por favor, verifique se o nome está correto e tente novamente. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3)."
+                    return f"Olá! Desculpe, não consegui encontrar informações para o aluno '{student_name}'. Por favor, verifique se o nome está correto e tente novamente. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3). Estou à disposição para mais perguntas!"
                 
                 # Segunda chamada à API com o resultado da função
                 try:
@@ -273,7 +281,33 @@ def get_openai_response(user_message: str, context: str = "") -> str:
                         top_p=0.9
                     )
                 
-                return second_response.choices[0].message["content"]
+                # Verificar se a resposta contém as informações do aluno
+                response_content = second_response.choices[0].message["content"]
+                
+                # Se a resposta não menciona o nome do aluno, adicione as informações manualmente
+                if student_info["nome"] not in response_content:
+                    # Determinar qual informação foi solicitada
+                    info_requested = ""
+                    if "responsável" in user_message.lower() or "responsavel" in user_message.lower():
+                        info_requested = f"O responsável por {student_info['nome']} é {student_info['responsavel']}."
+                    elif "data de nascimento" in user_message.lower() or "nascimento" in user_message.lower():
+                        info_requested = f"A data de nascimento de {student_info['nome']} é {student_info['data_nascimento']}."
+                    elif "telefone" in user_message.lower():
+                        info_requested = f"O telefone de {student_info['nome']} é {student_info['telefone']}."
+                    elif "endereço" in user_message.lower() or "endereco" in user_message.lower():
+                        info_requested = f"O endereço de {student_info['nome']} é {student_info['endereco']}."
+                    elif "email" in user_message.lower():
+                        info_requested = f"O email de {student_info['nome']} é {student_info['email']}."
+                    elif "nota" in user_message.lower():
+                        notas_str = ", ".join(student_info['notas'])
+                        info_requested = f"As notas de {student_info['nome']} são: {notas_str}."
+                    else:
+                        info_requested = f"Informações de {student_info['nome']}: Matrícula: {student_info['matricula']}, Data de Nascimento: {student_info['data_nascimento']}, Série: {student_info['serie']}, Responsável: {student_info['responsavel']}."
+                    
+                    # Adicionar a informação à resposta
+                    response_content = f"Olá! {info_requested}\n\nA data e hora atuais são: {get_current_datetime()}. Estou à disposição para mais perguntas!"
+                
+                return response_content
                 
             elif function_name == "get_student_photo":
                 student_name = function_args.get("student_name", "")
@@ -282,17 +316,17 @@ def get_openai_response(user_message: str, context: str = "") -> str:
                 
                 if student_info and student_info.get("foto_url"):
                     return [
-                        f"Aqui está a foto de {student_info['nome']}. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3).",
+                        f"Aqui está a foto de {student_info['nome']}. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3). Estou à disposição para mais perguntas!",
                         {"type": "image", "url": student_info["foto_url"]}
                     ]
                 elif student_info:
-                    return f"Desculpe, não encontrei uma foto cadastrada para {student_info['nome']}. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3)."
+                    return f"Olá! Desculpe, não encontrei uma foto cadastrada para {student_info['nome']}. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3). Estou à disposição para mais perguntas!"
                 else:
-                    return f"Desculpe, não encontrei o aluno '{student_name}'. Por favor, verifique se o nome está correto e tente novamente. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3)."
+                    return f"Olá! Desculpe, não encontrei o aluno '{student_name}'. Por favor, verifique se o nome está correto e tente novamente. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3). Estou à disposição para mais perguntas!"
         
         # Se não houve chamada de função, retorna a resposta direta
         return message["content"]
         
     except Exception as e:
         print(f"Erro na chamada da API OpenAI: {e}")
-        return f"Desculpe, ocorreu um erro ao processar sua solicitação. Por favor, tente novamente. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3)."
+        return f"Desculpe, ocorreu um erro ao processar sua solicitação. Por favor, tente novamente. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3). Estou à disposição para mais perguntas!"
