@@ -195,23 +195,33 @@
         const sendButton = document.getElementById('send-button');
         
         // Função para adicionar mensagem ao chat
-        function addMessage(message, isUser = false) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message');
-            messageElement.classList.add(isUser ? 'user-message' : 'bot-message');
-            
-            const now = new Date();
-            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                              now.getMinutes().toString().padStart(2, '0');
-            
-            messageElement.innerHTML = `
-                ${message}
-                <div class="message-time">${timeString}</div>
-            `;
-            
-            chatMessages.appendChild(messageElement);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+        // Função para adicionar mensagem ao chat (modificada)
+function addMessage(message, isUser = false) {
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message');
+    messageElement.classList.add(isUser ? 'user-message' : 'bot-message');
+    
+    const now = new Date();
+    const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                      now.getMinutes().toString().padStart(2, '0');
+    
+    // Verifica se a mensagem é um array contendo uma imagem
+    if (Array.isArray(message) && message.length > 1 && message[1].type === 'image') {
+        messageElement.innerHTML = `
+            ${message[0]}<br>
+            <img src="${message[1].url}" alt="Foto do aluno" style="max-width: 100%; margin-top: 10px; border-radius: 5px;">
+            <div class="message-time">${timeString}</div>
+        `;
+    } else {
+        messageElement.innerHTML = `
+            ${message}
+            <div class="message-time">${timeString}</div>
+        `;
+    }
+    
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
         
         // Função para mostrar indicador de digitação
         function showTypingIndicator() {

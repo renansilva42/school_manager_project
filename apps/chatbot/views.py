@@ -20,28 +20,15 @@ def chatbot_response(request):
             if not message:
                 return JsonResponse({'response': 'Por favor, digite uma mensagem.'})
 
-            # Verifica se a mensagem contém pedido de foto
-            if 'foto' in message.lower() or 'imagem' in message.lower():
-                info_aluno = None
-                palavras = message.lower().split()
-                for palavra in palavras:
-                    info_aluno = get_student_info(palavra)
-                    if info_aluno and info_aluno.get('foto_url'):
-                        return JsonResponse({
-                            'response': [
-                                f"Aqui está a foto de {info_aluno['nome']}:",
-                                {'type': 'image', 'url': info_aluno['foto_url']}
-                            ]
-                        })
-                    elif info_aluno:
-                        return JsonResponse({
-                            'response': f"Desculpe, não encontrei uma foto cadastrada para {info_aluno['nome']}."
-                        })
-                return JsonResponse({
-                    'response': "Desculpe, não encontrei o aluno mencionado."
-                })
-
+            # Usa a função otimizada que já trata fotos internamente
             response = get_openai_response(message)
+            
+            # Verifica se a resposta é uma lista contendo uma imagem
+            if isinstance(response, list) and len(response) > 1 and isinstance(response[1], dict) and response[1].get('type') == 'image':
+                return JsonResponse({
+                    'response': response
+                })
+            
             return JsonResponse({'response': response})
             
         except Exception as e:

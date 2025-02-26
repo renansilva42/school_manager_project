@@ -5,6 +5,7 @@ from django.db.models import Q
 from datetime import datetime
 import pytz
 from typing import Optional, Dict
+import json
 
 def get_current_datetime() -> str:
     """
@@ -17,12 +18,25 @@ def get_current_datetime() -> str:
 
 def get_student_info(query: str) -> Optional[Dict]:
     """
-    Busca informações de um aluno com base no nome ou série fornecido na query.
+    Busca informações de um aluno com base no nome fornecido na query.
     Retorna um dicionário com os dados do aluno, incluindo notas e URL da foto, ou None se não encontrado.
     """
     try:
+        if not query or len(query) < 3:
+            return None
+            
         # Normaliza a query removendo prefixos comuns e ajustando para minúsculas
-        query = query.lower().replace("notas do", "").replace("telefone do", "").replace("foto do", "").replace("endereço do", "").strip()
+        query = query.lower().strip()
+        
+        # Lista de palavras a serem removidas da query
+        palavras_para_remover = ["notas do", "notas da", "telefone do", "telefone da", 
+                                "foto do", "foto da", "endereço do", "endereço da", 
+                                "informações do", "informações da", "dados do", "dados da",
+                                "aluno", "aluna", "estudante", "o", "a", "do", "da"]
+        
+        # Remove as palavras da query
+        for palavra in palavras_para_remover:
+            query = query.replace(palavra, "").strip()
         
         # Busca por correspondência exata no nome
         aluno = Aluno.objects.filter(nome__iexact=query).first()
@@ -30,12 +44,17 @@ def get_student_info(query: str) -> Optional[Dict]:
         # Se não encontrado, busca por correspondências parciais
         if not aluno:
             search_terms = query.split()
-            alunos = Aluno.objects.filter(
-                Q(nome__icontains=search_terms[0]) if search_terms else Q()
-            )
+            if not search_terms:
+                return None
+                
+            # Cria uma consulta inicial
+            q_objects = Q(nome__icontains=search_terms[0])
+            
+            # Adiciona termos adicionais à consulta
             for term in search_terms[1:]:
-                alunos = alunos.filter(nome__icontains=term)
-            aluno = alunos.first()
+                q_objects &= Q(nome__icontains=term)
+            
+            aluno = Aluno.objects.filter(q_objects).first()
         
         if aluno:
             # Coleta notas do aluno
@@ -62,84 +81,118 @@ def get_student_info(query: str) -> Optional[Dict]:
         return None
 
 def get_openai_response(user_message: str, context: str = "") -> str:
-    """
-    Gera uma resposta usando a API de Chat Completion da OpenAI, integrando dados de alunos quando aplicável.
-    Mantém um tom amigável e profissional, fornecendo informações específicas conforme solicitado.
-    """
     try:
-        # Verifica se a chave da API está configurada
+        # Verificação da chave API
         if not settings.OPENAI_API_KEY:
             return "Erro: Chave da API OpenAI não configurada. Por favor, contate o administrador."
         
         openai.api_key = settings.OPENAI_API_KEY
-
-        # Lista de saudações simples
-        saudacoes = ["oi", "olá", "ola", "bom dia", "boa tarde", "boa noite", "hi", "hello"]
-        mensagem_lower = user_message.lower().strip()
-
-        # Responde a saudações simples
-        if any(saudacao in mensagem_lower for saudacao in saudacoes) and len(mensagem_lower.split()) <= 3:
-            return f"Olá! Sou o assistente virtual da Escola Manager. Como posso ajudar você hoje? A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3)."
-
-        # Extrai o nome do aluno potencial da mensagem
-        query = mensagem_lower
-        for keyword in ["notas do", "telefone do", "endereço do", "foto do"]:
-            if keyword in query:
-                query = query.replace(keyword, "").strip()
-                break
-
-        # Busca informações do aluno
-        info_aluno = get_student_info(query)
-
-        # Prompt do sistema para a OpenAI
-        system_prompt = f"""
+        
+        # Definição das funções disponíveis para o modelo
+        functions = [
+            {
+                "name": "get_student_info",
+                "description": "Busca informações detalhadas sobre um aluno pelo nome",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "student_name": {
+                            "type": "string",
+                            "description": "Nome do aluno a ser buscado"
+                        }
+                    },
+                    "required": ["student_name"]
+                }
+            },
+            {
+                "name": "get_student_photo",
+                "description": "Busca a foto de um aluno pelo nome",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "student_name": {
+                            "type": "string",
+                            "description": "Nome do aluno cuja foto será buscada"
+                        }
+                    },
+                    "required": ["student_name"]
+                }
+            }
+        ]
+        
+        # Prompt do sistema
+        system_prompt = """
         Você é um assistente escolar amigável e prestativo da Escola Manager, com acesso aos dados dos alunos.
         Regras importantes:
         1. Sempre mantenha um tom amigável, acolhedor e profissional.
         2. Comece suas respostas com uma saudação apropriada, como "Olá!" ou "Oi!".
-        3. Forneça todas as informações disponíveis sobre os alunos de forma clara e organizada.
-        4. Se o usuário pedir informações específicas (como notas, telefone, endereço ou foto), forneça exatamente o que foi solicitado, formatando adequadamente (ex.: notas em lista, URL da foto se disponível).
-        5. Se não encontrar informações sobre um aluno, diga: "Desculpe, não consegui encontrar informações sobre esse aluno. Por favor, verifique o nome ou forneça mais detalhes."
-        6. Se não tiver certeza sobre alguma informação, seja honesto e diga que não tem acesso ou que a informação não está disponível.
-        7. Termine suas respostas com: "Estou à disposição para mais perguntas!"
-        8. Inclua a data e hora atuais (horário de Belém, Pará - GMT-3) em todas as respostas.
+        3. Se o usuário pedir informações sobre um aluno, use a função get_student_info para buscar os dados.
+        4. Se o usuário pedir a foto de um aluno, use a função get_student_photo.
+        5. Termine suas respostas com: "Estou à disposição para mais perguntas!"
+        6. Inclua a data e hora atuais (horário de Belém, Pará - GMT-3) em todas as respostas.
 
         A data e hora atuais são: {get_current_datetime()}.
-        
-        Exemplos de resposta:
-        - Para "notas do João Pedro": "Olá! Aqui estão as notas de João Pedro: Matemática: 8.5, Português: 9.0. Estou à disposição para mais perguntas!"
-        - Para "foto do João Pedro": "Oi! Aqui está a foto de João Pedro: [URL da foto]. Estou à disposição para mais perguntas!"
         """
-
-        # Prepara o contexto para a OpenAI
-        context_with_data = {
-            "user_message": user_message,
-            "aluno_info": info_aluno if info_aluno else None
-        }
-
-        # Constrói as mensagens para a API
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Contexto: {context_with_data}\n\nPergunta: {user_message}"}
-        ]
-
-        # Chama a API de Chat Completion
+        
+        # Chamada à API com function calling
         response = openai.ChatCompletion.create(
             model="gpt-4o-mini-2024-07-18",
-            messages=messages,
-            temperature=0.7,  # Equilíbrio entre criatividade e precisão
-            max_tokens=500,   # Limite suficiente para respostas detalhadas
-            top_p=0.9         # Melhora a qualidade das respostas
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ],
+            functions=functions,
+            function_call="auto",
+            temperature=0.7,
+            max_tokens=500,
+            top_p=0.9
         )
-
-        return response.choices[0].message['content'].strip()
-
-    except openai.OpenAIError as e:
+        
+        # Processamento da resposta
+        message = response.choices[0].message
+        
+        # Verifica se o modelo decidiu chamar uma função
+        if message.get("function_call"):
+            function_name = message["function_call"]["name"]
+            function_args = json.loads(message["function_call"]["arguments"])
+            
+            # Executa a função apropriada
+            if function_name == "get_student_info":
+                student_info = get_student_info(function_args.get("student_name", ""))
+                
+                # Segunda chamada à API com o resultado da função
+                second_response = openai.ChatCompletion.create(
+                    model="gpt-4o-mini-2024-07-18",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_message},
+                        {"role": "function", "name": function_name, "content": json.dumps(student_info)}
+                    ],
+                    temperature=0.7,
+                    max_tokens=500,
+                    top_p=0.9
+                )
+                
+                return second_response.choices[0].message["content"]
+                
+            elif function_name == "get_student_photo":
+                student_info = get_student_info(function_args.get("student_name", ""))
+                if student_info and student_info.get("foto_url"):
+                    return [
+                        f"Aqui está a foto de {student_info['nome']}:",
+                        {"type": "image", "url": student_info["foto_url"]}
+                    ]
+                elif student_info:
+                    return f"Desculpe, não encontrei uma foto cadastrada para {student_info['nome']}."
+                else:
+                    return "Desculpe, não encontrei o aluno mencionado."
+        
+        # Se não houve chamada de função, retorna a resposta direta
+        return message["content"]
+        
+    except Exception as e:
         print(f"Erro na chamada da API OpenAI: {e}")
         return f"Desculpe, ocorreu um erro ao processar sua solicitação. Por favor, tente novamente. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3)."
-    except Exception as e:
-        print(f"Erro inesperado: {e}")
-        return f"Desculpe, ocorreu um erro inesperado. Por favor, tente novamente. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3)."
 
 # Exemplo de uso para teste
 if __name__ == "__main__":
