@@ -166,6 +166,7 @@
 </style>
 
 <div class="container mt-4">
+    {% csrf_token %}
     <div class="chat-container">
         <div class="chat-header">
             <i class="fas fa-robot"></i>
@@ -248,42 +249,40 @@ function addMessage(message, isUser = false) {
         }
         
         // Função para processar a entrada do usuário
-        function processUserInput() {
-            const message = userInput.value.trim();
-            if (message === '') return;
-            
-            // Adicionar mensagem do usuário
-            addMessage(message, true);
-            userInput.value = '';
-            
-            // Mostrar indicador de digitação
-            showTypingIndicator();
-            
-            // Simular resposta do bot após um pequeno atraso
-            setTimeout(() => {
-                removeTypingIndicator();
-                
-                // Lógica simples de resposta
-                let botResponse = '';
-                const lowerMessage = message.toLowerCase();
-                
-                if (lowerMessage.includes('olá') || lowerMessage.includes('oi') || lowerMessage.includes('bom dia') || lowerMessage.includes('boa tarde') || lowerMessage.includes('boa noite')) {
-                    botResponse = 'Olá! Como posso ajudar você hoje?';
-                } else if (lowerMessage.includes('aluno') && (lowerMessage.includes('cadastrar') || lowerMessage.includes('adicionar'))) {
-                    botResponse = 'Para cadastrar um novo aluno, acesse o menu "Alunos" e clique no botão "Cadastrar Novo Aluno".';
-                } else if (lowerMessage.includes('aluno') && (lowerMessage.includes('editar') || lowerMessage.includes('atualizar'))) {
-                    botResponse = 'Para editar informações de um aluno, acesse a lista de alunos, encontre o aluno desejado e clique no botão "Editar".';
-                } else if (lowerMessage.includes('relatório') || lowerMessage.includes('relatorio')) {
-                    botResponse = 'Você pode acessar os relatórios através do menu "Relatórios" no topo da página. Lá você encontrará diversas opções de relatórios disponíveis.';
-                } else if (lowerMessage.includes('ajuda') || lowerMessage.includes('help')) {
-                    botResponse = 'Estou aqui para ajudar! Você pode me perguntar sobre como cadastrar alunos, editar informações, gerar relatórios e outras funcionalidades do sistema.';
-                } else {
-                    botResponse = 'Desculpe, não entendi sua pergunta. Poderia reformular ou ser mais específico?';
-                }
-                
-                addMessage(botResponse);
-            }, 1500);
-        }
+        // Substitua a função processUserInput no arquivo chatbot.html com esta versão:
+function processUserInput() {
+    const message = userInput.value.trim();
+    if (message === '') return;
+    
+    // Adicionar mensagem do usuário
+    addMessage(message, true);
+    userInput.value = '';
+    
+    // Mostrar indicador de digitação
+    showTypingIndicator();
+    
+    // Fazer requisição AJAX para o backend
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch('/chatbot/response/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken
+        },
+        body: `message=${encodeURIComponent(message)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        removeTypingIndicator();
+        addMessage(data.response);
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        removeTypingIndicator();
+        addMessage('Desculpe, ocorreu um erro ao processar sua solicitação.');
+    });
+}
         
         // Event listeners
         sendButton.addEventListener('click', processUserInput);
