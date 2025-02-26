@@ -41,10 +41,6 @@ def get_all_students() -> List[Dict]:
         return []
 
 def get_student_info(query: str) -> Optional[Dict]:
-    """
-    Busca informações de um aluno com base no nome fornecido na query.
-    Retorna um dicionário com os dados do aluno, incluindo notas e URL da foto, ou None se não encontrado.
-    """
     try:
         if not query or len(query) < 3:
             return None
@@ -62,10 +58,18 @@ def get_student_info(query: str) -> Optional[Dict]:
         for palavra in palavras_para_remover:
             query = query.replace(palavra, "").strip()
         
-        # Busca por correspondência exata no nome
-        aluno = Aluno.objects.filter(nome__iexact=query).first()
+        # NOVA BUSCA: Primeiro tenta buscar por nome parcial no início do nome
+        aluno = Aluno.objects.filter(nome__istartswith=query).first()
         
-        # Se não encontrado, busca por correspondências parciais
+        # Se não encontrado, busca por correspondência exata no nome (busca original)
+        if not aluno:
+            aluno = Aluno.objects.filter(nome__iexact=query).first()
+        
+        # Se não encontrado, busca por correspondências parciais em qualquer parte do nome
+        if not aluno:
+            aluno = Aluno.objects.filter(nome__icontains=query).first()
+            
+        # Se ainda não encontrou, tenta a busca original com termos múltiplos
         if not aluno:
             search_terms = query.split()
             if not search_terms:
