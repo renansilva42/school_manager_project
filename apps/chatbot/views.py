@@ -34,7 +34,8 @@ def chatbot_response(request):
                                 "description": "Nome do aluno para busca"
                             }
                         },
-                        "required": [],
+                        # Change this line - at least one parameter must be provided
+                        "required": ["student_id", "name"],
                         "additionalProperties": False
                     },
                     "strict": True
@@ -57,7 +58,8 @@ def chatbot_response(request):
                                 "description": "Nome do aluno para busca"
                             }
                         },
-                        "required": [],
+                        # Change this line too for consistency
+                        "required": ["student_id", "name"],
                         "additionalProperties": False
                     },
                     "strict": True
