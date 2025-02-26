@@ -290,7 +290,7 @@ def get_openai_response(user_message: str, context: str = "") -> str:
         except Exception as api_error:
             print(f"Erro na chamada da API OpenAI, tentando alternativa: {api_error}")
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
@@ -341,7 +341,7 @@ def get_openai_response(user_message: str, context: str = "") -> str:
                 except Exception as api_error:
                     print(f"Erro na segunda chamada, tentando alternativa: {api_error}")
                     second_response = openai.ChatCompletion.create(
-                        model="gpt-3.5-turbo",
+                        model="gpt-4o-mini-2024-07-18",
                         messages=[
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": user_message},
@@ -370,9 +370,13 @@ def get_openai_response(user_message: str, context: str = "") -> str:
                             "Verifique o nome ou a disponibilidade. "
                             "Estou à disposição para mais perguntas!")
 
-                return (f"Olá! Aqui está a foto de {student_info['nome']}: "
-                        f"{student_info['foto_url']}. "
-                        "Estou à disposição para mais perguntas!")
+                return [
+                    f"Olá! Aqui está a foto de {student_info['nome']}. Estou à disposição para mais perguntas!",
+                    {
+                        "type": "image",
+                        "url": student_info['foto_url']
+                    }
+]
 
             elif function_name == "get_students_by_filter":
                 filter_type = function_args.get("filter_type", "")
@@ -419,7 +423,7 @@ def get_openai_response(user_message: str, context: str = "") -> str:
                 except Exception as api_error:
                     print(f"Erro na segunda chamada, tentando alternativa: {api_error}")
                     second_response = openai.ChatCompletion.create(
-                        model="gpt-3.5-turbo",
+                        model="gpt-4o-mini-2024-07-18",
                         messages=[
                             {"role": "system",
                              "content": system_prompt + specific_instruction},
