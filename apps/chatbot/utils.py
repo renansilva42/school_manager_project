@@ -53,7 +53,9 @@ def get_student_info(query: str) -> Optional[Dict]:
                           "foto do", "foto da", "endereço do", "endereço da", 
                           "informações do", "informações da", "dados do", "dados da",
                           "aluno", "aluna", "estudante", "o", "a", "do", "da",
-                          "responsável do", "responsável da", "responsável"]
+                          "responsável do", "responsável da", "responsável",
+                          "série do", "série da", "série", "turma do", "turma da", "turma",
+                          "email do", "email da", "email", "e-mail do", "e-mail da", "e-mail"]
         
         # Remove words from the query
         normalized_query = original_query
@@ -66,53 +68,70 @@ def get_student_info(query: str) -> Optional[Dict]:
             
         print(f"Query normalizada: '{normalized_query}'")
         
+        # Store both the normalized and original query for searching
+        search_queries = [normalized_query]
+        if normalized_query != original_query:
+            search_queries.append(original_query)
+            
+        # Add individual words from the query for better matching
+        words = normalized_query.split()
+        for word in words:
+            if len(word) >= 3 and word not in search_queries:  # Only add words with 3+ characters
+                search_queries.append(word)
+                
+        print(f"Search queries: {search_queries}")
+        
         # Try different search strategies
         aluno = None
         
-        # 1. First try exact match
-        aluno = Aluno.objects.filter(nome__iexact=normalized_query).first()
+        # 1. Try exact match with any of the search queries
+        for query_term in search_queries:
+            aluno = Aluno.objects.filter(nome__iexact=query_term).first()
+            if aluno:
+                break
         
         # 2. Try first name match for single name queries
-        if not aluno and len(normalized_query.split()) == 1:
-            # This is a single name query, so search for it as a first name
-            first_name = normalized_query
-            if len(first_name) >= 2:
-                # Look for students whose first name matches the query
-                for student in Aluno.objects.all():
-                    student_first_name = student.nome.split()[0].lower()
-                    if student_first_name == first_name:
-                        aluno = student
+        if not aluno:
+            for query_term in search_queries:
+                if len(query_term.split()) == 1 and len(query_term) >= 2:
+                    # Look for students whose first name matches the query
+                    for student in Aluno.objects.all():
+                        student_first_name = student.nome.split()[0].lower()
+                        if student_first_name == query_term.lower():
+                            aluno = student
+                            break
+                if aluno:
+                    break
+        
+        # 3. Try contains match with any part of the name
+        if not aluno:
+            for query_term in search_queries:
+                if len(query_term) >= 2:
+                    aluno = Aluno.objects.filter(nome__icontains=query_term).first()
+                    if aluno:
                         break
         
-        # 3. Try first name match for any query
+        # 4. Try fuzzy matching as a last resort
         if not aluno:
-            first_name = normalized_query.split()[0] if normalized_query.split() else normalized_query
-            if len(first_name) >= 2:
-                aluno = Aluno.objects.filter(nome__istartswith=first_name).first()
-        
-        # 4. Try partial match at the beginning
-        if not aluno:
-            aluno = Aluno.objects.filter(nome__istartswith=normalized_query).first()
-        
-        # 5. Try contains match
-        if not aluno:
-            aluno = Aluno.objects.filter(nome__icontains=normalized_query).first()
-        
-        # 6. Try with original query if normalized query failed
-        if not aluno and normalized_query != original_query:
-            aluno = Aluno.objects.filter(
-                Q(nome__iexact=original_query) | 
-                Q(nome__istartswith=original_query) | 
-                Q(nome__icontains=original_query)
-            ).first()
-        
-        # 7. Last resort: try to match any part of any name
-        if not aluno:
+            best_match = None
+            highest_score = 0
+            
             for student in Aluno.objects.all():
-                student_names = student.nome.lower().split()
-                if any(name == normalized_query.lower() for name in student_names):
-                    aluno = student
-                    break
+                for query_term in search_queries:
+                    # Simple similarity score: count of matching characters / max length
+                    student_name_lower = student.nome.lower()
+                    query_lower = query_term.lower()
+                    
+                    # Count matching characters
+                    matches = sum(1 for c in query_lower if c in student_name_lower)
+                    score = matches / max(len(query_lower), len(student_name_lower))
+                    
+                    if score > highest_score and score > 0.5:  # Threshold of 50% similarity
+                        highest_score = score
+                        best_match = student
+            
+            if best_match:
+                aluno = best_match
         
         if aluno:
             print(f"Aluno encontrado: {aluno.nome}")
@@ -125,7 +144,10 @@ def get_student_info(query: str) -> Optional[Dict]:
                 "nome": aluno.nome,
                 "matricula": aluno.matricula,
                 "data_nascimento": aluno.data_nascimento.strftime("%d/%m/%Y") if aluno.data_nascimento else "Não informado",
-                "serie": aluno.serie,
+                "serie": aluno.serie if aluno.serie else "Não informado",
+                "nivel": aluno.get_nivel_display() if hasattr(aluno, 'get_nivel_display') else "Não informado",
+                "ano": aluno.get_ano_display() if hasattr(aluno, 'get_ano_display') else "Não informado",
+                "turno": aluno.get_turno_display() if hasattr(aluno, 'get_turno_display') else "Não informado",
                 "email": aluno.email if aluno.email else "Não informado",
                 "telefone": aluno.telefone if aluno.telefone else "Não informado",
                 "endereco": aluno.endereco if aluno.endereco else "Não informado",
@@ -135,7 +157,7 @@ def get_student_info(query: str) -> Optional[Dict]:
             }
             return aluno_info
         else:
-            print(f"Nenhum aluno encontrado para a query: '{normalized_query}'")
+            print(f"Nenhum aluno encontrado para as queries: {search_queries}")
             return None
     except Exception as e:
         print(f"Erro ao buscar informações do aluno: {e}")
@@ -187,9 +209,9 @@ def get_openai_response(user_message: str, context: str = "") -> str:
         Regras importantes:
         1. Sempre mantenha um tom amigável, acolhedor e profissional.
         2. Comece suas respostas com uma saudação apropriada, como "Olá!" ou "Oi!".
-        3. Se o usuário pedir informações sobre um aluno, use a função get_student_info para buscar os dados.
+        3. Se o usuário pedir QUALQUER informação sobre um aluno, use a função get_student_info para buscar os dados.
         4. Se o usuário pedir a foto de um aluno, use a função get_student_photo.
-        5. IMPORTANTE: Quando receber dados de um aluno, SEMPRE inclua as informações específicas solicitadas pelo usuário (como data de nascimento, responsável, etc.) na sua resposta.
+        5. IMPORTANTE: Quando receber dados de um aluno, SEMPRE inclua as informações específicas solicitadas pelo usuário na sua resposta.
         6. Se você receber informações de um aluno através da função, SEMPRE use essas informações na sua resposta, não diga que está buscando informações que já foram encontradas.
         7. Termine suas respostas com: "Estou à disposição para mais perguntas!"
         8. Inclua a data e hora atuais (horário de Belém, Pará - GMT-3) em todas as respostas.
@@ -197,9 +219,28 @@ def get_openai_response(user_message: str, context: str = "") -> str:
         A data e hora atuais são: {get_current_datetime()}.
         """
         
+        # Expandir a lista de palavras-chave para detectar mais tipos de consultas sobre alunos
+        aluno_keywords = [
+            "aluno", "estudante", "nota", "notas", "informações", "dados", "foto", 
+            "telefone", "endereço", "responsável", "responsavel", "data de nascimento",
+            "série", "serie", "turma", "ano", "nível", "nivel", "email", "e-mail",
+            "matrícula", "matricula", "turno", "classe", "sala", "professor", "professora",
+            "disciplina", "matéria", "materia", "curso", "escola", "colégio", "colegio",
+            "quem é", "onde está", "onde mora", "quando nasceu", "qual", "quais"
+        ]
+        
         # Verificar se a mensagem do usuário parece estar solicitando informações de um aluno
-        aluno_keywords = ["aluno", "estudante", "nota", "notas", "informações", "dados", "foto", "telefone", "endereço", "responsável", "responsavel", "data de nascimento"]
+        # Primeiro, verificamos se há alguma palavra-chave
         is_student_query = any(keyword in user_message.lower() for keyword in aluno_keywords)
+        
+        # Se não encontramos palavras-chave, verificamos se há algum nome próprio na mensagem
+        # que possa ser um nome de aluno (primeira letra maiúscula seguida de minúsculas)
+        if not is_student_query:
+            words = user_message.split()
+            for word in words:
+                if len(word) > 2 and word[0].isupper() and word[1:].islower():
+                    is_student_query = True
+                    break
         
         # Chamada à API com function calling
         try:
@@ -254,12 +295,56 @@ def get_openai_response(user_message: str, context: str = "") -> str:
                 if not student_info:
                     return f"Olá! Desculpe, não consegui encontrar informações para o aluno '{student_name}'. Por favor, verifique se o nome está correto e tente novamente. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3). Estou à disposição para mais perguntas!"
                 
+                # Determinar qual informação foi solicitada para garantir que seja incluída na resposta
+                requested_info = []
+                
+                # Mapear palavras-chave para campos no student_info
+                info_mapping = {
+                    "responsável": "responsavel",
+                    "responsavel": "responsavel",
+                    "data de nascimento": "data_nascimento",
+                    "nascimento": "data_nascimento",
+                    "telefone": "telefone",
+                    "endereço": "endereco",
+                    "endereco": "endereco",
+                    "email": "email",
+                    "e-mail": "email",
+                    "nota": "notas",
+                    "notas": "notas",
+                    "série": "serie",
+                    "serie": "serie",
+                    "turma": "serie",
+                    "ano": "ano",
+                    "nível": "nivel",
+                    "nivel": "nivel",
+                    "turno": "turno",
+                    "matrícula": "matricula",
+                    "matricula": "matricula"
+                }
+                
+                # Identificar quais informações foram solicitadas
+                for keyword, field in info_mapping.items():
+                    if keyword in user_message.lower():
+                        requested_info.append(field)
+                
+                # Se nenhuma informação específica foi solicitada, incluir todas
+                if not requested_info:
+                    requested_info = list(info_mapping.values())
+                
+                # Garantir que não há duplicatas
+                requested_info = list(set(requested_info))
+                
                 # Segunda chamada à API com o resultado da função
                 try:
+                    # Adicionar uma instrução específica para incluir as informações solicitadas
+                    specific_instruction = f"O usuário solicitou informações sobre {student_info['nome']}. "
+                    specific_instruction += f"Certifique-se de incluir os seguintes campos na sua resposta: {', '.join(requested_info)}. "
+                    specific_instruction += "Não diga que está buscando informações, pois elas já foram encontradas."
+                    
                     second_response = openai.ChatCompletion.create(
                         model="gpt-4o-mini-2024-07-18",
                         messages=[
-                            {"role": "system", "content": system_prompt},
+                            {"role": "system", "content": system_prompt + "\n\n" + specific_instruction},
                             {"role": "user", "content": user_message},
                             {"role": "function", "name": function_name, "content": json.dumps(student_info)}
                         ],
@@ -272,7 +357,7 @@ def get_openai_response(user_message: str, context: str = "") -> str:
                     second_response = openai.ChatCompletion.create(
                         model="gpt-3.5-turbo",
                         messages=[
-                            {"role": "system", "content": system_prompt},
+                            {"role": "system", "content": system_prompt + "\n\n" + specific_instruction},
                             {"role": "user", "content": user_message},
                             {"role": "function", "name": function_name, "content": json.dumps(student_info)}
                         ],
@@ -284,28 +369,32 @@ def get_openai_response(user_message: str, context: str = "") -> str:
                 # Verificar se a resposta contém as informações do aluno
                 response_content = second_response.choices[0].message["content"]
                 
-                # Se a resposta não menciona o nome do aluno, adicione as informações manualmente
-                if student_info["nome"] not in response_content:
-                    # Determinar qual informação foi solicitada
-                    info_requested = ""
-                    if "responsável" in user_message.lower() or "responsavel" in user_message.lower():
-                        info_requested = f"O responsável por {student_info['nome']} é {student_info['responsavel']}."
-                    elif "data de nascimento" in user_message.lower() or "nascimento" in user_message.lower():
-                        info_requested = f"A data de nascimento de {student_info['nome']} é {student_info['data_nascimento']}."
-                    elif "telefone" in user_message.lower():
-                        info_requested = f"O telefone de {student_info['nome']} é {student_info['telefone']}."
-                    elif "endereço" in user_message.lower() or "endereco" in user_message.lower():
-                        info_requested = f"O endereço de {student_info['nome']} é {student_info['endereco']}."
-                    elif "email" in user_message.lower():
-                        info_requested = f"O email de {student_info['nome']} é {student_info['email']}."
-                    elif "nota" in user_message.lower():
-                        notas_str = ", ".join(student_info['notas'])
-                        info_requested = f"As notas de {student_info['nome']} são: {notas_str}."
-                    else:
-                        info_requested = f"Informações de {student_info['nome']}: Matrícula: {student_info['matricula']}, Data de Nascimento: {student_info['data_nascimento']}, Série: {student_info['serie']}, Responsável: {student_info['responsavel']}."
+                # Se a resposta não menciona o nome do aluno ou as informações solicitadas, adicione as informações manualmente
+                missing_info = []
+                for field in requested_info:
+                    if field in student_info and str(student_info[field]) not in response_content:
+                        missing_info.append(field)
+                
+                if student_info["nome"] not in response_content or missing_info:
+                    # Construir uma resposta manual com as informações solicitadas
+                    info_parts = []
                     
-                    # Adicionar a informação à resposta
-                    response_content = f"Olá! {info_requested}\n\nA data e hora atuais são: {get_current_datetime()}. Estou à disposição para mais perguntas!"
+                    # Adicionar as informações solicitadas
+                    for field in requested_info:
+                        if field in student_info:
+                            field_display_name = field.replace("_", " ").capitalize()
+                            
+                            # Formatação especial para alguns campos
+                            if field == "notas":
+                                if isinstance(student_info[field], list) and student_info[field]:
+                                    notas_str = ", ".join(student_info[field])
+                                    info_parts.append(f"**Notas**: {notas_str}")
+                            else:
+                                info_parts.append(f"**{field_display_name}**: {student_info[field]}")
+                    
+                    # Construir a resposta final
+                    info_text = "\n".join(info_parts)
+                    response_content = f"Olá! \n\nAqui estão as informações de {student_info['nome']}:\n\n{info_text}\n\nEstou à disposição para mais perguntas! \n\nData e hora atuais: {get_current_datetime()}."
                 
                 return response_content
                 
