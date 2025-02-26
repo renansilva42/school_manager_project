@@ -250,7 +250,7 @@ function addMessage(message, isUser = false) {
         
         // Função para processar a entrada do usuário
         // Substitua a função processUserInput no arquivo chatbot.html com esta versão:
-function processUserInput() {
+        function processUserInput() {
     const message = userInput.value.trim();
     if (message === '') return;
     
@@ -272,15 +272,24 @@ function processUserInput() {
         },
         body: `message=${encodeURIComponent(message)}`
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         removeTypingIndicator();
-        addMessage(data.response);
+        if (data.response) {
+            addMessage(data.response);
+        } else {
+            addMessage('Desculpe, não consegui processar sua solicitação. Por favor, tente novamente.');
+        }
     })
     .catch(error => {
         console.error('Erro:', error);
         removeTypingIndicator();
-        addMessage('Desculpe, ocorreu um erro ao processar sua solicitação.');
+        addMessage('Desculpe, ocorreu um erro ao processar sua solicitação. Por favor, tente novamente mais tarde.');
     });
 }
         

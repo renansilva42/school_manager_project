@@ -1,10 +1,11 @@
+# apps/chatbot/utils.py
 import openai
 from django.conf import settings
 from apps.alunos.models import Aluno, Nota
 from django.db.models import Q
 from datetime import datetime
 import pytz
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 import json
 
 def get_current_datetime() -> str:
@@ -15,6 +16,29 @@ def get_current_datetime() -> str:
     fuso_belem = pytz.timezone("America/Belem")
     agora = datetime.now(fuso_belem)
     return agora.strftime("%d/%m/%Y %H:%M:%S")
+
+def get_all_students() -> List[Dict]:
+    """
+    Retorna uma lista com todos os alunos cadastrados no sistema.
+    """
+    try:
+        alunos = Aluno.objects.all().order_by('nome')
+        if not alunos.exists():
+            return []
+            
+        alunos_list = []
+        for aluno in alunos:
+            alunos_list.append({
+                "nome": aluno.nome,
+                "matricula": aluno.matricula,
+                "serie": aluno.serie,
+                "ano": aluno.get_ano_display(),
+                "turno": aluno.get_turno_display()
+            })
+        return alunos_list
+    except Exception as e:
+        print(f"Erro ao buscar lista de alunos: {e}")
+        return []
 
 def get_student_info(query: str) -> Optional[Dict]:
     """
@@ -55,6 +79,15 @@ def get_student_info(query: str) -> Optional[Dict]:
                 q_objects &= Q(nome__icontains=term)
             
             aluno = Aluno.objects.filter(q_objects).first()
+            
+            # Se ainda não encontrou, tenta uma busca mais flexível
+            if not aluno and len(search_terms) > 1:
+                q_objects = Q()
+                for term in search_terms:
+                    if len(term) > 2:  # Ignora termos muito curtos
+                        q_objects |= Q(nome__icontains=term)
+                
+                aluno = Aluno.objects.filter(q_objects).first()
         
         if aluno:
             # Coleta notas do aluno
@@ -121,7 +154,7 @@ def get_openai_response(user_message: str, context: str = "") -> str:
         ]
         
         # Prompt do sistema
-        system_prompt = """
+        system_prompt = f"""
         Você é um assistente escolar amigável e prestativo da Escola Manager, com acesso aos dados dos alunos.
         Regras importantes:
         1. Sempre mantenha um tom amigável, acolhedor e profissional.
@@ -134,19 +167,39 @@ def get_openai_response(user_message: str, context: str = "") -> str:
         A data e hora atuais são: {get_current_datetime()}.
         """
         
+        # Verificar se a mensagem do usuário parece estar solicitando informações de um aluno
+        aluno_keywords = ["aluno", "estudante", "nota", "notas", "informações", "dados", "foto", "telefone", "endereço"]
+        is_student_query = any(keyword in user_message.lower() for keyword in aluno_keywords)
+        
         # Chamada à API com function calling
-        response = openai.ChatCompletion.create(
-            model="gpt-4o-mini-2024-07-18",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message}
-            ],
-            functions=functions,
-            function_call="auto",
-            temperature=0.7,
-            max_tokens=500,
-            top_p=0.9
-        )
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-4o-mini-2024-07-18",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message}
+                ],
+                functions=functions if is_student_query else None,
+                function_call="auto" if is_student_query else None,
+                temperature=0.7,
+                max_tokens=500,
+                top_p=0.9
+            )
+        except Exception as api_error:
+            print(f"Erro na chamada da API OpenAI, tentando modelo alternativo: {api_error}")
+            # Tentar com um modelo alternativo se o primeiro falhar
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message}
+                ],
+                functions=functions if is_student_query else None,
+                function_call="auto" if is_student_query else None,
+                temperature=0.7,
+                max_tokens=500,
+                top_p=0.9
+            )
         
         # Processamento da resposta
         message = response.choices[0].message
@@ -158,34 +211,56 @@ def get_openai_response(user_message: str, context: str = "") -> str:
             
             # Executa a função apropriada
             if function_name == "get_student_info":
-                student_info = get_student_info(function_args.get("student_name", ""))
+                student_name = function_args.get("student_name", "")
+                print(f"Buscando informações para o aluno: {student_name}")
+                student_info = get_student_info(student_name)
+                
+                if not student_info:
+                    return f"Desculpe, não consegui encontrar informações para o aluno '{student_name}'. Por favor, verifique se o nome está correto e tente novamente. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3)."
                 
                 # Segunda chamada à API com o resultado da função
-                second_response = openai.ChatCompletion.create(
-                    model="gpt-4o-mini-2024-07-18",
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_message},
-                        {"role": "function", "name": function_name, "content": json.dumps(student_info)}
-                    ],
-                    temperature=0.7,
-                    max_tokens=500,
-                    top_p=0.9
-                )
+                try:
+                    second_response = openai.ChatCompletion.create(
+                        model="gpt-4o-mini-2024-07-18",
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_message},
+                            {"role": "function", "name": function_name, "content": json.dumps(student_info)}
+                        ],
+                        temperature=0.7,
+                        max_tokens=500,
+                        top_p=0.9
+                    )
+                except Exception as api_error:
+                    print(f"Erro na segunda chamada da API OpenAI, tentando modelo alternativo: {api_error}")
+                    second_response = openai.ChatCompletion.create(
+                        model="gpt-3.5-turbo",
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_message},
+                            {"role": "function", "name": function_name, "content": json.dumps(student_info)}
+                        ],
+                        temperature=0.7,
+                        max_tokens=500,
+                        top_p=0.9
+                    )
                 
                 return second_response.choices[0].message["content"]
                 
             elif function_name == "get_student_photo":
-                student_info = get_student_info(function_args.get("student_name", ""))
+                student_name = function_args.get("student_name", "")
+                print(f"Buscando foto para o aluno: {student_name}")
+                student_info = get_student_info(student_name)
+                
                 if student_info and student_info.get("foto_url"):
                     return [
-                        f"Aqui está a foto de {student_info['nome']}:",
+                        f"Aqui está a foto de {student_info['nome']}. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3).",
                         {"type": "image", "url": student_info["foto_url"]}
                     ]
                 elif student_info:
-                    return f"Desculpe, não encontrei uma foto cadastrada para {student_info['nome']}."
+                    return f"Desculpe, não encontrei uma foto cadastrada para {student_info['nome']}. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3)."
                 else:
-                    return "Desculpe, não encontrei o aluno mencionado."
+                    return f"Desculpe, não encontrei o aluno '{student_name}'. Por favor, verifique se o nome está correto e tente novamente. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3)."
         
         # Se não houve chamada de função, retorna a resposta direta
         return message["content"]
@@ -193,15 +268,3 @@ def get_openai_response(user_message: str, context: str = "") -> str:
     except Exception as e:
         print(f"Erro na chamada da API OpenAI: {e}")
         return f"Desculpe, ocorreu um erro ao processar sua solicitação. Por favor, tente novamente. A data e hora atuais são: {get_current_datetime()} (horário de Belém, Pará - GMT-3)."
-
-# Exemplo de uso para teste
-if __name__ == "__main__":
-    queries = [
-        "oi",
-        "oi, preciso saber as notas do João Pedro",
-        "qual é o telefone do João Pedro?",
-        "mostre a foto do João Pedro"
-    ]
-    for q in queries:
-        print(f"Usuário: {q}")
-        print(f"Assistente: {get_openai_response(q)}\n")

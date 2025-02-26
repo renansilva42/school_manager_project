@@ -33,9 +33,8 @@ class AlunoForm(forms.ModelForm):
             if nivel == 'EFI':
                 self.fields['turno'].widget.attrs['disabled'] = 'disabled'
         else:
-            # Para um novo aluno, inicializar com listas vazias
-            # O JavaScript cuidará de preencher as opções
-            self.fields['ano'].choices = []
+            # Para um novo aluno, inicializar com todas as opções possíveis
+            self.fields['ano'].choices = Aluno.ANO_CHOICES
     
     def set_ano_choices(self, nivel, turno):
         """Define as opções de ano com base no nível e turno"""

@@ -20,8 +20,14 @@ def chatbot_response(request):
             if not message:
                 return JsonResponse({'response': 'Por favor, digite uma mensagem.'})
 
+            # Adicionar log para depuração
+            print(f"Mensagem recebida: {message}")
+            
             # Usa a função otimizada que já trata fotos internamente
             response = get_openai_response(message)
+            
+            # Adicionar log para depuração
+            print(f"Resposta gerada: {response}")
             
             # Verifica se a resposta é uma lista contendo uma imagem
             if isinstance(response, list) and len(response) > 1 and isinstance(response[1], dict) and response[1].get('type') == 'image':
@@ -32,7 +38,9 @@ def chatbot_response(request):
             return JsonResponse({'response': response})
             
         except Exception as e:
+            import traceback
             print(f"Erro no chatbot_response: {e}")
+            print(traceback.format_exc())
             return JsonResponse({
-                'response': 'Desculpe, ocorreu um erro ao processar sua solicitação.'
+                'response': f'Desculpe, ocorreu um erro ao processar sua solicitação: {str(e)}'
             })
