@@ -25,7 +25,7 @@ def get_openai_response(messages, tools=None, tool_choice="auto"):
     if use_legacy_api:
         openai.api_key = settings.OPENAI_API_KEY
         response = openai.ChatCompletion.create(
-            model="gpt-4o",
+            model="gpt-4o-mini-2024-07-18",
             messages=messages,
             tools=tools,
             tool_choice=tool_choice
@@ -33,7 +33,7 @@ def get_openai_response(messages, tools=None, tool_choice="auto"):
     else:
         client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini-2024-07-18",
             messages=messages,
             tools=tools,
             tool_choice=tool_choice

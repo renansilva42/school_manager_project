@@ -1,3 +1,4 @@
+# apps/chatbot/views.py
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Q, Avg
@@ -34,8 +35,8 @@ def chatbot_response(request):
                                 "description": "Nome do aluno para busca"
                             }
                         },
-                        # Corrigido: pelo menos um parâmetro deve ser fornecido, mas não ambos obrigatórios
-                        "required": [],
+                        # Corrigido: ambos os parâmetros são obrigatórios para strict mode
+                        "required": ["student_id", "name"],
                         "additionalProperties": False
                     },
                     "strict": True
@@ -59,7 +60,7 @@ def chatbot_response(request):
                             }
                         },
                         # Corrigido para consistência
-                        "required": [],
+                        "required": ["student_id", "name"],
                         "additionalProperties": False
                     },
                     "strict": True
@@ -82,7 +83,7 @@ def chatbot_response(request):
                                 "description": "Nome do aluno para busca"
                             }
                         },
-                        "required": [],
+                        "required": ["student_id", "name"],
                         "additionalProperties": False
                     },
                     "strict": True
@@ -111,7 +112,7 @@ def chatbot_response(request):
                                 "description": "Lista de IDs de alunos para comparação"
                             }
                         },
-                        "required": [],
+                        "required": ["student_names", "student_ids"],
                         "additionalProperties": False
                     },
                     "strict": True
@@ -121,7 +122,7 @@ def chatbot_response(request):
         
         # Mensagens para o modelo
         messages = [
-            {"role": "system", "content": "Você é um assistente virtual para uma escola. Você pode ajudar a buscar todas as informações de qualquer aluno cadastrado, incluindo dados pessoais, notas, fotos e análises de desempenho. Você também pode comparar alunos quando solicitado."},
+            {"role": "system", "content": "Você é um assistente virtual para uma escola. Você pode ajudar a buscar todas as informações de qualquer aluno cadastrado, incluindo dados pessoais, notas, fotos e análises de desempenho. Você também pode comparar alunos quando solicitado. Quando o usuário perguntar sobre um aluno, use a função get_student_info para buscar informações. Se o usuário não fornecer um ID, passe null para student_id. Se o usuário não fornecer um nome, passe null para name. Pelo menos um dos dois deve ser fornecido."},
             {"role": "user", "content": message}
         ]
         
@@ -140,13 +141,35 @@ def chatbot_response(request):
                 
                 # Executar a função apropriada
                 if function_name == "get_student_info":
-                    function_response = get_student_info(**function_args)
+                    # Garantir que os argumentos sejam tratados corretamente
+                    student_id = function_args.get("student_id")
+                    name = function_args.get("name")
+                    # Se ambos forem None, definir um valor padrão para evitar erros
+                    if student_id is None and (name is None or name == ""):
+                        function_response = {"error": "É necessário fornecer o ID ou o nome do aluno"}
+                    else:
+                        function_response = get_student_info(student_id=student_id, name=name)
                 elif function_name == "get_student_grades":
-                    function_response = get_student_grades(**function_args)
+                    student_id = function_args.get("student_id")
+                    name = function_args.get("name")
+                    if student_id is None and (name is None or name == ""):
+                        function_response = {"error": "É necessário fornecer o ID ou o nome do aluno"}
+                    else:
+                        function_response = get_student_grades(student_id=student_id, name=name)
                 elif function_name == "analyze_student_performance":
-                    function_response = analyze_student_performance(**function_args)
+                    student_id = function_args.get("student_id")
+                    name = function_args.get("name")
+                    if student_id is None and (name is None or name == ""):
+                        function_response = {"error": "É necessário fornecer o ID ou o nome do aluno"}
+                    else:
+                        function_response = analyze_student_performance(student_id=student_id, name=name)
                 elif function_name == "compare_students":
-                    function_response = compare_students(**function_args)
+                    student_names = function_args.get("student_names", [])
+                    student_ids = function_args.get("student_ids", [])
+                    if not student_names and not student_ids:
+                        function_response = {"error": "É necessário fornecer pelo menos um nome ou ID de aluno"}
+                    else:
+                        function_response = compare_students(student_names=student_names, student_ids=student_ids)
                 else:
                     function_response = "Função não implementada."
                 
