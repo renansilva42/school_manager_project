@@ -42,82 +42,63 @@ def get_all_students() -> List[Dict]:
 
 def get_student_info(query: str) -> Optional[Dict]:
     try:
-        if not query or len(query) < 2:  # Reduzido o mínimo para 2 caracteres
+        if not query or len(query) < 2:  # Minimum 2 characters
             return None
             
-        # Normaliza a query removendo prefixos comuns e ajustando para minúsculas
-        query = query.lower().strip()
+        # Normalize the query by removing common prefixes and converting to lowercase
+        original_query = query.lower().strip()
         
-        # Lista de palavras a serem removidas da query
-        palavras_para_remover = ["notas do", "notas da", "telefone do", "telefone da", 
-                                "foto do", "foto da", "endereço do", "endereço da", 
-                                "informações do", "informações da", "dados do", "dados da",
-                                "aluno", "aluna", "estudante", "o", "a", "do", "da"]
+        # List of words to be removed from the query
+        words_to_remove = ["notas do", "notas da", "telefone do", "telefone da", 
+                          "foto do", "foto da", "endereço do", "endereço da", 
+                          "informações do", "informações da", "dados do", "dados da",
+                          "aluno", "aluna", "estudante", "o", "a", "do", "da"]
         
-        # Remove as palavras da query
-        for palavra in palavras_para_remover:
-            query = query.replace(palavra, "").strip()
+        # Remove words from the query
+        normalized_query = original_query
+        for word in words_to_remove:
+            normalized_query = normalized_query.replace(word, "").strip()
         
-        print(f"Query normalizada: '{query}'")
-        
-        # Primeiro tenta buscar por nome exato
-        aluno = Aluno.objects.filter(nome__iexact=query).first()
-        
-        # Se não encontrado, busca por primeiro nome
-        if not aluno:
-            # Extrai o primeiro nome da query
-            primeiro_nome = query.split()[0] if query.split() else query
-            if len(primeiro_nome) >= 2:  # Verifica se o primeiro nome tem pelo menos 2 caracteres
-                aluno = Aluno.objects.filter(nome__istartswith=primeiro_nome).first()
-                
-        # Se não encontrado, busca por correspondência parcial no início do nome
-        if not aluno:
-            aluno = Aluno.objects.filter(nome__istartswith=query).first()
-        
-        # Se não encontrado, busca por correspondências parciais em qualquer parte do nome
-        if not aluno:
-            aluno = Aluno.objects.filter(nome__icontains=query).first()
+        # If normalization removed too much, use the original query
+        if len(normalized_query) < 2:
+            normalized_query = original_query
             
-        # Se ainda não encontrou, tenta a busca com termos múltiplos
+        print(f"Query normalizada: '{normalized_query}'")
+        
+        # Try different search strategies
+        
+        # 1. First try exact match
+        aluno = Aluno.objects.filter(nome__iexact=normalized_query).first()
+        
+        # 2. Try first name match
         if not aluno:
-            search_terms = query.split()
-            if search_terms:
-                # Cria uma consulta inicial
-                q_objects = Q(nome__icontains=search_terms[0])
-                
-                # Adiciona termos adicionais à consulta
-                for term in search_terms[1:]:
-                    q_objects &= Q(nome__icontains=term)
-                
-                aluno = Aluno.objects.filter(q_objects).first()
-            
-            # Se ainda não encontrou, tenta uma busca mais flexível
-            if not aluno and len(search_terms) > 1:
-                q_objects = Q()
-                for term in search_terms:
-                    if len(term) > 1:  # Reduzido para aceitar termos com pelo menos 2 caracteres
-                        q_objects |= Q(nome__icontains=term)
-                
-                aluno = Aluno.objects.filter(q_objects).first()
-                
-        # Busca adicional: tenta encontrar qualquer aluno cujo nome contenha a query como parte do nome
+            first_name = normalized_query.split()[0] if normalized_query.split() else normalized_query
+            if len(first_name) >= 2:
+                aluno = Aluno.objects.filter(nome__istartswith=first_name).first()
+        
+        # 3. Try partial match at the beginning
         if not aluno:
-            # Busca por qualquer parte do nome, mesmo que seja apenas um fragmento
-            aluno = Aluno.objects.filter(nome__icontains=query).first()
-            
-        # Busca por primeiro nome apenas
-        if not aluno and ' ' in query:
-            primeiro_nome = query.split(' ')[0]
-            if len(primeiro_nome) >= 2:
-                aluno = Aluno.objects.filter(nome__istartswith=primeiro_nome).first()
+            aluno = Aluno.objects.filter(nome__istartswith=normalized_query).first()
+        
+        # 4. Try contains match
+        if not aluno:
+            aluno = Aluno.objects.filter(nome__icontains=normalized_query).first()
+        
+        # 5. Try with original query if normalized query failed
+        if not aluno and normalized_query != original_query:
+            aluno = Aluno.objects.filter(
+                Q(nome__iexact=original_query) | 
+                Q(nome__istartswith=original_query) | 
+                Q(nome__icontains=original_query)
+            ).first()
         
         if aluno:
             print(f"Aluno encontrado: {aluno.nome}")
-            # Coleta notas do aluno
+            # Collect student grades
             notas = Nota.objects.filter(aluno=aluno)
             notas_info = [f"{nota.disciplina}: {nota.valor}" for nota in notas]
             
-            # Estrutura os dados do aluno
+            # Structure student data
             aluno_info = {
                 "nome": aluno.nome,
                 "matricula": aluno.matricula,
@@ -132,7 +113,7 @@ def get_student_info(query: str) -> Optional[Dict]:
             }
             return aluno_info
         else:
-            print(f"Nenhum aluno encontrado para a query: '{query}'")
+            print(f"Nenhum aluno encontrado para a query: '{normalized_query}'")
             return None
     except Exception as e:
         print(f"Erro ao buscar informações do aluno: {e}")
