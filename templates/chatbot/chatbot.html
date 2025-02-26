@@ -281,8 +281,24 @@ function addMessage(message, isUser = false) {
     .then(data => {
         removeTypingIndicator();
         if (data.response) {
-            // Verificar se a resposta contém formatação especial (como tabelas ou listas)
-            if (data.response.includes('<table>') || data.response.includes('<ul>')) {
+            // Verificar se a resposta contém uma referência a uma imagem
+            const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
+            let match = imgRegex.exec(data.response);
+            
+            if (match) {
+                // Extrair o texto e a URL da imagem
+                const altText = match[1];
+                let imgUrl = match[2];
+                
+                // Corrigir a URL se necessário (remover ./ do início)
+                if (imgUrl.startsWith('./')) {
+                    imgUrl = imgUrl.substring(2);
+                }
+                
+                // Criar uma resposta com texto e imagem
+                const textPart = data.response.replace(imgRegex, '').trim();
+                addMessage([textPart, {type: 'image', url: imgUrl}]);
+            } else if (data.response.includes('<table>') || data.response.includes('<ul>')) {
                 // Se contiver HTML, renderizar como HTML
                 const messageElement = document.createElement('div');
                 messageElement.classList.add('message', 'bot-message');

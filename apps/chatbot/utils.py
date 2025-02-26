@@ -41,45 +41,45 @@ def get_openai_response(messages, tools=None, tool_choice="auto"):
     return response.choices[0].message
 
 def get_student_info(student_id=None, name=None):
-    """
-    Busca informações de um aluno pelo ID ou nome.
-    """
     try:
-        if student_id:
+        # Verificar se pelo menos um parâmetro foi fornecido
+        if student_id is None and (name is None or name.strip() == ""):
+            return {"error": "É necessário fornecer o ID ou o nome do aluno"}
+        
+        # Buscar o aluno
+        if student_id is not None:
             aluno = Aluno.objects.get(id=student_id)
-        elif name:
-            aluno = Aluno.objects.filter(nome__icontains=name).first()
         else:
-            return "É necessário fornecer um ID ou nome de aluno."
+            # Busca por nome (pode retornar múltiplos resultados)
+            alunos = Aluno.objects.filter(nome__icontains=name)
+            if not alunos.exists():
+                return {"error": f"Nenhum aluno encontrado com o nome '{name}'"}
+            elif alunos.count() > 1:
+                # Se houver múltiplos resultados, retornar uma lista
+                return {
+                    "message": f"Encontrados {alunos.count()} alunos com o nome '{name}'",
+                    "alunos": [{"id": a.id, "nome": a.nome} for a in alunos]
+                }
+            aluno = alunos.first()
         
-        notas = Nota.objects.filter(aluno=aluno)
-        media = notas.aggregate(Avg('valor'))['valor__avg'] or 0
+        # Calcular média das notas
+        media = aluno.notas.aggregate(Avg('valor'))['valor__avg'] or 0
         
-        # Convert Decimal to float for JSON serialization
-        if isinstance(media, Decimal):
-            media = float(media)
-        
-        # Create the response dictionary with all student info
+        # Construir a resposta
         response = {
             "id": aluno.id,
             "nome": aluno.nome,
-            "email": aluno.email,
-            "data_nascimento": aluno.data_nascimento.strftime("%d/%m/%Y") if aluno.data_nascimento else "Não informada",
-            "media_notas": round(media, 2),
-            "numero_notas": notas.count()
+            "email": aluno.email or "Não informado",
+            "data_nascimento": aluno.data_nascimento.strftime('%d/%m/%Y') if aluno.data_nascimento else "Não informada",
+            "media_notas": float(media),
+            "foto_url": aluno.foto.url if aluno.foto else None
         }
         
-        # Add photo URL if available
-        if aluno.foto:
-            response["foto_url"] = aluno.foto.url
-        else:
-            response["foto_url"] = None
-            
         return response
     except Aluno.DoesNotExist:
-        return "Aluno não encontrado."
+        return {"error": f"Aluno com ID {student_id} não encontrado"}
     except Exception as e:
-        return f"Erro ao buscar informações do aluno: {str(e)}"
+        return {"error": f"Erro ao buscar informações do aluno: {str(e)}"}
 
 # And modify the get_student_grades function
 def get_student_grades(student_id=None, name=None):
