@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.db.models import Q, Avg
 from django.shortcuts import render
 from apps.alunos.models import Aluno, Nota
-from apps.chatbot.utils import get_openai_response, get_student_info, get_student_grades
+from apps.chatbot.utils import get_openai_response, get_student_info, get_student_grades, analyze_student_performance, compare_students
 import json
 
 @login_required
@@ -34,8 +34,8 @@ def chatbot_response(request):
                                 "description": "Nome do aluno para busca"
                             }
                         },
-                        # Change this line - at least one parameter must be provided
-                        "required": ["student_id", "name"],
+                        # Corrigido: pelo menos um parâmetro deve ser fornecido, mas não ambos obrigatórios
+                        "required": [],
                         "additionalProperties": False
                     },
                     "strict": True
@@ -58,8 +58,60 @@ def chatbot_response(request):
                                 "description": "Nome do aluno para busca"
                             }
                         },
-                        # Change this line too for consistency
-                        "required": ["student_id", "name"],
+                        # Corrigido para consistência
+                        "required": [],
+                        "additionalProperties": False
+                    },
+                    "strict": True
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "analyze_student_performance",
+                    "description": "Analisa o desempenho de um aluno com base em suas notas",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "student_id": {
+                                "type": ["integer", "null"],
+                                "description": "ID do aluno no sistema"
+                            },
+                            "name": {
+                                "type": ["string", "null"],
+                                "description": "Nome do aluno para busca"
+                            }
+                        },
+                        "required": [],
+                        "additionalProperties": False
+                    },
+                    "strict": True
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "compare_students",
+                    "description": "Compara o desempenho de dois ou mais alunos",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "student_names": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "Lista de nomes de alunos para comparação"
+                            },
+                            "student_ids": {
+                                "type": "array",
+                                "items": {
+                                    "type": "integer"
+                                },
+                                "description": "Lista de IDs de alunos para comparação"
+                            }
+                        },
+                        "required": [],
                         "additionalProperties": False
                     },
                     "strict": True
@@ -69,7 +121,7 @@ def chatbot_response(request):
         
         # Mensagens para o modelo
         messages = [
-            {"role": "system", "content": "Você é um assistente virtual para uma escola. Você pode ajudar a buscar todas as informações de qualquer aluno cadastrado."},
+            {"role": "system", "content": "Você é um assistente virtual para uma escola. Você pode ajudar a buscar todas as informações de qualquer aluno cadastrado, incluindo dados pessoais, notas, fotos e análises de desempenho. Você também pode comparar alunos quando solicitado."},
             {"role": "user", "content": message}
         ]
         
@@ -91,6 +143,10 @@ def chatbot_response(request):
                     function_response = get_student_info(**function_args)
                 elif function_name == "get_student_grades":
                     function_response = get_student_grades(**function_args)
+                elif function_name == "analyze_student_performance":
+                    function_response = analyze_student_performance(**function_args)
+                elif function_name == "compare_students":
+                    function_response = compare_students(**function_args)
                 else:
                     function_response = "Função não implementada."
                 
