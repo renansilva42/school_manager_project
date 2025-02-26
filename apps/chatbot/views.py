@@ -69,7 +69,7 @@ def chatbot_response(request):
         
         # Mensagens para o modelo
         messages = [
-            {"role": "system", "content": "Você é um assistente virtual para uma escola. Você pode ajudar a buscar informações sobre alunos e suas notas."},
+            {"role": "system", "content": "Você é um assistente virtual para uma escola. Você pode ajudar a buscar todas as informações de qualquer aluno cadastrado."},
             {"role": "user", "content": message}
         ]
         

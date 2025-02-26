@@ -7,6 +7,7 @@ import openai
 from django.conf import settings
 from django.db.models import Avg
 from apps.alunos.models import Aluno, Nota
+from decimal import Decimal
 
 # Verifica a versão do openai para definir a forma correta de uso
 try:
@@ -54,7 +55,12 @@ def get_student_info(student_id=None, name=None):
         notas = Nota.objects.filter(aluno=aluno)
         media = notas.aggregate(Avg('valor'))['valor__avg'] or 0
         
-        return {
+        # Convert Decimal to float for JSON serialization
+        if isinstance(media, Decimal):
+            media = float(media)
+        
+        # Create the response dictionary with all student info
+        response = {
             "id": aluno.id,
             "nome": aluno.nome,
             "email": aluno.email,
@@ -62,11 +68,20 @@ def get_student_info(student_id=None, name=None):
             "media_notas": round(media, 2),
             "numero_notas": notas.count()
         }
+        
+        # Add photo URL if available
+        if aluno.foto:
+            response["foto_url"] = aluno.foto.url
+        else:
+            response["foto_url"] = None
+            
+        return response
     except Aluno.DoesNotExist:
         return "Aluno não encontrado."
     except Exception as e:
         return f"Erro ao buscar informações do aluno: {str(e)}"
 
+# And modify the get_student_grades function
 def get_student_grades(student_id=None, name=None):
     """
     Busca as notas de um aluno pelo ID ou nome.
@@ -86,9 +101,12 @@ def get_student_grades(student_id=None, name=None):
         
         resultado = []
         for nota in notas:
+            # Convert Decimal to float for JSON serialization
+            valor = float(nota.valor) if isinstance(nota.valor, Decimal) else nota.valor
+            
             resultado.append({
                 "disciplina": nota.disciplina,
-                "valor": nota.valor,
+                "valor": valor,
                 "data": nota.data.strftime("%d/%m/%Y") if nota.data else "Não informada"
             })
         
