@@ -281,10 +281,30 @@ function addMessage(message, isUser = false) {
     .then(data => {
         removeTypingIndicator();
         if (data.response) {
-            addMessage(data.response);
+            // Verificar se a resposta contém formatação especial (como tabelas ou listas)
+            if (data.response.includes('<table>') || data.response.includes('<ul>')) {
+                // Se contiver HTML, renderizar como HTML
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message', 'bot-message');
+                
+                const now = new Date();
+                const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                                  now.getMinutes().toString().padStart(2, '0');
+                
+                messageElement.innerHTML = `
+                    ${data.response}
+                    <div class="message-time">${timeString}</div>
+                `;
+                
+                chatMessages.appendChild(messageElement);
+            } else {
+                // Caso contrário, usar a função addMessage normal
+                addMessage(data.response);
+            }
         } else {
             addMessage('Desculpe, não consegui processar sua solicitação. Por favor, tente novamente.');
         }
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     })
     .catch(error => {
         console.error('Erro:', error);
