@@ -197,6 +197,42 @@
     .delay-2 { animation-delay: 0.2s; }
     .delay-3 { animation-delay: 0.3s; }
     .delay-4 { animation-delay: 0.4s; }
+
+
+    @media (max-width: 768px) {
+    .student-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .student-photo {
+        margin-right: 0;
+        margin-bottom: 1rem;
+    }
+    
+    .badge-nivel {
+        position: static;
+        margin-bottom: 1rem;
+    }
+    
+    .student-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .student-actions div {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .student-actions a {
+        flex: 1;
+        text-align: center;
+    }
+}
 </style>
 
 <div class="container mt-4">
@@ -304,12 +340,12 @@
                     
                     <div class="student-detail">
                         <i class="fas fa-phone"></i>
-                        <span>{{ aluno.telefone }}</span>
+                        <span>{{ aluno.telefone|default:"Não informado" }}</span>
                     </div>
                     
                     <div class="student-detail">
                         <i class="fas fa-envelope"></i>
-                        <span>{{ aluno.email }}</span>
+                        <span>{{ aluno.email|default:"Não informado" }}</span>
                     </div>
                 </div>
                 
@@ -403,16 +439,24 @@
             });
         }, 100);
         
-        // Melhorar a experiência de filtragem
+        // Validação do campo de busca
+        const searchInput = document.getElementById('search');
         const filterForm = document.querySelector('form');
-        const filterSelects = filterForm.querySelectorAll('select');
         
-        filterSelects.forEach(select => {
-            select.addEventListener('change', function() {
-                filterForm.submit();
+        filterForm.addEventListener('submit', function(e) {
+            const searchValue = searchInput.value.trim();
+            
+            // Se o campo de busca tiver menos de 2 caracteres e não houver outros filtros ativos
+            if (searchValue.length > 0 && searchValue.length < 2 && 
+                !document.getElementById('nivel').value && 
+                !document.getElementById('ano').value && 
+                !document.getElementById('turno').value) {
+                e.preventDefault();
+                alert('Por favor, digite pelo menos 2 caracteres para buscar.');
+                return false;
+            }
 
-                
-            });
+        
         });
     });
 </script>
