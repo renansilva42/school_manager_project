@@ -52,7 +52,8 @@ def get_student_info(query: str) -> Optional[Dict]:
         words_to_remove = ["notas do", "notas da", "telefone do", "telefone da", 
                           "foto do", "foto da", "endereço do", "endereço da", 
                           "informações do", "informações da", "dados do", "dados da",
-                          "aluno", "aluna", "estudante", "o", "a", "do", "da"]
+                          "aluno", "aluna", "estudante", "o", "a", "do", "da",
+                          "responsável do", "responsável da", "responsável"]
         
         # Remove words from the query
         normalized_query = original_query
@@ -66,31 +67,52 @@ def get_student_info(query: str) -> Optional[Dict]:
         print(f"Query normalizada: '{normalized_query}'")
         
         # Try different search strategies
+        aluno = None
         
         # 1. First try exact match
         aluno = Aluno.objects.filter(nome__iexact=normalized_query).first()
         
-        # 2. Try first name match
+        # 2. Try first name match for single name queries
+        if not aluno and len(normalized_query.split()) == 1:
+            # This is a single name query, so search for it as a first name
+            first_name = normalized_query
+            if len(first_name) >= 2:
+                # Look for students whose first name matches the query
+                for student in Aluno.objects.all():
+                    student_first_name = student.nome.split()[0].lower()
+                    if student_first_name == first_name:
+                        aluno = student
+                        break
+        
+        # 3. Try first name match for any query
         if not aluno:
             first_name = normalized_query.split()[0] if normalized_query.split() else normalized_query
             if len(first_name) >= 2:
                 aluno = Aluno.objects.filter(nome__istartswith=first_name).first()
         
-        # 3. Try partial match at the beginning
+        # 4. Try partial match at the beginning
         if not aluno:
             aluno = Aluno.objects.filter(nome__istartswith=normalized_query).first()
         
-        # 4. Try contains match
+        # 5. Try contains match
         if not aluno:
             aluno = Aluno.objects.filter(nome__icontains=normalized_query).first()
         
-        # 5. Try with original query if normalized query failed
+        # 6. Try with original query if normalized query failed
         if not aluno and normalized_query != original_query:
             aluno = Aluno.objects.filter(
                 Q(nome__iexact=original_query) | 
                 Q(nome__istartswith=original_query) | 
                 Q(nome__icontains=original_query)
             ).first()
+        
+        # 7. Last resort: try to match any part of any name
+        if not aluno:
+            for student in Aluno.objects.all():
+                student_names = student.nome.lower().split()
+                if any(name == normalized_query.lower() for name in student_names):
+                    aluno = student
+                    break
         
         if aluno:
             print(f"Aluno encontrado: {aluno.nome}")
