@@ -90,14 +90,13 @@
     }
     
     .badge-nivel {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        padding: 0.3rem 0.6rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: bold;
-    }
+    display: inline-block;
+    padding: 0.3rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
     
     .badge-efi {
         background-color: #28a745;
@@ -238,6 +237,8 @@
                     <option value="7" {% if request.GET.ano == '7' %}selected{% endif %}>7º Ano</option>
                     <option value="8" {% if request.GET.ano == '8' %}selected{% endif %}>8º Ano</option>
                     <option value="9" {% if request.GET.ano == '9' %}selected{% endif %}>9º Ano</option>
+                    <option value="901" {% if request.GET.ano == '901' %}selected{% endif %}>9º Ano - Turma 901</option>
+                    <option value="902" {% if request.GET.ano == '902' %}selected{% endif %}>9º Ano - Turma 902</option>
                 </select>
             </div>
             
@@ -269,23 +270,25 @@
         {% for aluno in alunos %}
         <div class="col-md-6 col-lg-4 mb-4 animated delay-{{ forloop.counter|divisibleby:3|yesno:'3,1,2' }}">
             <div class="student-card">
-                <div class="student-header d-flex align-items-center">
-                    {% if aluno.foto %}
-                    <img src="{{ aluno.foto.url }}" alt="Foto do aluno" class="student-photo">
-                    {% else %}
-                    <div class="student-photo d-flex align-items-center justify-content-center bg-light text-dark">
-                        <i class="fas fa-user-graduate"></i>
-                    </div>
-                    {% endif %}
-                    
-                    <div>
-                        <h5 class="mb-0">{{ aluno.nome }}</h5>
-                        <small>Matrícula: {{ aluno.matricula }}</small>
-                    </div>
-                    
+                <div class="student-header">
                     <span class="badge-nivel badge-{{ aluno.nivel|lower }}">
                         {{ aluno.get_nivel_display }}
                     </span>
+                    
+                    <div class="d-flex align-items-center mt-2">
+                        {% if aluno.foto %}
+                        <img src="{{ aluno.foto.url }}" alt="Foto do aluno" class="student-photo">
+                        {% else %}
+                        <div class="student-photo d-flex align-items-center justify-content-center bg-light text-dark">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <div>
+                            <h5 class="mb-0">{{ aluno.nome }}</h5>
+                            <small>Matrícula: {{ aluno.matricula }}</small>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="student-info">
@@ -407,6 +410,8 @@
         filterSelects.forEach(select => {
             select.addEventListener('change', function() {
                 filterForm.submit();
+
+                
             });
         });
     });

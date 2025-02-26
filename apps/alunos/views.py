@@ -8,43 +8,49 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import Aluno
 from .forms import AlunoForm, NotaForm
+from django.core.paginator import Paginator
+from django.db import models
 
 def is_admin(user):
     return user.groups.filter(name='Administradores').exists()
 
-@login_required
 def lista_alunos(request):
-    # Parâmetros de filtro da URL
-    nivel_filter = request.GET.get('nivel')
-    turno_filter = request.GET.get('turno')
-    ano_filter = request.GET.get('ano')
+    # Obter parâmetros de filtro
+    nivel = request.GET.get('nivel', '')
+    turno = request.GET.get('turno', '')
+    ano = request.GET.get('ano', '')
+    search = request.GET.get('search', '')
     
-    # Iniciar com todos os alunos
-    alunos = Aluno.objects.all()
+    # Iniciar queryset com todos os alunos
+    queryset = Aluno.objects.all()
     
     # Aplicar filtros se fornecidos
-    if nivel_filter:
-        alunos = alunos.filter(nivel=nivel_filter)
-    if turno_filter:
-        alunos = alunos.filter(turno=turno_filter)
-    if ano_filter:
-        alunos = alunos.filter(ano=ano_filter)
+    if nivel:
+        queryset = queryset.filter(nivel=nivel)
+    if turno:
+        queryset = queryset.filter(turno=turno)
+    if ano:
+        queryset = queryset.filter(ano=ano)
+    if search:
+        # Modificar esta parte para incluir busca por matrícula
+        queryset = queryset.filter(
+            models.Q(nome__icontains=search) | 
+            models.Q(matricula__icontains=search)
+        )
     
-    # Organizar por nível, turno, ano e nome
-    alunos = alunos.order_by('nivel', 'turno', 'ano', 'nome')
+    # Ordenar resultados
+    queryset = queryset.order_by('nivel', 'turno', 'ano', 'nome')
     
-    # Contexto para o template
+    # Paginação
+    paginator = Paginator(queryset, 12)  # 12 alunos por página
+    page_number = request.GET.get('page')
+    alunos = paginator.get_page(page_number)
+    
     context = {
         'alunos': alunos,
-        'nivel_choices': Aluno.NIVEL_CHOICES,
-        'turno_choices': Aluno.TURNO_CHOICES,
-        'ano_choices': Aluno.ANO_CHOICES,
-        'nivel_filter': nivel_filter,
-        'turno_filter': turno_filter,
-        'ano_filter': ano_filter,
     }
     
-    return render(request, 'alunos/lista_alunos.html', context)
+    return render(request, 'alunos/lista_alunos.html', context) 
 
 @login_required
 def detalhe_aluno(request, pk):
