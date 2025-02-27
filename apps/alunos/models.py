@@ -36,6 +36,19 @@ class Aluno(models.Model):
     foto = models.ImageField(upload_to='fotos_alunos', blank=True, null=True)
     dados_adicionais = models.TextField(blank=True, null=True)
     
+    # Add the missing fields
+    cpf = models.CharField(max_length=14, blank=True, null=True)
+    rg = models.CharField(max_length=20, blank=True, null=True)
+    turma = models.CharField(max_length=10, blank=True, null=True)
+    cidade = models.CharField(max_length=100, blank=True, null=True)
+    uf = models.CharField(max_length=2, blank=True, null=True)
+    nome_responsavel1 = models.CharField(max_length=100, blank=True, null=True)
+    telefone_responsavel1 = models.CharField(max_length=20, blank=True, null=True)
+    nome_responsavel2 = models.CharField(max_length=100, blank=True, null=True)
+    telefone_responsavel2 = models.CharField(max_length=20, blank=True, null=True)
+    data_matricula = models.DateField(blank=True, null=True)
+    observacoes = models.TextField(blank=True, null=True)
+    
     def __str__(self):
         return f"{self.nome} - {self.get_ano_display()} ({self.get_turno_display()})"
 
