@@ -31,14 +31,128 @@
             </div>
         </div>
         
-        <!-- Renderizar todos os outros campos do formulário, exceto o campo de foto -->
-        {% for field in form %}
-            {% if field.name != 'foto' %}
-                <div class="form-group">
-                    {{ field|as_crispy_field }}
+        <!-- Dados Pessoais -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Dados Pessoais</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.nome|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.data_nascimento|as_crispy_field }}
+                    </div>
                 </div>
-            {% endif %}
-        {% endfor %}
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.cpf|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.rg|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contato -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">Contato</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.telefone|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.email|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        {{ form.endereco|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        {{ form.cidade|as_crispy_field }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.uf|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Responsáveis -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Responsáveis</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.nome_responsavel1|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.telefone_responsavel1|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.nome_responsavel2|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.telefone_responsavel2|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informações Acadêmicas -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">Informações Acadêmicas</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.matricula|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.data_matricula|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        {{ form.nivel|as_crispy_field }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.turno|as_crispy_field }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.ano|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        {{ form.turma|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Observações -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0">Observações</h4>
+            </div>
+            <div class="card-body">
+                {{ form.observacoes|as_crispy_field }}
+            </div>
+        </div>
         
         <div class="mt-3">
             <button type="submit" class="btn btn-primary">Cadastrar</button>

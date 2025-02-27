@@ -6,10 +6,18 @@ from .models import Aluno, Nota
 class AlunoForm(forms.ModelForm):
     class Meta:
         model = Aluno
-        fields = ['nome', 'data_nascimento', 'foto', 'nivel', 'turno', 'ano', 'matricula', 'email', 'telefone', 'endereco', 'dados_adicionais']
+        fields = [
+            'nome', 'data_nascimento', 'cpf', 'rg', 'foto', 
+            'nivel', 'turno', 'ano', 'turma', 'matricula', 
+            'email', 'telefone', 'endereco', 'cidade', 'uf',
+            'nome_responsavel1', 'telefone_responsavel1',
+            'nome_responsavel2', 'telefone_responsavel2',
+            'data_matricula', 'observacoes'
+        ]
         widgets = {
             'data_nascimento': forms.DateInput(attrs={'type': 'date'}),
-            'dados_adicionais': forms.Textarea(attrs={'rows': 4}),
+            'data_matricula': forms.DateInput(attrs={'type': 'date'}),
+            'observacoes': forms.Textarea(attrs={'rows': 4}),
         }
 
     def __init__(self, *args, **kwargs):
