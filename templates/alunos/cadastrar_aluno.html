@@ -1,9 +1,48 @@
 {% extends 'base.html' %}
+{% block extra_css %}
+<style>
+    .card-header {
+        background-color: #007bff; /* Azul */
+        color: white;
+        font-weight: bold;
+    }
+    
+    /* Cores diferentes para cada seção */
+    .card-header.dados-pessoais {
+        background-color: #007bff; /* Azul */
+    }
+    
+    .card-header.contato {
+        background-color: #28a745; /* Verde */
+    }
+    
+    .card-header.responsaveis {
+        background-color: #6f42c1; /* Roxo */
+    }
+    
+    .card-header.info-academicas {
+        background-color: #fd7e14; /* Laranja */
+    }
+    
+    .card-header.observacoes {
+        background-color: #20c997; /* Turquesa */
+    }
+    
+    .card {
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-body {
+        padding: 20px;
+    }
+</style>
+{% endblock %}
 {% load crispy_forms_tags %}
-
 {% block title %}Cadastrar Aluno{% endblock %}
-
 {% block content %}
+
 <div class="container mt-4">
     <h1>Cadastrar Aluno</h1>
     <form method="post" enctype="multipart/form-data">
@@ -32,7 +71,7 @@
         </div>
         
         <!-- Dados Pessoais -->
-        <div class="card mb-4">
+        <div class="card card mb-4">
             <div class="card-header bg-primary text-white">
                 <h4 class="mb-0">Dados Pessoais</h4>
             </div>
@@ -57,7 +96,7 @@
         </div>
         
         <!-- Contato -->
-        <div class="card mb-4">
+        <div class="card card mb-4">
             <div class="card-header bg-info text-white">
                 <h4 class="mb-0">Contato</h4>
             </div>
