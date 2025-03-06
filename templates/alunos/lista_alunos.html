@@ -62,13 +62,6 @@
         flex-grow: 1;
     }
     
-    .student-name {
-        font-size: 1.2rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
-        color: var(--primary-color);
-    }
-    
     .student-detail {
         display: flex;
         align-items: center;
@@ -475,43 +468,72 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Função para atualizar o select de turno
-    function updateTurnoSelect() {
-        const nivel = nivelSelect.value;
+    function updateTurnoChoices(nivel) {
+        const currentTurno = turnoSelect.value || '{{ request.GET.turno }}';
         
-        // Reset e desabilita turno e ano
-        turnoSelect.value = '';
-        anoSelect.value = '';
-        turnoSelect.disabled = !nivel;
-        anoSelect.disabled = true;
+        // Limpar opções atuais
+        turnoSelect.innerHTML = '';
         
-        // Se EFI foi selecionado, força turno Manhã e atualiza anos
         if (nivel === 'EFI') {
+            // Para EFI, apenas turno da manhã
+            const optElement = document.createElement('option');
+            optElement.value = 'M';
+            optElement.textContent = 'Manhã';
+            turnoSelect.appendChild(optElement);
             turnoSelect.value = 'M';
             turnoSelect.disabled = true;
-            updateAnoSelect();
         } else if (nivel === 'EFF') {
             turnoSelect.disabled = false;
+            
+            // Adicionar opção padrão
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = 'Selecione um Turno';
+            turnoSelect.appendChild(defaultOpt);
+            
+            // Adicionar opções de turno
+            const options = [
+                {value: 'M', text: 'Manhã'},
+                {value: 'T', text: 'Tarde'}
+            ];
+            
+            options.forEach(option => {
+                const optElement = document.createElement('option');
+                optElement.value = option.value;
+                optElement.textContent = option.text;
+                if (option.value === currentTurno) {
+                    optElement.selected = true;
+                }
+                turnoSelect.appendChild(optElement);
+            });
+        } else {
+            turnoSelect.disabled = true;
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = 'Selecione um Turno';
+            turnoSelect.appendChild(defaultOpt);
         }
+        
+        // Atualizar as opções de ano após atualizar o turno
+        updateAnoChoices(turnoSelect.value, nivel);
     }
 
     // Função para atualizar o select de ano
-    function updateAnoSelect() {
-        const nivel = nivelSelect.value;
-        const turno = turnoSelect.value;
+    function updateAnoChoices(turno, nivel) {
+        const currentAno = anoSelect.value || '{{ request.GET.ano }}';
         
-        // Limpa opções atuais
+        // Limpar opções atuais
         anoSelect.innerHTML = '<option value="">Selecione o Ano</option>';
         
-        // Se nível e turno estão selecionados
         if (nivel && turno && anoOptions[nivel] && anoOptions[nivel][turno]) {
             anoSelect.disabled = false;
             
-            // Adiciona novas opções
+            // Adicionar novas opções
             anoOptions[nivel][turno].forEach(option => {
                 const optionElement = document.createElement('option');
                 optionElement.value = option.value;
                 optionElement.textContent = option.label;
-                if (option.value === '{{ request.GET.ano }}') {
+                if (option.value === currentAno) {
                     optionElement.selected = true;
                 }
                 anoSelect.appendChild(optionElement);
@@ -536,14 +558,14 @@ document.addEventListener('DOMContentLoaded', function() {
         timeout = setTimeout(submitForm, 500);
     }
 
-    // Event Listeners para os selects
+    // Configurar os event listeners
     nivelSelect.addEventListener('change', function() {
-        updateTurnoSelect();
+        updateTurnoChoices(this.value);
         debounceSubmit();
     });
 
     turnoSelect.addEventListener('change', function() {
-        updateAnoSelect();
+        updateAnoChoices(this.value, nivelSelect.value);
         debounceSubmit();
     });
 
@@ -556,11 +578,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Inicializa estados se houver valores pré-selecionados
+    // Inicializar os campos com base nos valores da URL
     if (nivelSelect.value) {
-        updateTurnoSelect();
+        updateTurnoChoices(nivelSelect.value);
         if (turnoSelect.value) {
-            updateAnoSelect();
+            updateAnoChoices(turnoSelect.value, nivelSelect.value);
         }
     }
 
