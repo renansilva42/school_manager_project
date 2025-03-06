@@ -16,7 +16,6 @@ from django.http import JsonResponse
 def is_admin(user):
     return user.groups.filter(name='Administradores').exists()
 
-
 def lista_alunos(request):
     nivel = request.GET.get('nivel', '')
     turno = request.GET.get('turno', '')
@@ -115,7 +114,6 @@ def adicionar_nota(request, aluno_pk):
         form = NotaForm()
     return render(request, 'alunos/adicionar_nota.html', {'form': form, 'aluno': aluno})
 
-# apps/alunos/views.py
 def exportar_detalhes_aluno_pdf(request, aluno_pk):
     aluno = get_object_or_404(Aluno, pk=aluno_pk)
     
@@ -151,8 +149,6 @@ def exportar_detalhes_aluno_pdf(request, aluno_pk):
     p.drawString(100, y, f"Turno: {aluno.get_turno_display()}")
     y -= 20
     p.drawString(100, y, f"Ano: {aluno.get_ano_display()}")
-    
-    # Continuar com o resto das informações...
     
     p.save()
     buffer.seek(0)

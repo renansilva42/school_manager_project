@@ -20,6 +20,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 INSTALLED_APPS = [
+    'supabase',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -32,6 +33,9 @@ INSTALLED_APPS = [
     'apps.usuarios',
     'apps.chatbot',
 ]
+
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
