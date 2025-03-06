@@ -3,8 +3,13 @@ from django.db import models
 from services.database import SupabaseService
 
 class AlunoManager:
-    def __init__(self):
-        self.db = SupabaseService()
+    class AlunoManager:
+        def __init__(self):
+            self.db = SupabaseService()
+
+        def all(self):
+            # Add this method to get all students
+            return self.filter()  # Using the existing filter method without parameters
 
     def create(self, **kwargs):
         return self.db.create_aluno(kwargs)
