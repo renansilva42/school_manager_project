@@ -10,15 +10,19 @@ from .models import Aluno
 from .forms import AlunoForm, NotaForm
 from django.core.paginator import Paginator
 from django.db import models
+from django.template.loader import render_to_string
+from django.http import JsonResponse
 
 def is_admin(user):
     return user.groups.filter(name='Administradores').exists()
+
 
 def lista_alunos(request):
     # Obter parâmetros de filtro
     nivel = request.GET.get('nivel', '')
     turno = request.GET.get('turno', '')
     ano = request.GET.get('ano', '')
+    search = request.GET.get('search', '')
     
     # Iniciar queryset com todos os alunos
     queryset = Aluno.objects.all()
@@ -27,7 +31,6 @@ def lista_alunos(request):
     if nivel:
         queryset = queryset.filter(nivel=nivel)
         if nivel == 'EFI':
-            # EFI é sempre turno da manhã
             queryset = queryset.filter(turno='M')
     
     if turno:
@@ -35,6 +38,12 @@ def lista_alunos(request):
     
     if ano:
         queryset = queryset.filter(ano=ano)
+        
+    if search:
+        queryset = queryset.filter(
+            models.Q(nome__icontains=search) |
+            models.Q(matricula__icontains=search)
+        )
     
     # Ordenar resultados
     queryset = queryset.order_by('nivel', 'turno', 'ano', 'nome')
@@ -44,11 +53,14 @@ def lista_alunos(request):
     page_number = request.GET.get('page')
     alunos = paginator.get_page(page_number)
     
-    context = {
-        'alunos': alunos,
-    }
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        html = render_to_string(
+            'alunos/partials/lista_alunos_partial.html',
+            {'alunos': alunos}
+        )
+        return JsonResponse({'html': html})
     
-    return render(request, 'alunos/lista_alunos.html', context)
+    return render(request, 'alunos/lista_alunos.html', {'alunos': alunos})
 
 @login_required
 def detalhe_aluno(request, pk):
