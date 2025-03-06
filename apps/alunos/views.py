@@ -19,30 +19,28 @@ def lista_alunos(request):
     nivel = request.GET.get('nivel', '')
     turno = request.GET.get('turno', '')
     ano = request.GET.get('ano', '')
-    search = request.GET.get('search', '')
     
     # Iniciar queryset com todos os alunos
     queryset = Aluno.objects.all()
     
-    # Aplicar filtros se fornecidos
+    # Aplicar filtros
     if nivel:
         queryset = queryset.filter(nivel=nivel)
+        if nivel == 'EFI':
+            # EFI é sempre turno da manhã
+            queryset = queryset.filter(turno='M')
+    
     if turno:
         queryset = queryset.filter(turno=turno)
+    
     if ano:
         queryset = queryset.filter(ano=ano)
-    if search:
-        # Modificar esta parte para incluir busca por matrícula
-        queryset = queryset.filter(
-            models.Q(nome__icontains=search) | 
-            models.Q(matricula__icontains=search)
-        )
     
     # Ordenar resultados
     queryset = queryset.order_by('nivel', 'turno', 'ano', 'nome')
     
     # Paginação
-    paginator = Paginator(queryset, 12)  # 12 alunos por página
+    paginator = Paginator(queryset, 12)
     page_number = request.GET.get('page')
     alunos = paginator.get_page(page_number)
     
@@ -50,7 +48,7 @@ def lista_alunos(request):
         'alunos': alunos,
     }
     
-    return render(request, 'alunos/lista_alunos.html', context) 
+    return render(request, 'alunos/lista_alunos.html', context)
 
 @login_required
 def detalhe_aluno(request, pk):

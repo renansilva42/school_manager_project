@@ -90,13 +90,13 @@
     }
     
     .badge-nivel {
-    display: inline-block;
-    padding: 0.3rem 0.6rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-}
+        display: inline-block;
+        padding: 0.3rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
     
     .badge-efi {
         background-color: #28a745;
@@ -198,41 +198,40 @@
     .delay-3 { animation-delay: 0.3s; }
     .delay-4 { animation-delay: 0.4s; }
 
-
     @media (max-width: 768px) {
-    .student-header {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
+        .student-header {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .student-photo {
+            margin-right: 0;
+            margin-bottom: 1rem;
+        }
+        
+        .badge-nivel {
+            position: static;
+            margin-bottom: 1rem;
+        }
+        
+        .student-actions {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .student-actions div {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            width: 100%;
+        }
+        
+        .student-actions a {
+            flex: 1;
+            text-align: center;
+        }
     }
-    
-    .student-photo {
-        margin-right: 0;
-        margin-bottom: 1rem;
-    }
-    
-    .badge-nivel {
-        position: static;
-        margin-bottom: 1rem;
-    }
-    
-    .student-actions {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    
-    .student-actions div {
-        display: flex;
-        gap: 0.5rem;
-        justify-content: center;
-        width: 100%;
-    }
-    
-    .student-actions a {
-        flex: 1;
-        text-align: center;
-    }
-}
 </style>
 
 <div class="container mt-4">
@@ -256,34 +255,25 @@
             <div class="col-md-3 mb-3">
                 <label for="nivel">Nível de Ensino</label>
                 <select name="nivel" id="nivel" class="form-control">
-                    <option value="">Todos</option>
+                    <option value="">Selecione o Nível</option>
                     <option value="EFI" {% if request.GET.nivel == 'EFI' %}selected{% endif %}>Ensino Fundamental Anos Iniciais</option>
                     <option value="EFF" {% if request.GET.nivel == 'EFF' %}selected{% endif %}>Ensino Fundamental Anos Finais</option>
                 </select>
             </div>
             
             <div class="col-md-3 mb-3">
-                <label for="ano">Ano</label>
-                <select name="ano" id="ano" class="form-control">
-                    <option value="">Todos</option>
-                    <option value="3" {% if request.GET.ano == '3' %}selected{% endif %}>3º Ano</option>
-                    <option value="4" {% if request.GET.ano == '4' %}selected{% endif %}>4º Ano</option>
-                    <option value="5" {% if request.GET.ano == '5' %}selected{% endif %}>5º Ano</option>
-                    <option value="6" {% if request.GET.ano == '6' %}selected{% endif %}>6º Ano</option>
-                    <option value="7" {% if request.GET.ano == '7' %}selected{% endif %}>7º Ano</option>
-                    <option value="8" {% if request.GET.ano == '8' %}selected{% endif %}>8º Ano</option>
-                    <option value="9" {% if request.GET.ano == '9' %}selected{% endif %}>9º Ano</option>
-                    <option value="901" {% if request.GET.ano == '901' %}selected{% endif %}>9º Ano - Turma 901</option>
-                    <option value="902" {% if request.GET.ano == '902' %}selected{% endif %}>9º Ano - Turma 902</option>
+                <label for="turno">Turno</label>
+                <select name="turno" id="turno" class="form-control" disabled>
+                    <option value="">Selecione o Turno</option>
+                    <option value="M" {% if request.GET.turno == 'M' %}selected{% endif %}>Manhã</option>
+                    <option value="T" {% if request.GET.turno == 'T' %}selected{% endif %}>Tarde</option>
                 </select>
             </div>
             
             <div class="col-md-3 mb-3">
-                <label for="turno">Turno</label>
-                <select name="turno" id="turno" class="form-control">
-                    <option value="">Todos</option>
-                    <option value="M" {% if request.GET.turno == 'M' %}selected{% endif %}>Manhã</option>
-                    <option value="T" {% if request.GET.turno == 'T' %}selected{% endif %}>Tarde</option>
+                <label for="ano">Ano</label>
+                <select name="ano" id="ano" class="form-control" disabled>
+                    <option value="">Selecione o Ano</option>
                 </select>
             </div>
             
@@ -426,38 +416,128 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Garantir que as animações sejam executadas corretamente
-        const elements = document.querySelectorAll('.animated');
-        elements.forEach(element => {
-            element.style.opacity = '0';
-        });
-        
-        setTimeout(() => {
-            elements.forEach(element => {
-                element.style.opacity = '1';
-            });
-        }, 100);
-        
-        // Validação do campo de busca
-        const searchInput = document.getElementById('search');
-        const filterForm = document.querySelector('form');
-        
-        filterForm.addEventListener('submit', function(e) {
-            const searchValue = searchInput.value.trim();
-            
-            // Se o campo de busca tiver menos de 2 caracteres e não houver outros filtros ativos
-            if (searchValue.length > 0 && searchValue.length < 2 && 
-                !document.getElementById('nivel').value && 
-                !document.getElementById('ano').value && 
-                !document.getElementById('turno').value) {
-                e.preventDefault();
-                alert('Por favor, digite pelo menos 2 caracteres para buscar.');
-                return false;
-            }
+document.addEventListener('DOMContentLoaded', function() {
+    const nivelSelect = document.getElementById('nivel');
+    const turnoSelect = document.getElementById('turno');
+    const anoSelect = document.getElementById('ano');
+    
+    // Define as opções de ano baseadas no nível e turno
+    const anoOptions = {
+        EFI: {
+            M: [
+                {value: '3', label: '3º Ano'},
+                {value: '4', label: '4º Ano'},
+                {value: '5', label: '5º Ano'}
+            ]
+        },
+        EFF: {
+            M: [
+                {value: '6', label: '6º Ano - Manhã'},
+                {value: '7', label: '7º Ano - Manhã'},
+                {value: '8', label: '8º Ano - Manhã'}
+            ],
+            T: [
+                {value: '6', label: '6º Ano - Tarde'},
+                {value: '7', label: '7º Ano - Tarde'},
+                {value: '8', label: '8º Ano - Tarde'},
+                {value: '901', label: '9º Ano - Turma 901'},
+                {value: '902', label: '9º Ano - Turma 902'}
+            ]
+        }
+    };
 
+    // Função para atualizar o select de turno
+    function updateTurnoSelect() {
+        const nivel = nivelSelect.value;
         
-        });
+        // Reset e desabilita turno e ano
+        turnoSelect.value = '';
+        anoSelect.value = '';
+        turnoSelect.disabled = !nivel;
+        anoSelect.disabled = true;
+        
+        // Se EFI foi selecionado, força turno Manhã e atualiza anos
+        if (nivel === 'EFI') {
+            turnoSelect.value = 'M';
+            turnoSelect.disabled = true;
+            updateAnoSelect();
+        } else if (nivel === 'EFF') {
+            turnoSelect.disabled = false;
+        }
+    }
+
+    // Função para atualizar o select de ano
+    function updateAnoSelect() {
+        const nivel = nivelSelect.value;
+        const turno = turnoSelect.value;
+        
+        // Limpa opções atuais
+        anoSelect.innerHTML = '<option value="">Selecione o Ano</option>';
+        
+        // Se nível e turno estão selecionados
+        if (nivel && turno && anoOptions[nivel] && anoOptions[nivel][turno]) {
+            anoSelect.disabled = false;
+            
+            // Adiciona novas opções
+            anoOptions[nivel][turno].forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option.value;
+                optionElement.textContent = option.label;
+                if (option.value === '{{ request.GET.ano }}') {
+                    optionElement.selected = true;
+                }
+                anoSelect.appendChild(optionElement);
+            });
+        } else {
+            anoSelect.disabled = true;
+        }
+    }
+
+    // Event Listeners
+    nivelSelect.addEventListener('change', function() {
+        updateTurnoSelect();
     });
+
+    turnoSelect.addEventListener('change', function() {
+        updateAnoSelect();
+    });
+
+    // Inicializa estados se houver valores pré-selecionados
+    if (nivelSelect.value) {
+        updateTurnoSelect();
+        if (turnoSelect.value) {
+            updateAnoSelect();
+        }
+    }
+
+    // Validação do campo de busca
+    const searchInput = document.getElementById('search');
+    const filterForm = document.querySelector('form');
+    
+    filterForm.addEventListener('submit', function(e) {
+        const searchValue = searchInput.value.trim();
+        
+        if (searchValue.length > 0 && searchValue.length < 2 && 
+            !nivelSelect.value && 
+            !turnoSelect.value && 
+            !anoSelect.value) {
+            e.preventDefault();
+            alert('Por favor, digite pelo menos 2 caracteres para buscar.');
+            return false;
+        }
+    });
+
+    // Garantir que as animações sejam executadas corretamente
+    const elements = document.querySelectorAll('.animated');
+    elements.forEach(element => {
+        element.style.opacity = '0';
+    });
+    
+    setTimeout(() => {
+        elements.forEach(element => {
+            element.style.opacity = '1';
+        });
+    }, 100);
+});
 </script>
 {% endblock %}
