@@ -232,9 +232,42 @@
             text-align: center;
         }
     }
+
+    /* Estilos para o indicador de carregamento */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
 </style>
 
 <div class="container mt-4">
+    <!-- Indicador de carregamento -->
+    <div class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Lista de Alunos</h1>
         
@@ -251,7 +284,7 @@
             <h4 class="mb-0">Filtros</h4>
         </div>
         
-        <form method="get" class="row">
+        <form method="get" id="filterForm" class="row">
             <div class="col-md-3 mb-3">
                 <label for="nivel">Nível de Ensino</label>
                 <select name="nivel" id="nivel" class="form-control">
@@ -279,14 +312,7 @@
             
             <div class="col-md-3 mb-3">
                 <label for="search">Buscar</label>
-                <div class="input-group">
-                    <input type="text" name="search" id="search" class="form-control" placeholder="Nome ou matrícula" value="{{ request.GET.search }}">
-                    <div class="input-group-append">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                </div>
+                <input type="text" name="search" id="search" class="form-control" placeholder="Nome ou matrícula" value="{{ request.GET.search }}">
             </div>
         </form>
     </div>
@@ -417,9 +443,11 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filterForm');
     const nivelSelect = document.getElementById('nivel');
     const turnoSelect = document.getElementById('turno');
     const anoSelect = document.getElementById('ano');
+    const searchInput = document.getElementById('search');
     
     // Define as opções de ano baseadas no nível e turno
     const anoOptions = {
@@ -493,13 +521,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Event Listeners
+    // Função para submeter o formulário
+    function submitForm() {
+        if (nivelSelect.value || turnoSelect.value || anoSelect.value || searchInput.value.length >= 2) {
+            showLoading();
+            filterForm.submit();
+        }
+    }
+
+    // Adiciona delay para evitar múltiplas submissões (debounce)
+    let timeout = null;
+    function debounceSubmit() {
+        clearTimeout(timeout);
+        timeout = setTimeout(submitForm, 500);
+    }
+
+    // Event Listeners para os selects
     nivelSelect.addEventListener('change', function() {
         updateTurnoSelect();
+        debounceSubmit();
     });
 
     turnoSelect.addEventListener('change', function() {
         updateAnoSelect();
+        debounceSubmit();
+    });
+
+    anoSelect.addEventListener('change', debounceSubmit);
+
+    // Event Listener para o campo de busca
+    searchInput.addEventListener('input', function() {
+        if (this.value.length >= 2 || this.value.length === 0) {
+            debounceSubmit();
+        }
     });
 
     // Inicializa estados se houver valores pré-selecionados
@@ -510,22 +564,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Validação do campo de busca
-    const searchInput = document.getElementById('search');
-    const filterForm = document.querySelector('form');
-    
-    filterForm.addEventListener('submit', function(e) {
-        const searchValue = searchInput.value.trim();
-        
-        if (searchValue.length > 0 && searchValue.length < 2 && 
-            !nivelSelect.value && 
-            !turnoSelect.value && 
-            !anoSelect.value) {
-            e.preventDefault();
-            alert('Por favor, digite pelo menos 2 caracteres para buscar.');
-            return false;
-        }
-    });
+    // Funções para mostrar e esconder o loading
+    function showLoading() {
+        document.querySelector('.loading-overlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.querySelector('.loading-overlay').style.display = 'none';
+    }
 
     // Garantir que as animações sejam executadas corretamente
     const elements = document.querySelectorAll('.animated');
