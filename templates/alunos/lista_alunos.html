@@ -355,22 +355,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Function to fetch students via AJAX
     function fetchAlunos(params = {}) {
-        showLoading();
-        
-        fetch(`/alunos/buscar?${new URLSearchParams(params)}`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('alunos-container').innerHTML = data.html;
-                hideLoading();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                hideLoading();
-                // Show error notification if you have a notification system
-            });
+    showLoading();
+    
+    // Change this to use the correct URL
+    fetch(`/alunos/buscar/?${new URLSearchParams(params)}`, {
+    headers: {
+        'X-Requested-With': 'XMLHttpRequest'
     }
+})
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('alunos-container').innerHTML = data.html;
+            hideLoading();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            hideLoading();
+            alert('Erro ao carregar os alunos. Por favor, tente novamente.');
+        });
+}
 
     // Function to update shift select
     function updateTurnoChoices(nivel) {

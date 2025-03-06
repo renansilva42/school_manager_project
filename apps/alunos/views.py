@@ -18,37 +18,27 @@ def is_admin(user):
 
 
 def lista_alunos(request):
-    # Obter parâmetros de filtro
     nivel = request.GET.get('nivel', '')
     turno = request.GET.get('turno', '')
     ano = request.GET.get('ano', '')
     search = request.GET.get('search', '')
     
-    # Iniciar queryset com todos os alunos
     queryset = Aluno.objects.all()
     
-    # Aplicar filtros
     if nivel:
         queryset = queryset.filter(nivel=nivel)
-        if nivel == 'EFI':
-            queryset = queryset.filter(turno='M')
-    
     if turno:
         queryset = queryset.filter(turno=turno)
-    
     if ano:
         queryset = queryset.filter(ano=ano)
-        
     if search:
         queryset = queryset.filter(
             models.Q(nome__icontains=search) |
             models.Q(matricula__icontains=search)
         )
     
-    # Ordenar resultados
     queryset = queryset.order_by('nivel', 'turno', 'ano', 'nome')
     
-    # Paginação
     paginator = Paginator(queryset, 12)
     page_number = request.GET.get('page')
     alunos = paginator.get_page(page_number)
@@ -60,7 +50,9 @@ def lista_alunos(request):
         )
         return JsonResponse({'html': html})
     
-    return render(request, 'alunos/lista_alunos.html', {'alunos': alunos})
+    return render(request, 'alunos/lista_alunos.html', {
+        'alunos': alunos
+    })
 
 @login_required
 def detalhe_aluno(request, pk):
