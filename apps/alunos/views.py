@@ -69,6 +69,9 @@ def detalhe_aluno(request, pk):
     if not aluno:
         raise Http404("Aluno não encontrado")
     
+    # Adicionar o ID ao dicionário do aluno
+    aluno['pk'] = pk  # ou usar o ID que já existe nos dados
+    
     return render(request, 'alunos/detalhe_aluno.html', {'aluno': aluno})
 
 @login_required
