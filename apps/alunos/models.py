@@ -7,6 +7,12 @@ from PIL import Image
 import re
 import os
 
+phone_regex = RegexValidator(
+        regex=r'^\(\d{2}\) \d{4,5}-\d{4}$',
+        message="Formato do telefone deve ser: (99) 99999-9999"
+    )
+    
+
 class AlunoManager(models.Manager):
     """Custom manager for Aluno model with additional query methods"""
     
@@ -76,10 +82,27 @@ class Aluno(models.Model):
         TARDE = 'T', 'Tarde'
 
     # Validators
-    phone_regex = RegexValidator(
-        regex=r'^\(\d{2}\) \d{4,5}-\d{4}$',
-        message="Formato do telefone deve ser: (99) 99999-9999"
+    nivel = models.CharField(
+        max_length=3,
+        choices=NivelChoices.choices,
+        verbose_name="Nível",
+        help_text="Nível de ensino do aluno"
     )
+    
+    matricula = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="Matrícula",
+        help_text="Número de matrícula do aluno"
+    )
+    
+    turno = models.CharField(
+        max_length=1,
+        choices=TurnoChoices.choices,
+        verbose_name="Turno",
+        help_text="Turno de estudo do aluno"
+    )
+    
     
     cpf_regex = RegexValidator(
         regex=r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
@@ -311,6 +334,85 @@ class Nota(models.Model):
         null=True,
         verbose_name="Observação"
     )
+    
+    # Contact Information
+    email = models.EmailField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="E-mail"
+    )
+    telefone = models.CharField(
+        max_length=15,
+        validators=[phone_regex],
+        blank=True,
+        verbose_name="Telefone"
+    )
+    
+    # Address Information
+    endereco = models.CharField(
+        max_length=255,
+        verbose_name="Endereço"
+    )
+    cidade = models.CharField(
+        max_length=100,
+        verbose_name="Cidade"
+    )
+    uf = models.CharField(
+        max_length=2,
+        verbose_name="UF"
+    )
+    
+    # Academic Information
+    ano = models.CharField(
+        max_length=3,
+        choices=AnoChoices.choices,
+        verbose_name="Ano"
+    )
+    turma = models.CharField(
+        max_length=50,
+        verbose_name="Turma"
+    )
+    data_matricula = models.DateField(
+        verbose_name="Data de Matrícula"
+    )
+    
+    # Guardian Information
+    nome_responsavel1 = models.CharField(
+        max_length=255,
+        verbose_name="Nome do Responsável 1"
+    )
+    telefone_responsavel1 = models.CharField(
+        max_length=15,
+        validators=[phone_regex],
+        verbose_name="Telefone do Responsável 1"
+    )
+    nome_responsavel2 = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Nome do Responsável 2"
+    )
+    telefone_responsavel2 = models.CharField(
+        max_length=15,
+        validators=[phone_regex],
+        blank=True,
+        null=True,
+        verbose_name="Telefone do Responsável 2"
+    )
+    
+    # Additional Information
+    rg = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="RG"
+    )
+    observacoes = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Observações"
+    )
 
     class Meta:
         verbose_name = "Nota"
@@ -319,6 +421,8 @@ class Nota(models.Model):
         unique_together = ['aluno', 'disciplina', 'bimestre']
         indexes = [
             models.Index(fields=['aluno', 'disciplina']),
+            # If you need to index by student name, use:
+            # models.Index(fields=['aluno__nome'])
         ]
 
     def __str__(self):
@@ -332,3 +436,11 @@ class Nota(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+        
+class NivelChoices(models.TextChoices):
+    EFI = 'EFI', 'Ensino Fundamental Anos Iniciais'
+    EFF = 'EFF', 'Ensino Fundamental Anos Finais'
+    
+class TurnoChoices(models.TextChoices):
+    MANHA = 'M', 'Manhã'
+    TARDE = 'T', 'Tarde'

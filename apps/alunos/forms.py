@@ -36,7 +36,7 @@ class AlunoForm(BaseForm):
         model = Aluno
         fields = [
             'nome', 'data_nascimento', 'cpf', 'rg', 'foto',
-            'nivel', 'turno', 'ano', 'turma', 'matricula',
+            'nivel', 'turno', 'ano', 'turma', 'matricula',  # matricula is expected here
             'email', 'telefone', 'endereco', 'cidade', 'uf',
             'nome_responsavel1', 'telefone_responsavel1',
             'nome_responsavel2', 'telefone_responsavel2',
