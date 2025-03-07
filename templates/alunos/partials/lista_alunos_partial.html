@@ -1,122 +1,109 @@
+<!-- templates/alunos/partial_lista_alunos.html -->
 {% if alunos %}
-<div class="row">
     {% for aluno in alunos %}
-    <div class="col-md-6 col-lg-4 mb-4 animated delay-{{ forloop.counter|divisibleby:3|yesno:'3,1,2' }}">
-        <div class="student-card">
-            <div class="student-header">
-                <span class="badge-nivel badge-{{ aluno.nivel|lower }}">
-                    {{ aluno.get_nivel_display }}
-                </span>
-                
-                <div class="d-flex align-items-center mt-2">
-                    {% if aluno.foto %}
-                    <img src="{{ aluno.foto.url }}" alt="Foto do aluno" class="student-photo">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    {% if aluno.foto_url %}
+                        <img src="{{ aluno.foto_url }}" alt="Foto do aluno" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
                     {% else %}
-                    <div class="student-photo d-flex align-items-center justify-content-center bg-light text-dark">
-                        <i class="fas fa-user-graduate"></i>
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
+                            <i class="fas fa-user-graduate text-white"></i>
+                        </div>
+                    {% endif %}
+                    <div>
+                        <h5 class="card-title mb-0">{{ aluno.nome }}</h5>
+                        <small class="text-muted">Matrícula: {{ aluno.matricula }}</small>
                     </div>
+                </div>
+                
+                <div class="mb-3">
+                    <p class="mb-1"><strong>Ano:</strong> {{ aluno.get_ano_display }}</p>
+                    <p class="mb-1"><strong>Turno:</strong> {{ aluno.get_turno_display }}</p>
+                    <p class="mb-0"><strong>Turma:</strong> {{ aluno.turma }}</p>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    {% if aluno.id %}  <!-- Verifica se o ID existe -->
+                        <a href="{% url 'detalhe_aluno' aluno.id %}" class="btn btn-primary">
+                            <i class="fas fa-eye me-1"></i> Ver Detalhes
+                        </a>
                     {% endif %}
                     
-                    <div>
-                        <h5 class="mb-0">{{ aluno.nome }}</h5>
-                        <small>Matrícula: {{ aluno.matricula }}</small>
-                    </div>
+                    {% if user.groups.all.0.name == 'Administradores' %}
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton{{ aluno.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton{{ aluno.id }}">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'editar_aluno' aluno.id %}">
+                                        <i class="fas fa-edit me-2"></i> Editar
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'excluir_aluno' aluno.id %}">
+                                        <i class="fas fa-trash-alt me-2"></i> Excluir
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    {% endif %}
                 </div>
-            </div>
-            
-            <div class="student-info">
-                <div class="student-detail">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>{{ aluno.get_ano_display }}</span>
-                </div>
-                
-                <div class="student-detail">
-                    <i class="fas fa-clock"></i>
-                    <span>{{ aluno.get_turno_display }}</span>
-                </div>
-                
-                <div class="student-detail">
-                    <i class="fas fa-phone"></i>
-                    <span>{{ aluno.telefone|default:"Não informado" }}</span>
-                </div>
-                
-                <div class="student-detail">
-                    <i class="fas fa-envelope"></i>
-                    <span>{{ aluno.email|default:"Não informado" }}</span>
-                </div>
-            </div>
-            
-            <div class="student-actions">
-                <a href="{% url 'detalhe_aluno' aluno.pk %}" class="btn btn-sm btn-info">
-                    <i class="fas fa-eye"></i> Detalhes
-                </a>
-                
-                {% if user.groups.all.0.name == 'Administradores' %}
-                <div>
-                    <a href="{% url 'editar_aluno' aluno.pk %}" class="btn btn-sm btn-warning">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
-                    <a href="{% url 'excluir_aluno' aluno.pk %}" class="btn btn-sm btn-danger">
-                        <i class="fas fa-trash-alt"></i> Excluir
-                    </a>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
     {% endfor %}
-</div>
 
-<div class="pagination-container animated delay-4">
-    <ul class="pagination">
-        {% if alunos.has_previous %}
-        <li class="page-item">
-            <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                <i class="fas fa-angle-double-left"></i>
-            </a>
-        </li>
-        <li class="page-item">
-            <a class="page-link" href="?page={{ alunos.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                <i class="fas fa-angle-left"></i>
-            </a>
-        </li>
-        {% endif %}
-        
-        {% for num in alunos.paginator.page_range %}
-            {% if alunos.number == num %}
-            <li class="page-item active">
-                <span class="page-link">{{ num }}</span>
-            </li>
-            {% elif num > alunos.number|add:'-3' and num < alunos.number|add:'3' %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
-            </li>
-            {% endif %}
-        {% endfor %}
-        
-        {% if alunos.has_next %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ alunos.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                <i class="fas fa-angle-right"></i>
-            </a>
-        </li>
-        <li class="page-item">
-            <a class="page-link" href="?page={{ alunos.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                <i class="fas fa-angle-double-right"></i>
-            </a>
-        </li>
-        {% endif %}
-    </ul>
-</div>
-{% else %}
-<div class="empty-state animated delay-2">
-    <i class="fas fa-search"></i>
-    <h3>Nenhum aluno encontrado</h3>
-    <p>Tente ajustar os filtros ou cadastre um novo aluno.</p>
-    {% if user.groups.all.0.name == 'Administradores' %}
-    <a href="{% url 'cadastrar_aluno' %}" class="btn btn-primary mt-3">
-        <i class="fas fa-plus"></i> Cadastrar Novo Aluno
-    </a>
+    {% if alunos.has_other_pages %}
+    <div class="col-12">
+        <nav aria-label="Navegação de página">
+            <ul class="pagination justify-content-center">
+                {% if alunos.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ alunos.previous_page_number }}" aria-label="Anterior">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-hidden="true">&laquo;</span>
+                    </li>
+                {% endif %}
+
+                {% for num in alunos.paginator.page_range %}
+                    {% if alunos.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if alunos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ alunos.next_page_number }}" aria-label="Próximo">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-hidden="true">&raquo;</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
     {% endif %}
-</div>
+{% else %}
+    <div class="col-12 text-center">
+        <div class="alert alert-info" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            Nenhum aluno encontrado com os critérios de busca especificados.
+        </div>
+    </div>
 {% endif %}
