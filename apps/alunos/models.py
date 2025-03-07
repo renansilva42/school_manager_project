@@ -2,14 +2,10 @@
 from django.db import models
 from services.database import SupabaseService
 
-class AlunoManager:
-    class AlunoManager:
-        def __init__(self):
-            self.db = SupabaseService()
 
-        def all(self):
-            # Add this method to get all students
-            return self.filter()  # Using the existing filter method without parameters
+class AlunoManager:
+    def __init__(self):
+        self.db = SupabaseService()
 
     def create(self, **kwargs):
         return self.db.create_aluno(kwargs)
@@ -25,6 +21,9 @@ class AlunoManager:
 
     def filter(self, **kwargs):
         return self.db.list_alunos(kwargs)
+
+    def all(self):
+        return self.filter()  # Using the existing filter method without parameters
 
 class Aluno:
     objects = AlunoManager()
