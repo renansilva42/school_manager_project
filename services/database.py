@@ -21,7 +21,13 @@ class SupabaseService:
                     f"matricula.ilike.%{filters['search']}%"
                 )
         
-        return query.order('nivel', 'turno', 'ano', 'nome').execute()
+        # Corrigindo a chamada do método order
+        query = query.order('nivel')
+        query = query.order('turno')
+        query = query.order('ano')
+        query = query.order('nome')
+        
+        return query.execute()
 
     def get_aluno(self, id):
         return self.client.table('alunos').select('*').eq('id', id).execute()

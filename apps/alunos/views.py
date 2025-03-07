@@ -7,6 +7,7 @@ from django.http import JsonResponse, Http404
 from services.database import SupabaseService
 from .forms import AlunoForm
 import uuid
+from .forms import AlunoForm, NotaForm
 
 def is_admin(user):
     return user.groups.filter(name='Administradores').exists()
@@ -42,6 +43,22 @@ def lista_alunos(request):
     return render(request, 'alunos/lista_alunos.html', {
         'alunos': alunos_page
     })
+
+@login_required
+def exportar_detalhes_aluno_pdf(request, aluno_pk):
+    supabase = SupabaseService()
+    response = supabase.get_aluno(aluno_pk)
+    aluno = response.data[0] if response and response.data else None
+    
+    if not aluno:
+        raise Http404("Aluno não encontrado")
+    
+    # Aqui você pode implementar a lógica de exportação para PDF
+    # Por exemplo, usando uma biblioteca como reportlab ou weasyprint
+    
+    # Por enquanto, vamos apenas redirecionar para a página de detalhes
+    messages.info(request, 'Funcionalidade em desenvolvimento')
+    return redirect('detalhe_aluno', pk=aluno_pk)
 
 @login_required
 def detalhe_aluno(request, pk):
