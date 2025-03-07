@@ -108,6 +108,8 @@ USE_TZ = True
 
 LOGIN_URL = '/usuarios/login/'
 
+LOGIN_REDIRECT_URL = '/'  # Isso redirecionará para a página inicial após o login
+
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [

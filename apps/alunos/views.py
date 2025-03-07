@@ -13,6 +13,7 @@ from django.db import models
 from django.template.loader import render_to_string
 from django.http import JsonResponse
 from services.database import SupabaseService
+import uuid
 
 def is_admin(user):
     return user.groups.filter(name='Administradores').exists()
