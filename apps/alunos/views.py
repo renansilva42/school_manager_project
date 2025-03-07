@@ -1,241 +1,192 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.template.loader import render_to_string
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse, Http404, HttpResponseForbidden
+from django.db.models import Avg, Q  # Adicionei Q aqui
+from django.utils.decorators import method_decorator
+from django.views.generic import ListView, DetailView
+from django.core.exceptions import PermissionDenied
 from services.database import SupabaseService
-from .forms import AlunoForm
+from .forms import AlunoForm, NotaForm, AlunoFilterForm
+from .models import Aluno, Nota
 import uuid
-from .forms import AlunoForm, NotaForm
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 def is_admin(user):
+    """Check if user is in Administrators group"""
     return user.groups.filter(name='Administradores').exists()
 
-@login_required
-def lista_alunos(request):
-    nivel = request.GET.get('nivel', '')
-    turno = request.GET.get('turno', '')
-    ano = request.GET.get('ano', '')
-    search = request.GET.get('search', '')
-    
-    supabase = SupabaseService()
-    response = supabase.list_alunos({
-        'nivel': nivel,
-        'turno': turno,
-        'ano': ano,
-        'search': search
-    })
-    
-    alunos = response.data if response else []
-    
-    paginator = Paginator(alunos, 12)
-    page_number = request.GET.get('page')
-    alunos_page = paginator.get_page(page_number)
-    
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        html = render_to_string(
-            'alunos/partials/lista_alunos_partial.html',
-            {'alunos': alunos_page}
-        )
-        return JsonResponse({'html': html})
-    
-    return render(request, 'alunos/lista_alunos.html', {
-        'alunos': alunos_page
-    })
+class AlunoListView(ListView):
+    model = Aluno
+    template_name = 'alunos/lista_alunos.html'
+    context_object_name = 'alunos'
+    paginate_by = 12
 
-@login_required
-def exportar_detalhes_aluno_pdf(request, aluno_pk):
-    supabase = SupabaseService()
-    response = supabase.get_aluno(aluno_pk)
-    aluno = response.data[0] if response and response.data else None
-    
-    if not aluno:
-        raise Http404("Aluno não encontrado")
-    
-    # Aqui você pode implementar a lógica de exportação para PDF
-    # Por exemplo, usando uma biblioteca como reportlab ou weasyprint
-    
-    # Por enquanto, vamos apenas redirecionar para a página de detalhes
-    messages.info(request, 'Funcionalidade em desenvolvimento')
-    return redirect('detalhe_aluno', pk=aluno_pk)
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
-@login_required
-def detalhe_aluno(request, pk):
-    supabase = SupabaseService()
-    response = supabase.get_aluno(pk)
-    aluno = response.data[0] if response and response.data else None
-    
-    if not aluno:
-        raise Http404("Aluno não encontrado")
-    
-    # Adicionar o ID ao dicionário do aluno
-    aluno['pk'] = pk  # ou usar o ID que já existe nos dados
-    
-    return render(request, 'alunos/detalhe_aluno.html', {'aluno': aluno})
+    def get_queryset(self):
+        queryset = Aluno.objects.all()
+        
+        # Apply filters
+        filter_form = AlunoFilterForm(self.request.GET)
+        if filter_form.is_valid():
+            if filter_form.cleaned_data.get('nivel'):
+                queryset = queryset.filter(nivel=filter_form.cleaned_data['nivel'])
+            if filter_form.cleaned_data.get('turno'):
+                queryset = queryset.filter(turno=filter_form.cleaned_data['turno'])
+            if filter_form.cleaned_data.get('ano'):
+                queryset = queryset.filter(ano=filter_form.cleaned_data['ano'])
+            if filter_form.cleaned_data.get('search'):
+                search_query = filter_form.cleaned_data['search']
+                queryset = queryset.filter(
+                    Q(nome__icontains=search_query) |
+                    Q(matricula__icontains=search_query) |
+                    Q(cpf__icontains=search_query)
+                )
+        
+        return queryset.order_by('nome')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter_form'] = AlunoFilterForm(self.request.GET)
+        return context
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            html = render_to_string(
+                'alunos/partials/lista_alunos_partial.html',
+                context,
+                request=self.request
+            )
+            return JsonResponse({'html': html})
+        return super().render_to_response(context, **response_kwargs)
 
 @login_required
 @user_passes_test(is_admin)
 def cadastrar_aluno(request):
+    """View for creating a new student"""
     if request.method == 'POST':
         form = AlunoForm(request.POST, request.FILES)
         if form.is_valid():
             try:
-                aluno_data = {
-                    'id': str(uuid.uuid4()),
-                    'nome': form.cleaned_data['nome'],
-                    'matricula': form.cleaned_data['matricula'],
-                    'data_nascimento': form.cleaned_data['data_nascimento'].strftime('%Y-%m-%d'),
-                    'nivel': form.cleaned_data['nivel'],
-                    'turno': form.cleaned_data['turno'],
-                    'ano': form.cleaned_data['ano'],
-                    'cpf': form.cleaned_data['cpf'],
-                    'rg': form.cleaned_data['rg'],
-                    'email': form.cleaned_data['email'],
-                    'telefone': form.cleaned_data['telefone'],
-                    'endereco': form.cleaned_data['endereco'],
-                    'cidade': form.cleaned_data['cidade'],
-                    'uf': form.cleaned_data['uf'],
-                    'nome_responsavel1': form.cleaned_data['nome_responsavel1'],
-                    'telefone_responsavel1': form.cleaned_data['telefone_responsavel1'],
-                    'nome_responsavel2': form.cleaned_data['nome_responsavel2'],
-                    'telefone_responsavel2': form.cleaned_data['telefone_responsavel2'],
-                    'data_matricula': form.cleaned_data['data_matricula'].strftime('%Y-%m-%d'),
-                    'observacoes': form.cleaned_data['observacoes'],
-                    'turma': form.cleaned_data['turma'],
-                }
-
-                supabase = SupabaseService()
+                aluno = form.save(commit=False)
+                aluno.id = uuid.uuid4()
                 
+                # Handle photo upload
                 if 'foto' in request.FILES:
-                    photo_url = supabase.upload_photo(
-                        request.FILES['foto'],
-                        aluno_data['id']
-                    )
+                    supabase = SupabaseService()
+                    photo_url = supabase.upload_photo(request.FILES['foto'], str(aluno.id))
                     if photo_url:
-                        aluno_data['foto_url'] = photo_url
+                        aluno.foto_url = photo_url
 
-                response = supabase.create_aluno(aluno_data)
+                aluno.save()
+                messages.success(request, 'Aluno cadastrado com sucesso!')
+                return redirect('detalhe_aluno', pk=aluno.id)
                 
-                if response:
-                    messages.success(request, 'Aluno cadastrado com sucesso!')
-                    return redirect('lista_alunos')
-                else:
-                    messages.error(request, 'Erro ao cadastrar aluno')
-                    
             except Exception as e:
-                messages.error(request, f'Erro ao cadastrar aluno: {str(e)}')
+                logger.error(f"Error creating student: {str(e)}")
+                messages.error(request, 'Erro ao cadastrar aluno. Por favor, tente novamente.')
     else:
         form = AlunoForm()
     
     return render(request, 'alunos/cadastrar_aluno.html', {'form': form})
 
+class AlunoDetailView(DetailView):
+    model = Aluno
+    template_name = 'alunos/detalhe_aluno.html'
+    context_object_name = 'aluno'
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        aluno = self.get_object()
+        context['notas'] = Nota.objects.filter(aluno=aluno).order_by('-data')
+        context['media_geral'] = aluno.get_media_geral()
+        return context
+
 @login_required
 @user_passes_test(is_admin)
 def editar_aluno(request, pk):
-    supabase = SupabaseService()
-    response = supabase.get_aluno(pk)
-    aluno = response.data[0] if response and response.data else None
-    
-    if not aluno:
-        raise Http404("Aluno não encontrado")
+    """View for editing an existing student"""
+    aluno = get_object_or_404(Aluno, pk=pk)
     
     if request.method == 'POST':
-        form = AlunoForm(request.POST, request.FILES)
+        form = AlunoForm(request.POST, request.FILES, instance=aluno)
         if form.is_valid():
             try:
-                aluno_data = {
-                    'nome': form.cleaned_data['nome'],
-                    'matricula': form.cleaned_data['matricula'],
-                    'data_nascimento': form.cleaned_data['data_nascimento'].strftime('%Y-%m-%d'),
-                    'nivel': form.cleaned_data['nivel'],
-                    'turno': form.cleaned_data['turno'],
-                    'ano': form.cleaned_data['ano'],
-                    # Add other fields...
-                }
+                aluno = form.save(commit=False)
                 
+                # Handle photo upload
                 if 'foto' in request.FILES:
-                    photo_url = supabase.upload_photo(
-                        request.FILES['foto'],
-                        pk
-                    )
+                    supabase = SupabaseService()
+                    photo_url = supabase.upload_photo(request.FILES['foto'], str(aluno.id))
                     if photo_url:
-                        aluno_data['foto_url'] = photo_url
+                        aluno.foto_url = photo_url
 
-                response = supabase.update_aluno(pk, aluno_data)
+                aluno.save()
+                messages.success(request, 'Aluno atualizado com sucesso!')
+                return redirect('detalhe_aluno', pk=aluno.id)
                 
-                if response:
-                    messages.success(request, 'Aluno atualizado com sucesso!')
-                    return redirect('detalhe_aluno', pk=pk)
-                    
             except Exception as e:
-                messages.error(request, f'Erro ao atualizar aluno: {str(e)}')
+                logger.error(f"Error updating student: {str(e)}")
+                messages.error(request, 'Erro ao atualizar aluno. Por favor, tente novamente.')
     else:
-        form = AlunoForm(initial=aluno)
+        form = AlunoForm(instance=aluno)
     
     return render(request, 'alunos/editar_aluno.html', {
         'form': form,
         'aluno': aluno
     })
-    
 
 @login_required
 @user_passes_test(is_admin)
 def excluir_aluno(request, pk):
-    supabase = SupabaseService()
-    response = supabase.get_aluno(pk)
-    aluno = response.data[0] if response and response.data else None
-    
-    if not aluno:
-        raise Http404("Aluno não encontrado")
+    """View for deleting a student"""
+    aluno = get_object_or_404(Aluno, pk=pk)
     
     if request.method == 'POST':
         try:
-            supabase.delete_aluno(pk)
-            messages.success(request, f'Aluno "{aluno["nome"]}" excluído com sucesso!')
+            nome_aluno = aluno.nome
+            aluno.delete()
+            messages.success(request, f'Aluno "{nome_aluno}" excluído com sucesso!')
             return redirect('lista_alunos')
         except Exception as e:
-            messages.error(request, f'Erro ao excluir aluno: {str(e)}')
+            logger.error(f"Error deleting student: {str(e)}")
+            messages.error(request, 'Erro ao excluir aluno. Por favor, tente novamente.')
             return redirect('detalhe_aluno', pk=pk)
     
     return render(request, 'alunos/confirmar_exclusao.html', {'aluno': aluno})
 
-def create_nota(self, data):
-    return self.client.table('notas').insert(data).execute()
-
 @login_required
 @user_passes_test(is_admin)
 def adicionar_nota(request, aluno_pk):
-    supabase = SupabaseService()
-    response = supabase.get_aluno(aluno_pk)
-    aluno = response.data[0] if response and response.data else None
-    
-    if not aluno:
-        raise Http404("Aluno não encontrado")
+    """View for adding a grade to a student"""
+    aluno = get_object_or_404(Aluno, pk=aluno_pk)
 
     if request.method == 'POST':
         form = NotaForm(request.POST)
         if form.is_valid():
             try:
-                nota_data = {
-                    'id': str(uuid.uuid4()),
-                    'aluno_id': aluno_pk,
-                    'disciplina': form.cleaned_data['disciplina'],
-                    'nota': form.cleaned_data['nota'],
-                    'data': form.cleaned_data['data'].strftime('%Y-%m-%d'),
-                    'bimestre': form.cleaned_data['bimestre']
-                }
+                nota = form.save(commit=False)
+                nota.aluno = aluno
+                nota.save()
                 
-                response = supabase.create_nota(nota_data)
+                messages.success(request, 'Nota adicionada com sucesso!')
+                return redirect('detalhe_aluno', pk=aluno_pk)
                 
-                if response:
-                    messages.success(request, 'Nota adicionada com sucesso!')
-                    return redirect('detalhe_aluno', pk=aluno_pk)
-                else:
-                    messages.error(request, 'Erro ao adicionar nota')
-                    
             except Exception as e:
-                messages.error(request, f'Erro ao adicionar nota: {str(e)}')
+                logger.error(f"Error adding grade: {str(e)}")
+                messages.error(request, 'Erro ao adicionar nota. Por favor, tente novamente.')
     else:
         form = NotaForm()
     
@@ -243,3 +194,45 @@ def adicionar_nota(request, aluno_pk):
         'form': form,
         'aluno': aluno
     })
+
+@login_required
+def exportar_detalhes_aluno_pdf(request, aluno_pk):
+    """View for exporting student details to PDF"""
+    aluno = get_object_or_404(Aluno, pk=aluno_pk)
+    
+    try:
+        # Implementation for PDF export would go here
+        # Using a library like ReportLab or WeasyPrint
+        messages.info(request, 'Funcionalidade em desenvolvimento')
+        return redirect('detalhe_aluno', pk=aluno_pk)
+    except Exception as e:
+        logger.error(f"Error exporting PDF: {str(e)}")
+        messages.error(request, 'Erro ao gerar PDF. Por favor, tente novamente.')
+        return redirect('detalhe_aluno', pk=aluno_pk)
+
+# API Views for AJAX requests
+@login_required
+def get_aluno_notas(request, aluno_pk):
+    """API view to get student grades"""
+    try:
+        aluno = get_object_or_404(Aluno, pk=aluno_pk)
+        notas = Nota.objects.filter(aluno=aluno).values(
+            'disciplina', 'valor', 'bimestre', 'data'
+        )
+        return JsonResponse({'notas': list(notas)})
+    except Exception as e:
+        logger.error(f"Error fetching grades: {str(e)}")
+        return JsonResponse({'error': 'Erro ao buscar notas'}, status=400)
+
+@login_required
+def get_aluno_media(request, aluno_pk):
+    """API view to get student average grades"""
+    try:
+        aluno = get_object_or_404(Aluno, pk=aluno_pk)
+        medias = Nota.objects.filter(aluno=aluno).values('disciplina').annotate(
+            media=Avg('valor')
+        )
+        return JsonResponse({'medias': list(medias)})
+    except Exception as e:
+        logger.error(f"Error calculating averages: {str(e)}")
+        return JsonResponse({'error': 'Erro ao calcular médias'}, status=400)
