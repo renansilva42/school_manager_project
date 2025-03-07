@@ -12,6 +12,15 @@ phone_regex = RegexValidator(
         message="Formato do telefone deve ser: (99) 99999-9999"
     )
     
+class AnoChoices(models.TextChoices):
+        ANO_3 = '3', '3º Ano'
+        ANO_4 = '4', '4º Ano'
+        ANO_5 = '5', '5º Ano'
+        ANO_6 = '6', '6º Ano'
+        ANO_7 = '7', '7º Ano'
+        ANO_8 = '8', '8º Ano'
+        ANO_901 = '901', '9º Ano - Turma 901'
+        ANO_902 = '902', '9º Ano - Turma 902'   
 
 class AlunoManager(models.Manager):
     """Custom manager for Aluno model with additional query methods"""
@@ -62,16 +71,7 @@ class Aluno(models.Model):
     Includes personal information, academic details, and contact information.
     """
     
-    # Choice Constants with improved organization
-    class AnoChoices(models.TextChoices):
-        ANO_3 = '3', '3º Ano'
-        ANO_4 = '4', '4º Ano'
-        ANO_5 = '5', '5º Ano'
-        ANO_6 = '6', '6º Ano'
-        ANO_7 = '7', '7º Ano'
-        ANO_8 = '8', '8º Ano'
-        ANO_901 = '901', '9º Ano - Turma 901'
-        ANO_902 = '902', '9º Ano - Turma 902'
+
     
     class NivelChoices(models.TextChoices):
         EFI = 'EFI', 'Ensino Fundamental Anos Iniciais'
