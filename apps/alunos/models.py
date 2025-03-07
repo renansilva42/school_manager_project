@@ -18,7 +18,7 @@ class Aluno(models.Model):
     data_nascimento = models.DateField(default=timezone.now)
     cpf = models.CharField(max_length=14, default='Não informado')
     rg = models.CharField(max_length=20, default='Não informado')
-    foto = models.ImageField(upload_to='alunos/', null=True, blank=True)
+    foto_url = models.URLField(max_length=500, null=True, blank=True)
     nivel = models.CharField(max_length=3, choices=[
         ('EFI', 'Ensino Fundamental Anos Iniciais'),
         ('EFF', 'Ensino Fundamental Anos Finais'),
@@ -46,7 +46,6 @@ class Aluno(models.Model):
     telefone_responsavel2 = models.CharField(max_length=15, blank=True, null=True)
     data_matricula = models.DateField(default=timezone.now)
     observacoes = models.TextField(blank=True, null=True)
-    foto = models.ImageField(upload_to='alunos/', null=True, blank=True)
     foto_url = models.URLField(max_length=500, null=True, blank=True)
 
     def __str__(self):
