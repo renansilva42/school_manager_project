@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 import re
 
 class Aluno(models.Model):
@@ -206,16 +207,21 @@ class Aluno(models.Model):
         return f"{self.nome} - Matrícula: {self.matricula}"
 
     def clean(self):
-        """Validate the model data."""
-        # Validate age
+        super().clean()
+        errors = {}
+        
+        # Validação de idade
         if self.data_nascimento:
-            age = (timezone.now().date() - self.data_nascimento).days / 365
-            if age < 5 or age > 18:
-                raise ValidationError('Idade deve estar entre 5 e 18 anos')
-
-        # Validate nivel and turno combination
+            idade = (timezone.now().date() - self.data_nascimento).days / 365
+            if idade < 5 or idade > 18:
+                errors['data_nascimento'] = _('Idade deve estar entre 5 e 18 anos')
+        
+        # Validação de nível e turno
         if self.nivel == 'EFI' and self.turno != 'M':
-            raise ValidationError('Ensino Fundamental Anos Iniciais só está disponível no turno da manhã')
+            errors['turno'] = _('Ensino Fundamental Anos Iniciais só está disponível no turno da manhã')
+        
+        if errors:
+            raise ValidationError(errors)
 
     def get_absolute_url(self):
         """Get the absolute URL for the student detail page."""

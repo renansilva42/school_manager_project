@@ -10,6 +10,7 @@ from django.views.generic import ListView, DetailView
 from django.core.exceptions import PermissionDenied
 from services.database import SupabaseService
 from .forms import AlunoForm, NotaForm, AlunoFilterForm
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .models import Aluno, Nota
 import uuid
 import logging
@@ -21,30 +22,25 @@ def is_admin(user):
     """Check if user is in Administrators group"""
     return user.groups.filter(name='Administradores').exists()
 
-class AlunoListView(ListView):
+class AlunoListView(LoginRequiredMixin, ListView):
     model = Aluno
     template_name = 'alunos/lista_alunos.html'
     context_object_name = 'alunos'
     paginate_by = 12
-
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
-
+    
     def get_queryset(self):
-        queryset = Aluno.objects.all()
+        queryset = super().get_queryset()
+        form = AlunoFilterForm(self.request.GET)
         
-        # Apply filters
-        filter_form = AlunoFilterForm(self.request.GET)
-        if filter_form.is_valid():
-            if filter_form.cleaned_data.get('nivel'):
-                queryset = queryset.filter(nivel=filter_form.cleaned_data['nivel'])
-            if filter_form.cleaned_data.get('turno'):
-                queryset = queryset.filter(turno=filter_form.cleaned_data['turno'])
-            if filter_form.cleaned_data.get('ano'):
-                queryset = queryset.filter(ano=filter_form.cleaned_data['ano'])
-            if filter_form.cleaned_data.get('search'):
-                search_query = filter_form.cleaned_data['search']
+        if form.is_valid():
+            if form.cleaned_data.get('nivel'):
+                queryset = queryset.filter(nivel=form.cleaned_data['nivel'])
+            if form.cleaned_data.get('turno'):
+                queryset = queryset.filter(turno=form.cleaned_data['turno'])
+            if form.cleaned_data.get('ano'):
+                queryset = queryset.filter(ano=form.cleaned_data['ano'])
+            if form.cleaned_data.get('search'):
+                search_query = form.cleaned_data['search']
                 queryset = queryset.filter(
                     Q(nome__icontains=search_query) |
                     Q(matricula__icontains=search_query) |

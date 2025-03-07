@@ -2,10 +2,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.lista_alunos, name='lista_alunos'),
-    path('buscar/', views.lista_alunos, name='buscar_alunos'),
-    # Altere esta linha para aceitar UUID
-    path('aluno/<str:pk>/', views.detalhe_aluno, name='detalhe_aluno'),
+    path('', views.AlunoListView.as_view(), name='lista_alunos'),
+    path('buscar/', views.AlunoListView.as_view(), name='buscar_alunos'),
+    path('aluno/<str:pk>/', views.AlunoDetailView.as_view(), name='detalhe_aluno'),
     path('cadastrar/', views.cadastrar_aluno, name='cadastrar_aluno'),
     path('editar/<str:pk>/', views.editar_aluno, name='editar_aluno'),
     path('excluir/<str:pk>/', views.excluir_aluno, name='excluir_aluno'),
