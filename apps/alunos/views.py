@@ -86,10 +86,10 @@ def cadastrar_aluno(request):
         form = AlunoForm(request.POST, request.FILES)
         if form.is_valid():
             try:
-                # Salva no Django
+                # Save in Django
                 aluno = form.save()
                 
-                # Prepara dados para o Supabase
+                # Prepare data for Supabase
                 aluno_data = {
                     'id': aluno.pk,
                     'nome': aluno.nome,
@@ -99,19 +99,41 @@ def cadastrar_aluno(request):
                     'serie': aluno.serie,
                     'turno': aluno.turno,
                     'ano': aluno.ano,
-                    'foto_url': aluno.foto.url if aluno.foto else None
+                    'foto_url': aluno.foto.url if aluno.foto else None,
+                    'cpf': aluno.cpf,
+                    'rg': aluno.rg,
+                    'email': aluno.email,
+                    'telefone': aluno.telefone,
+                    'endereco': aluno.endereco,
+                    'cidade': aluno.cidade,
+                    'uf': aluno.uf,
+                    'nome_responsavel1': aluno.nome_responsavel1,
+                    'telefone_responsavel1': aluno.telefone_responsavel1,
+                    'nome_responsavel2': aluno.nome_responsavel2,
+                    'telefone_responsavel2': aluno.telefone_responsavel2,
+                    'data_matricula': aluno.data_matricula.strftime('%Y-%m-%d'),
+                    'observacoes': aluno.observacoes
                 }
                 
-                # Salva no Supabase
+                # Save to Supabase
                 supabase_service = SupabaseService()
-                supabase_service.create_aluno(aluno_data)
+                response = supabase_service.create_aluno(aluno_data)
                 
-                messages.success(request, 'Aluno cadastrado com sucesso!')
-                return redirect('lista_alunos')
+                if response:
+                    messages.success(request, 'Aluno cadastrado com sucesso!')
+                    return redirect('lista_alunos')
+                else:
+                    messages.error(request, 'Erro ao salvar no Supabase')
+                    aluno.delete()  # Rollback Django save if Supabase fails
+                    
             except Exception as e:
+                print(f"Error saving student: {str(e)}")
                 messages.error(request, f'Erro ao cadastrar aluno: {str(e)}')
+                if 'aluno' in locals():
+                    aluno.delete()  # Rollback if exception occurs
     else:
         form = AlunoForm()
+    
     return render(request, 'alunos/cadastrar_aluno.html', {'form': form})
 
 @login_required

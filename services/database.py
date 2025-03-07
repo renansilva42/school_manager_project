@@ -1,22 +1,39 @@
 # services/database.py
 from supabase_client import get_supabase_client
 from datetime import datetime
+from supabase import create_client
+from django.conf import settings
 
 class SupabaseService:
     def __init__(self):
-        self.supabase = get_supabase_client()
+        self.supabase_url = settings.SUPABASE_URL
+        self.supabase_key = settings.SUPABASE_KEY
+        self.client = create_client(self.supabase_url, self.supabase_key)
 
-    def create_aluno(self, data):
-        return self.supabase.table('alunos').insert(data).execute()
+    def create_aluno(self, aluno_data):
+        try:
+            response = self.client.table('alunos').insert(aluno_data).execute()
+            print(f"Supabase response: {response}")
+            return response.data if response else None
+        except Exception as e:
+            print(f"Supabase error: {str(e)}")
+            return None
 
-    def get_aluno(self, id):
-        return self.supabase.table('alunos').select("*").eq('id', id).execute()
+    def update_aluno(self, aluno_id, aluno_data):
+        try:
+            response = self.client.table('alunos').update(aluno_data).eq('id', aluno_id).execute()
+            return response.data if response else None
+        except Exception as e:
+            print(f"Supabase error: {str(e)}")
+            return None
 
-    def update_aluno(self, id, data):
-        return self.supabase.table('alunos').update(data).eq('id', id).execute()
-
-    def delete_aluno(self, id):
-        return self.supabase.table('alunos').delete().eq('id', id).execute()
+    def delete_aluno(self, aluno_id):
+        try:
+            response = self.client.table('alunos').delete().eq('id', aluno_id).execute()
+            return response.data if response else None
+        except Exception as e:
+            print(f"Supabase error: {str(e)}")
+            return None
 
     def list_alunos(self, filters=None):
         query = self.supabase.table('alunos').select("*")

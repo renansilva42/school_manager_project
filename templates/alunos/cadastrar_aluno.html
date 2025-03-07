@@ -2,31 +2,16 @@
 {% block extra_css %}
 <style>
     .card-header {
-        background-color: #007bff; /* Azul */
+        background-color: #007bff;
         color: white;
         font-weight: bold;
     }
     
-    /* Cores diferentes para cada seção */
-    .card-header.dados-pessoais {
-        background-color: #007bff; /* Azul */
-    }
-    
-    .card-header.contato {
-        background-color: #28a745; /* Verde */
-    }
-    
-    .card-header.responsaveis {
-        background-color: #6f42c1; /* Roxo */
-    }
-    
-    .card-header.info-academicas {
-        background-color: #fd7e14; /* Laranja */
-    }
-    
-    .card-header.observacoes {
-        background-color: #20c997; /* Turquesa */
-    }
+    .card-header.dados-pessoais { background-color: #007bff; }
+    .card-header.contato { background-color: #28a745; }
+    .card-header.responsaveis { background-color: #6f42c1; }
+    .card-header.info-academicas { background-color: #fd7e14; }
+    .card-header.observacoes { background-color: #20c997; }
     
     .card {
         margin-bottom: 20px;
@@ -45,10 +30,25 @@
 
 <div class="container mt-4">
     <h1>Cadastrar Aluno</h1>
+
+    <!-- Nova seção de mensagens -->
+    {% if messages %}
+    <div class="messages mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         
-        <!-- Substituir o campo de foto original por nossa versão personalizada -->
+        <!-- Seção de Foto -->
         <div class="form-group">
             <label for="id_foto">Foto do Aluno</label>
             <div class="custom-file-container">
@@ -77,20 +77,12 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
-                        {{ form.nome|as_crispy_field }}
-                    </div>
-                    <div class="col-md-6">
-                        {{ form.data_nascimento|as_crispy_field }}
-                    </div>
+                    <div class="col-md-6">{{ form.nome|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.data_nascimento|as_crispy_field }}</div>
                 </div>
                 <div class="row">
-                    <div class="col-md-6">
-                        {{ form.cpf|as_crispy_field }}
-                    </div>
-                    <div class="col-md-6">
-                        {{ form.rg|as_crispy_field }}
-                    </div>
+                    <div class="col-md-6">{{ form.cpf|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.rg|as_crispy_field }}</div>
                 </div>
             </div>
         </div>
@@ -102,25 +94,15 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
-                        {{ form.telefone|as_crispy_field }}
-                    </div>
-                    <div class="col-md-6">
-                        {{ form.email|as_crispy_field }}
-                    </div>
+                    <div class="col-md-6">{{ form.telefone|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.email|as_crispy_field }}</div>
                 </div>
                 <div class="row">
-                    <div class="col-md-12">
-                        {{ form.endereco|as_crispy_field }}
-                    </div>
+                    <div class="col-md-12">{{ form.endereco|as_crispy_field }}</div>
                 </div>
                 <div class="row">
-                    <div class="col-md-8">
-                        {{ form.cidade|as_crispy_field }}
-                    </div>
-                    <div class="col-md-4">
-                        {{ form.uf|as_crispy_field }}
-                    </div>
+                    <div class="col-md-8">{{ form.cidade|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.uf|as_crispy_field }}</div>
                 </div>
             </div>
         </div>
@@ -132,20 +114,12 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
-                        {{ form.nome_responsavel1|as_crispy_field }}
-                    </div>
-                    <div class="col-md-6">
-                        {{ form.telefone_responsavel1|as_crispy_field }}
-                    </div>
+                    <div class="col-md-6">{{ form.nome_responsavel1|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.telefone_responsavel1|as_crispy_field }}</div>
                 </div>
                 <div class="row">
-                    <div class="col-md-6">
-                        {{ form.nome_responsavel2|as_crispy_field }}
-                    </div>
-                    <div class="col-md-6">
-                        {{ form.telefone_responsavel2|as_crispy_field }}
-                    </div>
+                    <div class="col-md-6">{{ form.nome_responsavel2|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.telefone_responsavel2|as_crispy_field }}</div>
                 </div>
             </div>
         </div>
@@ -157,28 +131,16 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
-                        {{ form.matricula|as_crispy_field }}
-                    </div>
-                    <div class="col-md-6">
-                        {{ form.data_matricula|as_crispy_field }}
-                    </div>
+                    <div class="col-md-6">{{ form.matricula|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.data_matricula|as_crispy_field }}</div>
                 </div>
                 <div class="row">
-                    <div class="col-md-4">
-                        {{ form.nivel|as_crispy_field }}
-                    </div>
-                    <div class="col-md-4">
-                        {{ form.turno|as_crispy_field }}
-                    </div>
-                    <div class="col-md-4">
-                        {{ form.ano|as_crispy_field }}
-                    </div>
+                    <div class="col-md-4">{{ form.nivel|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.turno|as_crispy_field }}</div>
+                    <div class="col-md-4">{{ form.ano|as_crispy_field }}</div>
                 </div>
                 <div class="row">
-                    <div class="col-md-12">
-                        {{ form.turma|as_crispy_field }}
-                    </div>
+                    <div class="col-md-12">{{ form.turma|as_crispy_field }}</div>
                 </div>
             </div>
         </div>
@@ -199,6 +161,7 @@
         </div>
     </form>
 </div>
+
 
 <!-- Script para captura de foto -->
 <script>
