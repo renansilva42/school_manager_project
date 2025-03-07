@@ -86,35 +86,34 @@ def cadastrar_aluno(request):
         form = AlunoForm(request.POST, request.FILES)
         if form.is_valid():
             try:
-                # Save in Django
-                aluno = form.save()
+                # Não salve o aluno ainda
+                aluno = form.save(commit=False)
                 
-                # Prepare data for Supabase
+                # Prepare os dados para o Supabase
                 aluno_data = {
-                    'id': aluno.pk,
-                    'nome': aluno.nome,
-                    'matricula': aluno.matricula,
-                    'data_nascimento': aluno.data_nascimento.strftime('%Y-%m-%d'),
-                    'nivel': aluno.nivel,
-                    'turno': aluno.turno,
-                    'ano': aluno.ano,
-                    'foto': request.FILES.get('foto'),  # Add the photo file
-                    'cpf': aluno.cpf,
-                    'rg': aluno.rg,
-                    'email': aluno.email,
-                    'telefone': aluno.telefone,
-                    'endereco': aluno.endereco,
-                    'cidade': aluno.cidade,
-                    'uf': aluno.uf,
-                    'nome_responsavel1': aluno.nome_responsavel1,
-                    'telefone_responsavel1': aluno.telefone_responsavel1,
-                    'nome_responsavel2': aluno.nome_responsavel2,
-                    'telefone_responsavel2': aluno.telefone_responsavel2,
-                    'data_matricula': aluno.data_matricula.strftime('%Y-%m-%d'),
-                    'observacoes': aluno.observacoes
+                    'id': str(uuid.uuid4()),
+                    'nome': form.cleaned_data['nome'],
+                    'matricula': form.cleaned_data['matricula'],
+                    'data_nascimento': form.cleaned_data['data_nascimento'].strftime('%Y-%m-%d'),
+                    'nivel': form.cleaned_data['nivel'],
+                    'turno': form.cleaned_data['turno'],
+                    'ano': form.cleaned_data['ano'],
                 }
+
+                # Se houver foto, faça o upload
+                if 'foto' in request.FILES:
+                    supabase_service = SupabaseService()
+                    photo_url = supabase_service.upload_photo(
+                        request.FILES['foto'], 
+                        aluno_data['id']
+                    )
+                    if photo_url:
+                        aluno.foto_url = photo_url
                 
-                # Save to Supabase
+                # Salve o aluno no Django
+                aluno.save()
+                
+                # Crie o registro no Supabase
                 supabase_service = SupabaseService()
                 response = supabase_service.create_aluno(aluno_data)
                 
@@ -122,14 +121,10 @@ def cadastrar_aluno(request):
                     messages.success(request, 'Aluno cadastrado com sucesso!')
                     return redirect('lista_alunos')
                 else:
-                    messages.error(request, 'Erro ao salvar no Supabase')
-                    aluno.delete()  # Rollback Django save if Supabase fails
+                    messages.error(request, 'Erro ao cadastrar aluno no Supabase')
                     
             except Exception as e:
-                print(f"Error saving student: {str(e)}")
                 messages.error(request, f'Erro ao cadastrar aluno: {str(e)}')
-                if 'aluno' in locals():
-                    aluno.delete()  # Rollback if exception occurs
     else:
         form = AlunoForm()
     

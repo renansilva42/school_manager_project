@@ -4,10 +4,11 @@ from django.core.exceptions import ValidationError
 from .models import Aluno, Nota
 # apps/alunos/forms.py
 class AlunoForm(forms.ModelForm):
+    foto = forms.ImageField(required=False)
     class Meta:
         model = Aluno
         fields = [
-            'nome', 'data_nascimento', 'cpf', 'rg', 'foto', 
+            'nome', 'data_nascimento', 'cpf', 'rg', 'foto_url',
             'nivel', 'turno', 'ano', 'turma', 'matricula', 
             'email', 'telefone', 'endereco', 'cidade', 'uf',
             'nome_responsavel1', 'telefone_responsavel1',
