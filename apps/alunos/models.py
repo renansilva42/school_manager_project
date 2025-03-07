@@ -5,6 +5,12 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 import re
 
+def validate_image(fieldfile_obj):
+    filesize = fieldfile_obj.size
+    megabyte_limit = 5.0
+    if filesize > megabyte_limit * 1024 * 1024:
+        raise ValidationError(f"Tamanho máximo da imagem é {megabyte_limit}MB")
+
 class Aluno(models.Model):
     """
     Model representing a student in the school management system.
@@ -33,13 +39,6 @@ class Aluno(models.Model):
         ('T', 'Tarde'),
     ]
 
-    # Validators
-    @staticmethod
-    def validate_image(fieldfile_obj):
-        filesize = fieldfile_obj.file.size
-        megabyte_limit = 5.0
-        if filesize > megabyte_limit * 1024 * 1024:
-            raise ValidationError(f"Tamanho máximo da imagem é {megabyte_limit}MB")
 
     phone_regex = RegexValidator(
         regex=r'^\(\d{2}\) \d{4,5}-\d{4}$',
@@ -51,16 +50,15 @@ class Aluno(models.Model):
         message="Formato do CPF deve ser: 999.999.999-99"
     )
 
-    # Fields
+   # Fields
     foto = models.ImageField(
-        upload_to='alunos/fotos/',
-        null=True,
-        blank=True,
-        verbose_name='Foto do Aluno',
-        validators=[validate_image],
-        help_text='Tamanho máximo permitido: 5MB'
+    upload_to='alunos/fotos/',
+    null=True,
+    blank=True,
+    verbose_name='Foto do Aluno',
+    validators=[validate_image],
+    help_text='Tamanho máximo permitido: 5MB'
     )
-
     # Personal Information
     nome = models.CharField(
         max_length=255,
@@ -113,6 +111,7 @@ class Aluno(models.Model):
     )
     turma = models.CharField(
         max_length=10,
+        default="Não informada",
         verbose_name="Turma"
     )
     matricula = models.CharField(
@@ -131,29 +130,35 @@ class Aluno(models.Model):
     telefone = models.CharField(
         max_length=15,
         validators=[phone_regex],
+        default="(00) 00000-0000",
         verbose_name="Telefone"
     )
     endereco = models.CharField(
         max_length=255,
+        default="Não informado",
         verbose_name="Endereço"
     )
     cidade = models.CharField(
         max_length=100,
+        default="Não informada",
         verbose_name="Cidade"
     )
     uf = models.CharField(
         max_length=2,
+        default="NA",
         verbose_name="UF"
     )
 
     # Guardian Information
     nome_responsavel1 = models.CharField(
         max_length=255,
+        default="Não informado",
         verbose_name="Nome do Responsável 1"
     )
     telefone_responsavel1 = models.CharField(
         max_length=15,
         validators=[phone_regex],
+        default="(00) 00000-0000",
         verbose_name="Telefone do Responsável 1"
     )
     nome_responsavel2 = models.CharField(
@@ -184,10 +189,7 @@ class Aluno(models.Model):
         default=True,
         verbose_name="Ativo"
     )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Criado em"
-    )
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="Criado em")
     updated_at = models.DateTimeField(
         auto_now=True,
         verbose_name="Atualizado em"
@@ -284,10 +286,11 @@ class Nota(models.Model):
     )
     bimestre = models.IntegerField(
         choices=BIMESTRE_CHOICES,
+        default=1,
         verbose_name="Bimestre"
     )
     data = models.DateField(
-        auto_now_add=True,
+        default=timezone.now,
         verbose_name="Data de Lançamento"
     )
     observacao = models.TextField(
