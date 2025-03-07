@@ -236,3 +236,8 @@ def get_aluno_media(request, aluno_pk):
     except Exception as e:
         logger.error(f"Error calculating averages: {str(e)}")
         return JsonResponse({'error': 'Erro ao calcular médias'}, status=400)
+    
+try:
+    from .forms import AlunoForm, NotaForm, AlunoFilterForm
+except ImportError as e:
+    raise ImportError(f"Erro ao importar formulários: {str(e)}. Verifique se todas as classes estão definidas corretamente.")
