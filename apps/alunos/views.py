@@ -96,10 +96,9 @@ def cadastrar_aluno(request):
                     'matricula': aluno.matricula,
                     'data_nascimento': aluno.data_nascimento.strftime('%Y-%m-%d'),
                     'nivel': aluno.nivel,
-                    'serie': aluno.serie,
                     'turno': aluno.turno,
                     'ano': aluno.ano,
-                    'foto_url': aluno.foto.url if aluno.foto else None,
+                    'foto': request.FILES.get('foto'),  # Add the photo file
                     'cpf': aluno.cpf,
                     'rg': aluno.rg,
                     'email': aluno.email,
