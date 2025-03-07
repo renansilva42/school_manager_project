@@ -1,8 +1,10 @@
-# apps/alunos/management/commands/migrate_to_supabase.py
 from django.core.management.base import BaseCommand
 from apps.alunos.models import Aluno, Nota
 from services.database import SupabaseService
 from django.forms.models import model_to_dict
+import uuid
+from decimal import Decimal
+import json
 
 class Command(BaseCommand):
     help = 'Migra dados do SQLite para o Supabase'
@@ -15,6 +17,9 @@ class Command(BaseCommand):
         for aluno in alunos:
             # Converter o objeto aluno em um dicionário serializável
             aluno_dict = model_to_dict(aluno)
+            
+            # Gerar um novo UUID para cada aluno
+            aluno_dict['id'] = str(uuid.uuid4())
             
             # Converter campos de data para string
             if aluno_dict.get('data_nascimento'):
@@ -36,6 +41,10 @@ class Command(BaseCommand):
         notas = Nota.objects.all()
         for nota in notas:
             nota_dict = model_to_dict(nota)
+            
+            # Converter Decimal para float
+            if isinstance(nota_dict['valor'], Decimal):
+                nota_dict['valor'] = float(nota_dict['valor'])
             
             # Converter campos de data para string
             if nota_dict.get('data'):
