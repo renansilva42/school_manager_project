@@ -70,12 +70,15 @@ class Aluno(models.Model):
         help_text="Data de nascimento do aluno"
     )
     cpf = models.CharField(
-        max_length=14,
-        validators=[cpf_regex],
-        unique=True,
-        verbose_name="CPF",
-        help_text="CPF no formato: 999.999.999-99"
-    )
+    max_length=14,
+    validators=[cpf_regex],
+    unique=True,
+    verbose_name="CPF",
+    help_text="CPF no formato: 999.999.999-99",
+    null=True,  # Adicione esta linha
+    blank=True  # Adicione esta linha
+)
+    
     rg = models.CharField(
         max_length=20,
         unique=True,
