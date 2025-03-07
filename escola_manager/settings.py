@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'apps.alunos',
     'apps.usuarios',
     'apps.chatbot',
+    'django_extensions',
 ]
 
 SUPABASE_URL = os.getenv('SUPABASE_URL')
