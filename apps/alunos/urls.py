@@ -1,13 +1,56 @@
 from django.urls import path
 from . import views
 
+app_name = 'alunos'
+
 urlpatterns = [
-    path('', views.AlunoListView.as_view(), name='lista_alunos'),
-    path('buscar/', views.AlunoListView.as_view(), name='buscar_alunos'),
-    path('aluno/<str:pk>/', views.AlunoDetailView.as_view(), name='detalhe_aluno'),
-    path('cadastrar/', views.cadastrar_aluno, name='cadastrar_aluno'),
-    path('editar/<str:pk>/', views.editar_aluno, name='editar_aluno'),
-    path('excluir/<str:pk>/', views.excluir_aluno, name='excluir_aluno'),
-    path('adicionar_nota/<str:aluno_pk>/', views.adicionar_nota, name='adicionar_nota'),
-    path('aluno/<str:aluno_pk>/exportar_pdf/', views.exportar_detalhes_aluno_pdf, name='exportar_detalhes_aluno_pdf'),
+    # List and Search Views
+    path('', 
+         views.AlunoListView.as_view(), 
+         name='lista'),
+    
+    path('buscar/', 
+         views.AlunoListView.as_view(), 
+         name='buscar'),
+
+    # Detail View
+    path('aluno/<uuid:pk>/', 
+         views.AlunoDetailView.as_view(), 
+         name='detalhe'),
+
+    # CRUD Operations
+    path('cadastrar/', 
+         views.AlunoCreateView.as_view(), 
+         name='cadastrar'),
+    
+    path('editar/<uuid:pk>/', 
+         views.AlunoUpdateView.as_view(), 
+         name='editar'),
+    
+    path('excluir/<uuid:pk>/', 
+         views.AlunoDeleteView.as_view(), 
+         name='excluir'),
+
+    # Grade Management
+    path('aluno/<uuid:aluno_pk>/notas/adicionar/', 
+         views.NotaCreateView.as_view(), 
+         name='adicionar_nota'),
+
+    # API Endpoints
+    path('api/aluno/<uuid:aluno_pk>/notas/', 
+         views.AlunoNotasAPIView.as_view(), 
+         name='api_notas'),
+    
+    path('api/aluno/<uuid:aluno_pk>/medias/', 
+         views.AlunoMediaAPIView.as_view(), 
+         name='api_medias'),
+
+    # Export Operations
+    path('aluno/<uuid:aluno_pk>/exportar/pdf/', 
+         views.AlunoExportPDFView.as_view(), 
+         name='exportar_pdf'),
+    
+    path('aluno/<uuid:aluno_pk>/exportar/excel/', 
+         views.AlunoExportExcelView.as_view(), 
+         name='exportar_excel'),
 ]

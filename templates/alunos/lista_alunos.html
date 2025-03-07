@@ -3,6 +3,11 @@
 {% block title %}Lista de Alunos{% endblock %}
 
 {% block content %}
+
+{% url 'alunos:lista' %}
+{% url 'alunos:detalhe' pk=aluno.pk %}
+{% url 'alunos:adicionar_nota' aluno_pk=aluno.pk %}
+
 <style>
     .filters-container {
         background-color: white;
