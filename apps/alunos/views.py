@@ -12,6 +12,7 @@ from django.core.paginator import Paginator
 from django.db import models
 from django.template.loader import render_to_string
 from django.http import JsonResponse
+from services.database import SupabaseService
 
 def is_admin(user):
     return user.groups.filter(name='Administradores').exists()
@@ -64,13 +65,18 @@ def excluir_aluno(request, pk):
     aluno = get_object_or_404(Aluno, pk=pk)
     nome_aluno = aluno.nome
     
-    # Exclui o aluno
-    aluno.delete()
+    try:
+        # Exclui o aluno do Django
+        aluno.delete()
+        
+        # Exclui o aluno do Supabase
+        supabase_service = SupabaseService()
+        supabase_service.delete_aluno(pk)
+        
+        messages.success(request, f'Aluno "{nome_aluno}" excluído com sucesso!')
+    except Exception as e:
+        messages.error(request, f'Erro ao excluir aluno: {str(e)}')
     
-    # Adiciona mensagem de sucesso
-    messages.success(request, f'Aluno "{nome_aluno}" excluído com sucesso!')
-    
-    # Redireciona para a lista de alunos
     return redirect('lista_alunos')
 
 @login_required
@@ -79,8 +85,31 @@ def cadastrar_aluno(request):
     if request.method == 'POST':
         form = AlunoForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            return redirect('lista_alunos')
+            try:
+                # Salva no Django
+                aluno = form.save()
+                
+                # Prepara dados para o Supabase
+                aluno_data = {
+                    'id': aluno.pk,
+                    'nome': aluno.nome,
+                    'matricula': aluno.matricula,
+                    'data_nascimento': aluno.data_nascimento.strftime('%Y-%m-%d'),
+                    'nivel': aluno.nivel,
+                    'serie': aluno.serie,
+                    'turno': aluno.turno,
+                    'ano': aluno.ano,
+                    'foto_url': aluno.foto.url if aluno.foto else None
+                }
+                
+                # Salva no Supabase
+                supabase_service = SupabaseService()
+                supabase_service.create_aluno(aluno_data)
+                
+                messages.success(request, 'Aluno cadastrado com sucesso!')
+                return redirect('lista_alunos')
+            except Exception as e:
+                messages.error(request, f'Erro ao cadastrar aluno: {str(e)}')
     else:
         form = AlunoForm()
     return render(request, 'alunos/cadastrar_aluno.html', {'form': form})
@@ -93,8 +122,31 @@ def editar_aluno(request, pk):
     if request.method == 'POST':
         form = AlunoForm(request.POST, request.FILES, instance=aluno)
         if form.is_valid():
-            form.save()
-            return redirect('detalhe_aluno', pk=pk)
+            try:
+                # Salva no Django
+                aluno = form.save()
+                
+                # Prepara dados para o Supabase
+                aluno_data = {
+                    'id': aluno.pk,
+                    'nome': aluno.nome,
+                    'matricula': aluno.matricula,
+                    'data_nascimento': aluno.data_nascimento.strftime('%Y-%m-%d'),
+                    'nivel': aluno.nivel,
+                    'serie': aluno.serie,
+                    'turno': aluno.turno,
+                    'ano': aluno.ano,
+                    'foto_url': aluno.foto.url if aluno.foto else None
+                }
+                
+                # Atualiza no Supabase
+                supabase_service = SupabaseService()
+                supabase_service.update_aluno(pk, aluno_data)
+                
+                messages.success(request, 'Dados do aluno atualizados com sucesso!')
+                return redirect('detalhe_aluno', pk=pk)
+            except Exception as e:
+                messages.error(request, f'Erro ao atualizar aluno: {str(e)}')
     else:
         form = AlunoForm(instance=aluno)
     
