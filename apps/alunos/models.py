@@ -10,6 +10,7 @@ class Aluno(models.Model):
     Includes personal information, academic details, and contact information.
     """
     
+    # Choice Constants
     ANO_CHOICES = [
         ('3', '3º Ano'),
         ('4', '4º Ano'),
@@ -32,6 +33,13 @@ class Aluno(models.Model):
     ]
 
     # Validators
+    @staticmethod
+    def validate_image(fieldfile_obj):
+        filesize = fieldfile_obj.file.size
+        megabyte_limit = 5.0
+        if filesize > megabyte_limit * 1024 * 1024:
+            raise ValidationError(f"Tamanho máximo da imagem é {megabyte_limit}MB")
+
     phone_regex = RegexValidator(
         regex=r'^\(\d{2}\) \d{4,5}-\d{4}$',
         message="Formato do telefone deve ser: (99) 99999-9999"
@@ -40,6 +48,16 @@ class Aluno(models.Model):
     cpf_regex = RegexValidator(
         regex=r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
         message="Formato do CPF deve ser: 999.999.999-99"
+    )
+
+    # Fields
+    foto = models.ImageField(
+        upload_to='alunos/fotos/',
+        null=True,
+        blank=True,
+        verbose_name='Foto do Aluno',
+        validators=[validate_image],
+        help_text='Tamanho máximo permitido: 5MB'
     )
 
     # Personal Information

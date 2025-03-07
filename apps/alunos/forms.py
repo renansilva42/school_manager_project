@@ -18,6 +18,7 @@ class AlunoForm(forms.ModelForm):
             'data_matricula', 'observacoes'
         ]
         widgets = {
+            'foto': forms.FileInput(attrs={'accept': 'image/*'}),
             'data_nascimento': forms.DateInput(attrs={'type': 'date'}),
             'data_matricula': forms.DateInput(attrs={'type': 'date'}),
             'observacoes': forms.Textarea(attrs={'rows': 4}),
