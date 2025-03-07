@@ -157,6 +157,7 @@ def editar_aluno(request, pk):
         'form': form,
         'aluno': aluno
     })
+    
 
 @login_required
 @user_passes_test(is_admin)
@@ -178,3 +179,47 @@ def excluir_aluno(request, pk):
             return redirect('detalhe_aluno', pk=pk)
     
     return render(request, 'alunos/confirmar_exclusao.html', {'aluno': aluno})
+
+def create_nota(self, data):
+    return self.client.table('notas').insert(data).execute()
+
+@login_required
+@user_passes_test(is_admin)
+def adicionar_nota(request, aluno_pk):
+    supabase = SupabaseService()
+    response = supabase.get_aluno(aluno_pk)
+    aluno = response.data[0] if response and response.data else None
+    
+    if not aluno:
+        raise Http404("Aluno não encontrado")
+
+    if request.method == 'POST':
+        form = NotaForm(request.POST)
+        if form.is_valid():
+            try:
+                nota_data = {
+                    'id': str(uuid.uuid4()),
+                    'aluno_id': aluno_pk,
+                    'disciplina': form.cleaned_data['disciplina'],
+                    'nota': form.cleaned_data['nota'],
+                    'data': form.cleaned_data['data'].strftime('%Y-%m-%d'),
+                    'bimestre': form.cleaned_data['bimestre']
+                }
+                
+                response = supabase.create_nota(nota_data)
+                
+                if response:
+                    messages.success(request, 'Nota adicionada com sucesso!')
+                    return redirect('detalhe_aluno', pk=aluno_pk)
+                else:
+                    messages.error(request, 'Erro ao adicionar nota')
+                    
+            except Exception as e:
+                messages.error(request, f'Erro ao adicionar nota: {str(e)}')
+    else:
+        form = NotaForm()
+    
+    return render(request, 'alunos/adicionar_nota.html', {
+        'form': form,
+        'aluno': aluno
+    })

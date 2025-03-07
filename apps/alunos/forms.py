@@ -1,6 +1,26 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
+class NotaForm(forms.Form):
+    disciplina = forms.ChoiceField(choices=[
+        ('PORTUGUES', 'Português'),
+        ('MATEMATICA', 'Matemática'),
+        ('CIENCIAS', 'Ciências'),
+        ('HISTORIA', 'História'),
+        ('GEOGRAFIA', 'Geografia'),
+        ('INGLES', 'Inglês'),
+        ('ARTES', 'Artes'),
+        ('EDUCACAO_FISICA', 'Educação Física')
+    ])
+    nota = forms.DecimalField(max_digits=4, decimal_places=2)
+    data = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+    bimestre = forms.ChoiceField(choices=[
+        ('1', '1º Bimestre'),
+        ('2', '2º Bimestre'),
+        ('3', '3º Bimestre'),
+        ('4', '4º Bimestre')
+    ])
+
 class AlunoForm(forms.Form):
     nome = forms.CharField(max_length=255)
     data_nascimento = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
@@ -50,4 +70,7 @@ class AlunoForm(forms.Form):
         
         # Add other validations as needed
         
+        
         return cleaned_data
+    
+    
