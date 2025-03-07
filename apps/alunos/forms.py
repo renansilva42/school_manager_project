@@ -23,25 +23,17 @@ class AlunoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Remover os event handlers que estavam sendo adicionados anteriormente
-        # pois agora usamos addEventListener no JavaScript
-        
-        # Configurar os campos inicialmente
         instance = kwargs.get('instance')
         
         if instance:
-            # Se estamos editando um aluno existente
             nivel = instance.nivel
             turno = instance.turno
-            
-            # Configurar as opções de ano com base no nível e turno do aluno
             self.set_ano_choices(nivel, turno)
             
-            # Se for EFI, desabilitar o campo de turno
             if nivel == 'EFI':
                 self.fields['turno'].widget.attrs['disabled'] = 'disabled'
         else:
-            # Para um novo aluno, inicializar com todas as opções possíveis
+            # Agora vai funcionar porque ANO_CHOICES existe na classe Aluno
             self.fields['ano'].choices = Aluno.ANO_CHOICES
     
     def set_ano_choices(self, nivel, turno):

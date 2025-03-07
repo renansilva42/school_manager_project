@@ -2,6 +2,18 @@ from django.db import models
 from django.utils import timezone
 
 class Aluno(models.Model):
+    
+    ANO_CHOICES = [
+        ('3', '3º Ano'),
+        ('4', '4º Ano'),
+        ('5', '5º Ano'),
+        ('6', '6º Ano'),
+        ('7', '7º Ano'),
+        ('8', '8º Ano'),
+        ('901', '9º Ano - Turma 901'),
+        ('902', '9º Ano - Turma 902'),
+    ]
+    
     nome = models.CharField(max_length=255, default='Não informado')
     data_nascimento = models.DateField(default=timezone.now)
     cpf = models.CharField(max_length=14, default='Não informado')
@@ -15,16 +27,12 @@ class Aluno(models.Model):
         ('M', 'Manhã'),
         ('T', 'Tarde'),
     ], default='M')
-    ano = models.CharField(max_length=3, choices=[
-        ('3', '3º Ano'),
-        ('4', '4º Ano'),
-        ('5', '5º Ano'),
-        ('6', '6º Ano'),
-        ('7', '7º Ano'),
-        ('8', '8º Ano'),
-        ('901', '9º Ano - Turma 901'),
-        ('902', '9º Ano - Turma 902'),
-    ], default='3')
+    ano = models.CharField(
+        max_length=3,
+        choices=ANO_CHOICES,
+        default='3'
+    )
+    
     turma = models.CharField(max_length=10, default='A')
     matricula = models.CharField(max_length=20, unique=True, default='0000')
     email = models.EmailField(unique=True, null=True, blank=True)
