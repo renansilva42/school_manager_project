@@ -45,9 +45,13 @@ class AlunoManager(models.Manager):
         return queryset
 
 def validate_image(fieldfile_obj):
-    """Validate image size and format"""
-    if not fieldfile_obj:
-        return
+    megabyte_limit = 2
+    if hasattr(fieldfile_obj, 'size'):
+        if fieldfile_obj.size > megabyte_limit * 1024 * 1024:
+            raise ValidationError(f"A imagem não pode ser maior que {megabyte_limit}MB")
+    elif hasattr(fieldfile_obj, 'getbuffer'):
+        if len(fieldfile_obj.getbuffer()) > megabyte_limit * 1024 * 1024:
+            raise ValidationError(f"A imagem não pode ser maior que {megabyte_limit}MB")
         
     # Validate file size
     megabyte_limit = 5.0
