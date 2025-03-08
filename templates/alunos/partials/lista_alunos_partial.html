@@ -4,9 +4,12 @@
     <div class="col-md-4 mb-4">
         <div class="card h-100">
             <div class="card-body">
+                <span class="profile-badge badge-{{ aluno.nivel|lower }}">
+                    {{ aluno.get_nivel_display }}
+                </span>
                 <div class="d-flex align-items-center mb-3">
-                    {% if aluno.foto_url %}
-                        <img src="{{ aluno.foto_url }}" alt="Foto do aluno" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                    {% if aluno.foto %}
+                        <img src="{{ aluno.foto.url }}" alt="Foto do aluno" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
                     {% else %}
                         <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
                             <i class="fas fa-user-graduate text-white"></i>
