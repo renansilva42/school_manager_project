@@ -100,12 +100,8 @@ class AlunoListView(BaseAlunoView, ListView):
         logger.debug("Starting get_queryset")
         try:
             queryset = super().get_queryset()
-            form = AlunoFilterForm(self.request.GET)
-            
-            if form.is_valid():
-                queryset = self.apply_filters(queryset, form.cleaned_data)
-            
-            return queryset.select_related('created_by', 'updated_by').order_by('nome')
+            logger.debug(f"Queryset count: {queryset.count()}")
+            return queryset
         except Exception as e:
             logger.error(f"Error in get_queryset: {str(e)}")
             return Aluno.objects.none()
