@@ -52,6 +52,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.URLErrorMiddleware',
 ]
 
 ROOT_URLCONF = 'escola_manager.urls'
@@ -104,6 +105,22 @@ LOGGING = {
         'verbose': {
             'format': '{levelname} {asctime} {module} {message}',
             'style': '{',
+        },
+    },
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/url_errors.log',
+        },
+    },
+    'loggers': {
+        'core.middleware': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
         },
     },
     'handlers': {

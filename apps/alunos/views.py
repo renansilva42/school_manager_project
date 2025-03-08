@@ -194,7 +194,7 @@ class NotaUpdateView(LoginRequiredMixin, UpdateView):
         return super().dispatch(request, *args, **kwargs)
     
     def get_success_url(self):
-        return reverse_lazy('alunos:detalhe', kwargs={'pk': self.aluno.pk})
+        return reverse_lazy('alunos:detalhe', kwargs={'pk': self.object.pk})
     
     def form_valid(self, form):
         

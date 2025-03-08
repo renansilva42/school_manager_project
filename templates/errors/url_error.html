@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="alert alert-danger">
+        <h4 class="alert-heading">Erro na Aplicação</h4>
+        <p>{{ error_message }}</p>
+        {% if error_details %}
+        <hr>
+        <p class="mb-0">Detalhes técnicos: {{ error_details }}</p>
+        {% endif %}
+    </div>
+    <a href="{% url 'home' %}" class="btn btn-primary">Voltar para a página inicial</a>
+</div>
+{% endblock %}

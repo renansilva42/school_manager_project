@@ -211,7 +211,7 @@
     <nav aria-label="breadcrumb" class="animated">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'lista_alunos' %}">Alunos</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'alunos:lista' %}">Alunos</a></li>
             <li class="breadcrumb-item active" aria-current="page">{{ aluno.nome }}</li>
         </ol>
     </nav>

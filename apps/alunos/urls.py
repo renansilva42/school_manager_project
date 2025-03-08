@@ -1,36 +1,27 @@
 from django.urls import path
 from . import views
+from .constants import URL_NAMES
 
 app_name = 'alunos'
 
 urlpatterns = [
     # Lista principal e busca de alunos
-    path('', 
-         views.AlunoListView.as_view(), 
-         name='lista'),
+    path('', views.AlunoListView.as_view(), name=URL_NAMES['LISTA']),
     
     path('buscar/', 
          views.AlunoListView.as_view(), 
          name='buscar_alunos'),
     
     # Visualização detalhada do aluno
-    path('aluno/<uuid:pk>/', 
-         views.AlunoDetailView.as_view(), 
-         name='detalhe'),
+    path('aluno/<uuid:pk>/', views.AlunoDetailView.as_view(), name=URL_NAMES['DETALHE']),
 
     # Operações CRUD (Criar, Atualizar, Deletar)
-    path('cadastrar/', 
-         views.AlunoCreateView.as_view(), 
-         name='cadastrar'),
+    path('cadastrar/', views.AlunoCreateView.as_view(), name=URL_NAMES['CADASTRAR']),
     
-    path('editar/<uuid:pk>/', 
-         views.AlunoUpdateView.as_view(), 
-         name='editar'),
+    path('editar/<uuid:pk>/', views.AlunoUpdateView.as_view(), name=URL_NAMES['EDITAR']),
     
-    path('excluir/<uuid:pk>/', 
-         views.AlunoDeleteView.as_view(), 
-         name='excluir'),
-
+    path('excluir/<uuid:pk>/', views.AlunoDeleteView.as_view(), name=URL_NAMES['EXCLUIR']),
+    
     # Gerenciamento de notas
     path('aluno/<uuid:aluno_pk>/notas/adicionar/', 
          views.NotaCreateView.as_view(), 
