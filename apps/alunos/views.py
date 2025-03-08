@@ -25,6 +25,7 @@ import uuid
 import logging
 from django.core.exceptions import ValidationError
 import os
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 
 
 from django.urls import reverse_lazy
@@ -254,20 +255,53 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
             messages.error(self.request, f'Erro ao cadastrar aluno: {str(e)}')
             return self.form_invalid(form)
 
-
-class AlunoDetailView(BaseAlunoView, DetailView):
-    """View for displaying student details"""
-    template_name = 'alunos/detalhe_aluno.html'
-    context_object_name = 'aluno'
+class AlunoDeleteView(BaseAlunoView, DeleteView):
+    template_name = 'alunos/confirmar_exclusao.html'
+    success_url = reverse_lazy('alunos:lista')
+    
+    def delete(self, request, *args, **kwargs):
+        """
+        Sobrescreve o método delete para adicionar tratamento de erros
+        e logging adequado
+        """
+        try:
+            self.object = self.get_object()
+            nome_aluno = self.object.nome
+            
+            # Remove a foto se existir
+            if self.object.foto:
+                try:
+                    if os.path.exists(self.object.foto.path):
+                        os.remove(self.object.foto.path)
+                except Exception as e:
+                    logger.warning(f"Erro ao remover foto do aluno {nome_aluno}: {str(e)}")
+            
+            # Executa a deleção dentro de uma transação
+            with transaction.atomic():
+                # Remove notas relacionadas
+                self.object.nota_set.all().delete()
+                # Remove o aluno
+                self.object.delete()
+                
+                messages.success(
+                    request,
+                    f'O aluno "{nome_aluno}" foi excluído com sucesso!'
+                )
+                
+                logger.info(f"Aluno {nome_aluno} excluído com sucesso")
+                return HttpResponseRedirect(self.success_url)
+                
+        except Exception as e:
+            logger.error(f"Erro ao excluir aluno: {str(e)}")
+            messages.error(
+                request,
+                'Não foi possível excluir o aluno. Por favor, tente novamente.'
+            )
+            return redirect('alunos:lista')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        aluno = self.get_object()
-        context.update({
-            'notas': Nota.objects.filter(aluno=aluno).order_by('-data'),
-            'media_geral': aluno.get_media_geral(),
-            'form_nota': NotaForm()
-        })
+        context['title'] = 'Confirmar Exclusão'
         return context
 
 class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):

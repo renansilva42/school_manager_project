@@ -6,21 +6,31 @@ app_name = 'alunos'
 
 urlpatterns = [
     # Lista principal e busca de alunos
-    path('', views.AlunoListView.as_view(), name=URL_NAMES['LISTA']),
+    path('', 
+         views.AlunoListView.as_view(), 
+         name=URL_NAMES['LISTA']),
     
     path('buscar/', 
          views.AlunoListView.as_view(), 
          name='buscar_alunos'),
     
     # Visualização detalhada do aluno
-    path('aluno/<uuid:pk>/', views.AlunoDetailView.as_view(), name=URL_NAMES['DETALHE']),
+    path('aluno/<uuid:pk>/', 
+         views.AlunoDetailView.as_view(), 
+         name=URL_NAMES['DETALHE']),
 
     # Operações CRUD (Criar, Atualizar, Deletar)
-    path('cadastrar/', views.AlunoCreateView.as_view(), name=URL_NAMES['CADASTRAR']),
+    path('cadastrar/', 
+         views.AlunoCreateView.as_view(), 
+         name=URL_NAMES['CADASTRAR']),
     
-    path('editar/<uuid:pk>/', views.AlunoUpdateView.as_view(), name=URL_NAMES['EDITAR']),
+    path('editar/<uuid:pk>/', 
+         views.AlunoUpdateView.as_view(), 
+         name=URL_NAMES['EDITAR']),
     
-    path('excluir/<uuid:pk>/', views.AlunoDeleteView.as_view(), name=URL_NAMES['EXCLUIR']),
+    path('excluir/<uuid:pk>/', 
+         views.AlunoDeleteView.as_view(), 
+         name=URL_NAMES['EXCLUIR']),
     
     # Gerenciamento de notas
     path('aluno/<uuid:aluno_pk>/notas/adicionar/', 
@@ -45,19 +55,19 @@ urlpatterns = [
          name='api_medias'),
     
     path('api/alunos/', 
-     views.AlunoListView.as_view(), 
-     name='api_lista_alunos'),
+         views.AlunoListView.as_view(), 
+         name='api_lista_alunos'),
 
     # Operações de exportação
     path('aluno/<uuid:aluno_pk>/exportar/pdf/', 
-     views.AlunoExportPDFView.as_view(), 
-     name=URL_NAMES['EXPORTAR_PDF']),
+         views.AlunoExportPDFView.as_view(), 
+         name=URL_NAMES['EXPORTAR_PDF']),
 
     path('aluno/<uuid:aluno_pk>/exportar/excel/', 
-        views.AlunoExportExcelView.as_view(), 
-        name=URL_NAMES['EXPORTAR_EXCEL']),
+         views.AlunoExportExcelView.as_view(), 
+         name=URL_NAMES['EXPORTAR_EXCEL']),
 
     path('importar/excel/', 
-        views.AlunoImportExcelView.as_view(), 
-        name=URL_NAMES['IMPORTAR_EXCEL']),
+         views.AlunoImportExcelView.as_view(), 
+         name=URL_NAMES['IMPORTAR_EXCEL']),
 ]
