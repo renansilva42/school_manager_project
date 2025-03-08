@@ -6,6 +6,11 @@ from django.utils.translation import gettext_lazy as _
 from PIL import Image
 import re
 import os
+import uuid
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 phone_regex = RegexValidator(
         regex=r'^\(\d{2}\) \d{4,5}-\d{4}$',
@@ -73,15 +78,50 @@ def validate_image(fieldfile_obj):
         raise ValidationError("Formato de imagem não suportado. Use JPEG, PNG ou GIF.")
 
 def aluno_foto_path(instance, filename):
-    """Generate path for student photos"""
+    """Gera um caminho único para a foto do aluno"""
     ext = filename.split('.')[-1]
-    return f'alunos/fotos/{instance.matricula}.{ext}'
+    new_name = f"{instance.id}_{uuid.uuid4().hex[:8]}.{ext}"
+    return f'alunos/fotos/{new_name}'
 
 class Aluno(models.Model):
-    """
-    Model representing a student in the school management system.
-    Includes personal information, academic details, and contact information.
-    """
+    foto = models.ImageField(
+        upload_to=aluno_foto_path,
+        null=True,
+        blank=True,
+        verbose_name='Foto do Aluno',
+        validators=[validate_image],
+        help_text='Tamanho máximo permitido: 5MB'
+    )
+    
+    def save(self, *args, **kwargs):
+        """Método save aprimorado com logging"""
+        logger.debug(f"Iniciando salvamento do aluno: {self.nome}")
+        
+        if self.pk:
+            self.version += 1
+            logger.debug(f"Atualizando versão para: {self.version}")
+        
+        # Processar foto se presente
+        if self.foto:
+            try:
+                img = Image.open(self.foto)
+                logger.debug(f"Processando foto: {self.foto.name}")
+                
+                if img.height > 800 or img.width > 800:
+                    output_size = (800, 800)
+                    img.thumbnail(output_size)
+                    logger.debug("Foto redimensionada")
+                    
+                # Salvar imagem otimizada
+                img.save(self.foto.path, quality=85, optimize=True)
+                logger.info("Foto processada e salva com sucesso")
+                
+            except Exception as e:
+                logger.error(f"Erro ao processar foto: {str(e)}")
+                raise ValidationError(f"Erro ao processar imagem: {str(e)}")
+        
+        super().save(*args, **kwargs)
+        logger.info(f"Aluno {self.nome} salvo com sucesso")
     
 
     

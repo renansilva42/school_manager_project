@@ -23,6 +23,8 @@ import xlsxwriter
 from io import BytesIO
 import uuid
 import logging
+from django.core.exceptions import ValidationError
+
 
 from django.urls import reverse_lazy
 success_url = reverse_lazy('alunos:lista')
@@ -200,30 +202,46 @@ class NotaUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
-    template_name = 'alunos/cadastrar_aluno.html'  # Adicione o template
-    form_class = AlunoForm  # Adicione esta linha
+    template_name = 'alunos/cadastrar_aluno.html'
+    form_class = AlunoForm
     
     def form_valid(self, form):
         try:
+            logger.info("Iniciando processo de cadastro de aluno")
             with transaction.atomic():
                 aluno = form.save(commit=False)
                 aluno.id = uuid.uuid4()
                 
+                logger.debug(f"Dados do aluno antes de salvar: {aluno.__dict__}")
+                
                 # Salva primeiro o aluno para ter o ID
                 aluno.save()
+                logger.info(f"Aluno salvo com ID: {aluno.id}")
                 
-                # Depois trata a foto se existir
+                # Processa a foto se existir
                 if 'foto' in self.request.FILES:
-                    foto = self.request.FILES['foto']
-                    aluno.foto = foto
-                    aluno.save()
+                    try:
+                        foto = self.request.FILES['foto']
+                        logger.debug(f"Processando foto: tamanho={foto.size}, tipo={foto.content_type}")
+                        
+                        # Validação adicional da foto
+                        if not foto.content_type.startswith('image/'):
+                            raise ValidationError("Arquivo não é uma imagem válida")
+                        
+                        aluno.foto = foto
+                        aluno.save()
+                        logger.info("Foto do aluno processada e salva com sucesso")
+                    except Exception as e:
+                        logger.error(f"Erro ao processar foto: {str(e)}")
+                        raise
                 
                 messages.success(self.request, 'Aluno cadastrado com sucesso!')
+                logger.info(f"Cadastro do aluno {aluno.nome} finalizado com sucesso")
                 return redirect('alunos:detalhe', pk=aluno.id)
                 
         except Exception as e:
-            logger.error(f"Error creating student: {str(e)}")
-            messages.error(self.request, 'Erro ao cadastrar aluno.')
+            logger.error(f"Erro no cadastro do aluno: {str(e)}")
+            messages.error(self.request, f'Erro ao cadastrar aluno: {str(e)}')
             return self.form_invalid(form)
 
 class AlunoDetailView(BaseAlunoView, DetailView):

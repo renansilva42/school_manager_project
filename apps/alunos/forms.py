@@ -6,6 +6,11 @@ from .models import Aluno, Nota
 from PIL import Image
 import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 class BaseForm(forms.ModelForm):
     """Base form class with common functionality"""
@@ -30,12 +35,59 @@ class BaseForm(forms.ModelForm):
 
 class AlunoForm(BaseForm):
     def clean_foto(self):
+        """Validação e processamento melhorado da foto"""
         foto = self.cleaned_data.get('foto')
         if foto:
+            logger.debug(f"Iniciando validação da foto: {foto.name}")
+            
+            # Validar tipo do arquivo
+            if not foto.content_type.startswith('image/'):
+                logger.error(f"Tipo de arquivo inválido: {foto.content_type}")
+                raise ValidationError('O arquivo deve ser uma imagem')
+            
+            # Validar tamanho
             if foto.size > 5 * 1024 * 1024:  # 5MB
+                logger.error(f"Arquivo muito grande: {foto.size} bytes")
                 raise ValidationError('A foto não pode ter mais que 5MB')
-            return foto
-        return None
+            
+            try:
+                # Processar imagem
+                img = Image.open(foto)
+                
+                # Converter para RGB se necessário
+                if img.mode not in ('RGB', 'RGBA'):
+                    img = img.convert('RGB')
+                    logger.debug("Imagem convertida para RGB")
+                
+                # Redimensionar se necessário
+                if img.height > 800 or img.width > 800:
+                    output_size = (800, 800)
+                    img.thumbnail(output_size)
+                    logger.debug(f"Imagem redimensionada para {output_size}")
+                
+                # Salvar imagem otimizada
+                output = io.BytesIO()
+                img.save(output, format='JPEG', quality=85, optimize=True)
+                output.seek(0)
+                
+                # Criar novo arquivo
+                new_foto = InMemoryUploadedFile(
+                    output,
+                    'foto',
+                    f"{foto.name.split('.')[0]}.jpg",
+                    'image/jpeg',
+                    output.getbuffer().nbytes,
+                    None
+                )
+                
+                logger.info("Foto processada com sucesso")
+                return new_foto
+                
+            except Exception as e:
+                logger.error(f"Erro ao processar imagem: {str(e)}")
+                raise ValidationError(f"Erro ao processar imagem: {str(e)}")
+                
+        return foto
     
     class Meta:
         model = Aluno
