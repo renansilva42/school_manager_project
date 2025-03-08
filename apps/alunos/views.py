@@ -197,6 +197,7 @@ class NotaUpdateView(LoginRequiredMixin, UpdateView):
         return reverse_lazy('alunos:detalhe', kwargs={'pk': self.aluno.pk})
     
     def form_valid(self, form):
+        
         form.instance.aluno = self.aluno
         messages.success(self.request, 'Nota atualizada com sucesso!')
         return super().form_valid(form)
@@ -210,7 +211,8 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
             logger.info("Iniciando processo de cadastro de aluno")
             with transaction.atomic():
                 aluno = form.save(commit=False)
-                aluno.id = uuid.uuid4()
+                # Convertendo UUID para string antes de salvar
+                aluno.id = str(uuid.uuid4())
                 
                 logger.debug(f"Dados do aluno antes de salvar: {aluno.__dict__}")
                 
@@ -243,6 +245,7 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
             logger.error(f"Erro no cadastro do aluno: {str(e)}")
             messages.error(self.request, f'Erro ao cadastrar aluno: {str(e)}')
             return self.form_invalid(form)
+
 
 class AlunoDetailView(BaseAlunoView, DetailView):
     """View for displaying student details"""

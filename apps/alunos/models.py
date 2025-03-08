@@ -84,6 +84,12 @@ def aluno_foto_path(instance, filename):
     return f'alunos/fotos/{new_name}'
 
 class Aluno(models.Model):
+    id = models.CharField(
+        primary_key=True,
+        max_length=36,  # Tamanho suficiente para um UUID
+        editable=False
+    )
+    
     foto = models.ImageField(
         upload_to=aluno_foto_path,
         null=True,
