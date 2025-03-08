@@ -34,6 +34,10 @@ class BaseForm(forms.ModelForm):
             })
 
 class AlunoForm(BaseForm):
+    def clean_matricula(self):
+        matricula = self.cleaned_data.get('matricula')
+        return str(matricula)  # Força a conversão para string
+    
     def clean_foto(self):
         """Validação e processamento melhorado da foto"""
         foto = self.cleaned_data.get('foto')
