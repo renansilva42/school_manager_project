@@ -132,7 +132,7 @@ class Aluno(models.Model):
     )
 
     # Version control
-    version = models.IntegerField(default=1, editable=False)
+    version = models.BigIntegerField(default=1, editable=False)
     
     # Audit fields
     created_by = models.ForeignKey(

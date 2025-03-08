@@ -200,6 +200,9 @@ class NotaUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
+    template_name = 'alunos/cadastrar_aluno.html'  # Adicione o template
+    form_class = AlunoForm  # Adicione esta linha
+    
     def form_valid(self, form):
         try:
             with transaction.atomic():

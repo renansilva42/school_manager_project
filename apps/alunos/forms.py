@@ -36,6 +36,7 @@ class AlunoForm(BaseForm):
                 raise ValidationError('A foto não pode ter mais que 5MB')
             return foto
         return None
+    
     class Meta:
         model = Aluno
         fields = [
@@ -55,12 +56,16 @@ class AlunoForm(BaseForm):
                 'rows': 4,
                 'maxlength': 1000
             }),
+            'matricula': forms.TextInput(),  # Alterado para TextInput para evitar problemas com números grandes
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setup_nivel_dependent_fields()
         self.setup_field_dependencies()
+        # Configuração adicional para campos numéricos grandes
+        if 'matricula' in self.fields:
+            self.fields['matricula'].widget.attrs['maxlength'] = 20
 
     def setup_nivel_dependent_fields(self):
         """Setup fields that depend on nivel selection"""
@@ -159,6 +164,12 @@ class AlunoForm(BaseForm):
         cleaned_data = super().clean()
         self.validate_nivel_combinations(cleaned_data)
         self.validate_unique_fields(cleaned_data)
+        
+        # Validação adicional para campos numéricos
+        matricula = cleaned_data.get('matricula')
+        if matricula and len(str(matricula)) > 20:
+            raise ValidationError({'matricula': _("Número de matrícula muito grande")})
+            
         return cleaned_data
 
     def validate_nivel_combinations(self, cleaned_data):
@@ -214,7 +225,6 @@ class AlunoForm(BaseForm):
             
         return instance
 
-# As classes NotaForm e AlunoFilterForm permanecem inalteradas
 class NotaForm(BaseForm): 
     """Enhanced form for grade registration"""  
     class Meta:
