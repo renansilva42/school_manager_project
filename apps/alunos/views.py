@@ -255,49 +255,7 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
             messages.error(self.request, f'Erro ao cadastrar aluno: {str(e)}')
             return self.form_invalid(form)
 
-class AlunoDeleteView(BaseAlunoView, DeleteView):
-    template_name = 'alunos/confirmar_exclusao.html'
-    success_url = reverse_lazy('alunos:lista')
-    
-    def delete(self, request, *args, **kwargs):
-        """
-        Sobrescreve o método delete para adicionar tratamento de erros
-        e logging adequado
-        """
-        try:
-            self.object = self.get_object()
-            nome_aluno = self.object.nome
-            
-            # Remove a foto se existir
-            if self.object.foto:
-                try:
-                    if os.path.exists(self.object.foto.path):
-                        os.remove(self.object.foto.path)
-                except Exception as e:
-                    logger.warning(f"Erro ao remover foto do aluno {nome_aluno}: {str(e)}")
-            
-            # Executa a deleção dentro de uma transação
-            with transaction.atomic():
-                # Remove notas relacionadas
-                self.object.nota_set.all().delete()
-                # Remove o aluno
-                self.object.delete()
-                
-                messages.success(
-                    request,
-                    f'O aluno "{nome_aluno}" foi excluído com sucesso!'
-                )
-                
-                logger.info(f"Aluno {nome_aluno} excluído com sucesso")
-                return HttpResponseRedirect(self.success_url)
-                
-        except Exception as e:
-            logger.error(f"Erro ao excluir aluno: {str(e)}")
-            messages.error(
-                request,
-                'Não foi possível excluir o aluno. Por favor, tente novamente.'
-            )
-            return redirect('alunos:lista')
+
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -344,31 +302,38 @@ class AlunoDeleteView(BaseAlunoView, DeleteView):
     template_name = 'alunos/confirmar_exclusao.html'
     success_url = reverse_lazy('alunos:lista')
     
-    def form_valid(self, form):
+    def delete(self, request, *args, **kwargs):
         try:
-            aluno = self.get_object()
-            nome_aluno = aluno.nome
+            self.object = self.get_object()
+            nome_aluno = self.object.nome
             
             # Remove a foto se existir
-            if aluno.foto:
+            if self.object.foto:
                 try:
-                    os.remove(aluno.foto.path)
+                    if os.path.exists(self.object.foto.path):
+                        os.remove(self.object.foto.path)
                 except Exception as e:
-                    logger.error(f"Erro ao remover foto: {str(e)}")
+                    logger.warning(f"Erro ao remover foto do aluno {nome_aluno}: {str(e)}")
             
-            response = super().form_valid(form)
-            
-            messages.success(
-                self.request,
-                f'O aluno "{nome_aluno}" foi excluído com sucesso!'
-            )
-            
-            return response
-            
+            # Executa a deleção dentro de uma transação
+            with transaction.atomic():
+                # Remove notas relacionadas
+                self.object.nota_set.all().delete()
+                # Remove o aluno
+                self.object.delete()
+                
+                messages.success(
+                    request,
+                    f'O aluno "{nome_aluno}" foi excluído com sucesso!'
+                )
+                
+                logger.info(f"Aluno {nome_aluno} excluído com sucesso")
+                return HttpResponseRedirect(self.success_url)
+                
         except Exception as e:
             logger.error(f"Erro ao excluir aluno: {str(e)}")
             messages.error(
-                self.request,
+                request,
                 'Não foi possível excluir o aluno. Por favor, tente novamente.'
             )
             return redirect('alunos:lista')

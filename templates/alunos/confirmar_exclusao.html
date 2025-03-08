@@ -29,7 +29,7 @@
                         <p><strong>Turma:</strong> {{ object.get_ano_display }} - {{ object.get_turno_display }}</p>
                     </div>
 
-                    <form method="post" class="text-center" id="deleteForm">
+                    <form method="post" class="text-center" id="deleteForm" action="{% url 'alunos:excluir' object.pk %}">
                         {% csrf_token %}
                         <div class="d-flex justify-content-center gap-3">
                             <a href="{% url 'alunos:detalhe' object.pk %}" 
@@ -54,26 +54,16 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Animação de fade do card
-    const card = document.querySelector('.card');
-    card.style.opacity = '0';
-    setTimeout(() => {
-        card.style.transition = 'opacity 0.3s ease-in-out';
-        card.style.opacity = '1';
-    }, 100);
-
-    // Manipulador do formulário de exclusão
     const deleteForm = document.getElementById('deleteForm');
     const confirmBtn = document.getElementById('confirmDeleteBtn');
 
     deleteForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (confirm('Tem certeza que deseja excluir este aluno? Esta ação não poderá ser desfeita.')) {
-            confirmBtn.disabled = true;
-            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Excluindo...';
-            this.submit();
+        if (!confirm('Tem certeza que deseja excluir este aluno? Esta ação não poderá ser desfeita.')) {
+            e.preventDefault();
+            return;
         }
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Excluindo...';
     });
 });
 </script>
