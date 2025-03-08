@@ -54,8 +54,8 @@ urlpatterns = [
          name='api_medias'),
     
     path('api/alunos/', 
-         views.AlunoListAPIView.as_view(), 
-         name='api_lista_alunos'),
+     views.AlunoListView.as_view(), 
+     name='api_lista_alunos'),
 
     # Operações de exportação
     path('aluno/<uuid:aluno_pk>/exportar/pdf/', 

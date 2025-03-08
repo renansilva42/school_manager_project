@@ -168,6 +168,10 @@ class NotaDeleteView(AdminRequiredMixin, DeleteView):
 
 # Em /apps/alunos/views.py
 
+
+    
+
+
 class NotaUpdateView(LoginRequiredMixin, UpdateView):
     model = Nota
     form_class = NotaForm
