@@ -200,38 +200,28 @@ class NotaUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
-    """View for creating new students"""
-    template_name = 'alunos/cadastrar_aluno.html'
-    form_class = AlunoForm
-    
     def form_valid(self, form):
         try:
             with transaction.atomic():
                 aluno = form.save(commit=False)
                 aluno.id = uuid.uuid4()
                 
-                if 'foto' in self.request.FILES:
-                    photo_url = self.handle_photo_upload(aluno.id)
-                    if photo_url:
-                        aluno.foto_url = photo_url
-                
+                # Salva primeiro o aluno para ter o ID
                 aluno.save()
+                
+                # Depois trata a foto se existir
+                if 'foto' in self.request.FILES:
+                    foto = self.request.FILES['foto']
+                    aluno.foto = foto
+                    aluno.save()
+                
                 messages.success(self.request, 'Aluno cadastrado com sucesso!')
-                return redirect('detalhe_aluno', pk=aluno.id)
+                return redirect('alunos:detalhe', pk=aluno.id)
                 
         except Exception as e:
             logger.error(f"Error creating student: {str(e)}")
             messages.error(self.request, 'Erro ao cadastrar aluno.')
             return self.form_invalid(form)
-    
-    def handle_photo_upload(self, aluno_id):
-        """Handle photo upload to Supabase"""
-        try:
-            supabase = SupabaseService()
-            return supabase.upload_photo(self.request.FILES['foto'], str(aluno_id))
-        except Exception as e:
-            logger.error(f"Photo upload error: {str(e)}")
-            return None
 
 class AlunoDetailView(BaseAlunoView, DetailView):
     """View for displaying student details"""

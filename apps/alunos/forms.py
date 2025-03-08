@@ -29,6 +29,13 @@ class BaseForm(forms.ModelForm):
             })
 
 class AlunoForm(BaseForm):
+    def clean_foto(self):
+        foto = self.cleaned_data.get('foto')
+        if foto:
+            if foto.size > 5 * 1024 * 1024:  # 5MB
+                raise ValidationError('A foto não pode ter mais que 5MB')
+            return foto
+        return None
     class Meta:
         model = Aluno
         fields = [

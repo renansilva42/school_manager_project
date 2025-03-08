@@ -47,7 +47,7 @@
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        
+        <input type="hidden" name="foto" id="foto-input">
         <!-- Seção de Foto -->
         <div class="form-group">
             <label for="id_foto">Foto do Aluno</label>
@@ -235,34 +235,20 @@ takePhotoBtn.addEventListener('click', async () => {
 
 // Evento para o botão de capturar foto
 capturePhotoBtn.addEventListener('click', () => {
-    // Configurar o canvas para capturar a imagem
     const context = photoCanvas.getContext('2d');
     photoCanvas.width = cameraPreview.videoWidth;
     photoCanvas.height = cameraPreview.videoHeight;
     
-    // Desenhar o frame atual do vídeo no canvas
     context.drawImage(cameraPreview, 0, 0, photoCanvas.width, photoCanvas.height);
     
-    // Converter o canvas para uma URL de dados (formato base64)
-    const dataUrl = photoCanvas.toDataURL('image/jpeg');
+    // Converter para blob antes de enviar
+    photoCanvas.toBlob((blob) => {
+        const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        fileInput.files = dataTransfer.files;
+    }, 'image/jpeg', 0.8);
     
-    // Exibir a imagem capturada no preview
-    photoPreview.src = dataUrl;
-    previewContainer.style.display = 'block';
-    
-    // Converter a URL de dados para um arquivo Blob e adicionar ao input de arquivo
-    fetch(dataUrl)
-        .then(res => res.blob())
-        .then(blob => {
-            const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
-            
-            // Criar um DataTransfer para simular a seleção de arquivo
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            fileInput.files = dataTransfer.files;
-        });
-    
-    // Parar a câmera
     stopCamera();
 });
 
