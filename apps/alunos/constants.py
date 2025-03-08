@@ -8,5 +8,8 @@ URL_NAMES = {
     'EDITAR_NOTA': 'editar_nota',
     'EXCLUIR_NOTA': 'excluir_nota',
     'API_NOTAS': 'api_notas',
-    'API_MEDIAS': 'api_medias'
+    'API_MEDIAS': 'api_medias',
+    'EXPORTAR_PDF': 'exportar_pdf',
+    'EXPORTAR_EXCEL': 'exportar_excel',
+    'IMPORTAR_EXCEL': 'importar_excel'
 }

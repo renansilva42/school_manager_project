@@ -50,15 +50,14 @@ urlpatterns = [
 
     # Operações de exportação
     path('aluno/<uuid:aluno_pk>/exportar/pdf/', 
-         views.AlunoExportPDFView.as_view(), 
-         name='exportar_pdf'),
-    
+     views.AlunoExportPDFView.as_view(), 
+     name=URL_NAMES['EXPORTAR_PDF']),
+
     path('aluno/<uuid:aluno_pk>/exportar/excel/', 
-         views.AlunoExportExcelView.as_view(), 
-         name='exportar_excel'),
-    
-    # Importação de dados
+        views.AlunoExportExcelView.as_view(), 
+        name=URL_NAMES['EXPORTAR_EXCEL']),
+
     path('importar/excel/', 
-         views.AlunoImportExcelView.as_view(), 
-         name='importar_excel'),
+        views.AlunoImportExcelView.as_view(), 
+        name=URL_NAMES['IMPORTAR_EXCEL']),
 ]

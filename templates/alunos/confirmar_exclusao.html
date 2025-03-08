@@ -4,6 +4,18 @@
 
 {% block content %}
 <div class="container mt-4">
+    <div class="btn-group">
+        <!-- Botão de confirmar exclusão -->
+        <button type="submit" class="btn btn-danger btn-lg">
+            <i class="fas fa-trash-alt"></i> Confirmar Exclusão
+        </button>
+        
+        <!-- Botão de cancelar -->
+        <a href="{% url 'alunos:detalhe' object.pk %}" 
+           class="btn btn-secondary btn-lg ml-2">
+            <i class="fas fa-times"></i> Cancelar
+        </a>
+    </div>
     <div class="card">
         <div class="card-header bg-danger text-white">
             <h4>Confirmar Exclusão</h4>
