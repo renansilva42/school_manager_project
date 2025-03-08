@@ -81,6 +81,11 @@ class Aluno(models.Model):
         MANHA = 'M', 'Manhã'
         TARDE = 'T', 'Tarde'
 
+
+    ativo = models.BooleanField(
+        default=True,
+        verbose_name="Ativo"
+    )
     # Validators
     nivel = models.CharField(
         max_length=3,
@@ -507,16 +512,6 @@ class Nota(models.Model):
         unique_together = ['aluno', 'disciplina', 'bimestre']
         indexes = [
             models.Index(fields=['aluno', 'disciplina'])
-        ]
-        constraints = [
-            models.UniqueConstraint(
-                fields=['cpf'],
-                name='unique_cpf'
-            ),
-            models.UniqueConstraint(
-                fields=['matricula'],
-                name='unique_matricula'
-            ),
         ]
 
     def __str__(self):
