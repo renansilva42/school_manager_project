@@ -294,7 +294,10 @@ class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
             messages.error(self.request, 'Erro ao atualizar aluno.')
             return self.form_invalid(form)
 
-class AlunoDeleteView(LoginRequiredMixin, DeleteView):
+class AlunoDeleteView(LoginRequiredMixin, BaseAlunoView, DeleteView):
+    template_name = 'alunos/confirmar_exclusao.html'
+    success_url = reverse_lazy('alunos:lista')
+    
     def delete(self, request, *args, **kwargs):
         try:
             aluno = self.get_object()
