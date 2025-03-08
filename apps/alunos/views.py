@@ -294,11 +294,12 @@ class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
             messages.error(self.request, 'Erro ao atualizar aluno.')
             return self.form_invalid(form)
 
+
 class AlunoDeleteView(BaseAlunoView, DeleteView):
     template_name = 'alunos/confirmar_exclusao.html'
     success_url = reverse_lazy('alunos:lista')
     
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form):
         try:
             aluno = self.get_object()
             nome_aluno = aluno.nome
@@ -310,11 +311,10 @@ class AlunoDeleteView(BaseAlunoView, DeleteView):
                 except Exception as e:
                     logger.error(f"Erro ao remover foto: {str(e)}")
             
-            # Exclui o aluno
-            response = super().delete(request, *args, **kwargs)
+            response = super().form_valid(form)
             
             messages.success(
-                request,
+                self.request,
                 f'O aluno "{nome_aluno}" foi excluído com sucesso!'
             )
             
@@ -323,7 +323,7 @@ class AlunoDeleteView(BaseAlunoView, DeleteView):
         except Exception as e:
             logger.error(f"Erro ao excluir aluno: {str(e)}")
             messages.error(
-                request,
+                self.request,
                 'Não foi possível excluir o aluno. Por favor, tente novamente.'
             )
             return redirect('alunos:lista')
