@@ -209,12 +209,22 @@ class NotaForm(BaseForm):
 class AlunoFilterForm(forms.Form):
     """Enhanced filter form for student listing"""
     
-    NIVEL_CHOICES = [('', _('Todos'))] + Aluno.NIVEL_CHOICES
-    TURNO_CHOICES = [('', _('Todos'))] + Aluno.TURNO_CHOICES
+    NIVEL_CHOICES = [('', _('Todos'))] + list(Aluno.NivelChoices.choices)
+    TURNO_CHOICES = [('', _('Todos'))] + list(Aluno.TurnoChoices.choices)
+    ANO_CHOICES = [('', _('Todos'))] + [
+        ('3', '3º Ano'),
+        ('4', '4º Ano'),
+        ('5', '5º Ano'),
+        ('6', '6º Ano'),
+        ('7', '7º Ano'),
+        ('8', '8º Ano'),
+        ('901', '9º Ano - Turma 901'),
+        ('902', '9º Ano - Turma 902')
+    ]
     
     nivel = forms.ChoiceField(choices=NIVEL_CHOICES, required=False)
     turno = forms.ChoiceField(choices=TURNO_CHOICES, required=False)
-    ano = forms.ChoiceField(choices=[('', _('Todos'))] + Aluno.ANO_CHOICES, required=False)
+    ano = forms.ChoiceField(choices=ANO_CHOICES, required=False)
     search = forms.CharField(required=False)
     
     def __init__(self, *args, **kwargs):

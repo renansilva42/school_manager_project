@@ -11,12 +11,16 @@ from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-
+from django.views import View  # Adicione este import
 from services.database import SupabaseService
 from .forms import AlunoForm, NotaForm, AlunoFilterForm
 from .models import Aluno, Nota
 from .mixins import AdminRequiredMixin
-
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+import xlsxwriter
+from io import BytesIO
 import uuid
 import logging
 
@@ -25,6 +29,56 @@ success_url = reverse_lazy('alunos:lista')
 
 logger = logging.getLogger(__name__)
 
+
+class AlunoExportPDFView(LoginRequiredMixin, View):
+    """View for exporting student data to PDF"""
+    def get(self, request, aluno_pk):
+        try:
+            aluno = get_object_or_404(Aluno, pk=aluno_pk)
+            template = get_template('alunos/pdf_template.html')
+            context = {'aluno': aluno}
+            html = template.render(context)
+            
+            response = HttpResponse(content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{aluno.nome}_dados.pdf"'
+            
+            pisa.CreatePDF(html, dest=response)
+            return response
+            
+        except Exception as e:
+            logger.error(f"Error exporting PDF: {str(e)}")
+            messages.error(request, 'Erro ao exportar PDF')
+            return redirect('alunos:detalhe', pk=aluno_pk)
+
+class AlunoExportExcelView(LoginRequiredMixin, View):
+    """View for exporting student data to Excel"""
+    def get(self, request, aluno_pk):
+        try:
+            aluno = get_object_or_404(Aluno, pk=aluno_pk)
+            
+            output = BytesIO()
+            workbook = xlsxwriter.Workbook(output)
+            worksheet = workbook.add_worksheet()
+            
+            # Add data to Excel
+            worksheet.write(0, 0, "Nome")
+            worksheet.write(0, 1, aluno.nome)
+            # Add more fields as needed
+            
+            workbook.close()
+            output.seek(0)
+            
+            response = HttpResponse(
+                output.read(),
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{aluno.nome}_dados.xlsx"'
+            return response
+            
+        except Exception as e:
+            logger.error(f"Error exporting Excel: {str(e)}")
+            messages.error(request, 'Erro ao exportar Excel')
+            return redirect('alunos:detalhe', pk=aluno_pk)
 
 
 class BaseAlunoView(LoginRequiredMixin):
@@ -213,7 +267,7 @@ class AlunoAPIView:
     def error_response(message, status=400):
         return JsonResponse({'error': message}, status=status)
 
-class AlunoNotasAPIView(LoginRequiredMixin, AlunoAPIView):
+class AlunoNotasAPIView(LoginRequiredMixin, View):  # Herda diretamente de View
     """API view for student grades"""
     def get(self, request, aluno_pk):
         try:
@@ -221,12 +275,12 @@ class AlunoNotasAPIView(LoginRequiredMixin, AlunoAPIView):
             notas = Nota.objects.filter(aluno=aluno).values(
                 'disciplina', 'valor', 'bimestre', 'data'
             )
-            return self.json_response({'notas': list(notas)})
+            return JsonResponse({'notas': list(notas)})
         except Exception as e:
             logger.error(f"Error fetching grades: {str(e)}")
-            return self.error_response('Erro ao buscar notas')
+            return JsonResponse({'error': 'Erro ao buscar notas'}, status=400)
 
-class AlunoMediaAPIView(LoginRequiredMixin, AlunoAPIView):
+class AlunoMediaAPIView(LoginRequiredMixin, View):  # Também atualize esta classe
     """API view for student averages"""
     def get(self, request, aluno_pk):
         try:
@@ -234,7 +288,7 @@ class AlunoMediaAPIView(LoginRequiredMixin, AlunoAPIView):
             medias = Nota.objects.filter(aluno=aluno).values('disciplina').annotate(
                 media=Avg('valor')
             )
-            return self.json_response({'medias': list(medias)})
+            return JsonResponse({'medias': list(medias)})
         except Exception as e:
             logger.error(f"Error calculating averages: {str(e)}")
-            return self.error_response('Erro ao calcular médias')
+            return JsonResponse({'error': 'Erro ao calcular médias'}, status=400)

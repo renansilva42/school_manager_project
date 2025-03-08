@@ -166,6 +166,85 @@ class Aluno(models.Model):
         blank=True
     )
     
+    # Informações de Contato
+    email = models.EmailField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="E-mail"
+    )
+    telefone = models.CharField(
+        max_length=15,
+        validators=[phone_regex],
+        blank=True,
+        verbose_name="Telefone"
+    )
+    
+    # Informações de Endereço
+    endereco = models.CharField(
+        max_length=255,
+        verbose_name="Endereço"
+    )
+    cidade = models.CharField(
+        max_length=100,
+        verbose_name="Cidade"
+    )
+    uf = models.CharField(
+        max_length=2,
+        verbose_name="UF"
+    )
+    
+    # Informações Acadêmicas
+    ano = models.CharField(
+        max_length=3,
+        choices=AnoChoices.choices,
+        verbose_name="Ano"
+    )
+    
+    turma = models.CharField(
+        max_length=50,
+        verbose_name="Turma"
+    )
+    data_matricula = models.DateField(
+        verbose_name="Data de Matrícula"
+    )
+    
+    # Informações dos Responsáveis
+    nome_responsavel1 = models.CharField(
+        max_length=255,
+        verbose_name="Nome do Responsável 1"
+    )
+    telefone_responsavel1 = models.CharField(
+        max_length=15,
+        validators=[phone_regex],
+        verbose_name="Telefone do Responsável 1"
+    )
+    nome_responsavel2 = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Nome do Responsável 2"
+    )
+    telefone_responsavel2 = models.CharField(
+        max_length=15,
+        validators=[phone_regex],
+        blank=True,
+        null=True,
+        verbose_name="Telefone do Responsável 2"
+    )
+    
+    # Informações Adicionais
+    rg = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="RG"
+    )
+    observacoes = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Observações"
+    )
     # ... [rest of the fields remain the same but with improved organization]
 
     # Custom manager
@@ -351,30 +430,36 @@ class Nota(models.Model):
     
     # Address Information
     endereco = models.CharField(
-        max_length=255,
-        verbose_name="Endereço"
+    max_length=255,
+    verbose_name="Endereço",
+    null=True,
+    blank=True
     )
     cidade = models.CharField(
-        max_length=100,
-        verbose_name="Cidade"
+    max_length=100,
+    verbose_name="Cidade",
+    null=True,
+    blank=True
     )
     uf = models.CharField(
-        max_length=2,
-        verbose_name="UF"
+    max_length=2,
+    verbose_name="UF",
+    null=True,
+    blank=True
     )
     
     # Academic Information
-    ano = models.CharField(
-        max_length=3,
-        choices=AnoChoices.choices,
-        verbose_name="Ano"
-    )
+    
     turma = models.CharField(
-        max_length=50,
-        verbose_name="Turma"
+    max_length=255,
+    verbose_name="Turma",
+    null=True,
+    blank=True
     )
     data_matricula = models.DateField(
-        verbose_name="Data de Matrícula"
+    verbose_name="Data de Matrícula",
+    null=True,
+    blank=True
     )
     
     # Guardian Information
@@ -382,10 +467,11 @@ class Nota(models.Model):
         max_length=255,
         verbose_name="Nome do Responsável 1"
     )
-    telefone_responsavel1 = models.CharField(
-        max_length=15,
-        validators=[phone_regex],
-        verbose_name="Telefone do Responsável 1"
+    nome_responsavel1 = models.CharField(
+    max_length=255,
+    verbose_name="Nome do Responsável 1",
+    null=True,
+    blank=True
     )
     nome_responsavel2 = models.CharField(
         max_length=255,
