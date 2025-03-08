@@ -104,6 +104,13 @@ class AlunoListView(BaseAlunoView, ListView):
         try:
             queryset = super().get_queryset()
             logger.debug(f"Queryset count: {queryset.count()}")
+            
+            # Add your filtering logic here
+            nivel = self.request.GET.get('nivel')
+            if nivel:
+                queryset = queryset.filter(nivel=nivel)
+                logger.debug(f"Alunos após filtro nivel={nivel}: {queryset.count()}")
+                
             return queryset
         except Exception as e:
             logger.error(f"Error in get_queryset: {str(e)}")

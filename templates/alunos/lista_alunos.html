@@ -257,6 +257,9 @@
 </style>
 
 <div class="container mt-4">
+    <div class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
     <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -467,51 +470,54 @@
         };
     
         // Core functions
-        async function fetchAlunos(params = {}) {
-            if (state.isLoading) return;
-            
-            try {
-                state.isLoading = true;
-                showLoading();
-                
-                // Update current filters
-                state.currentFilters = { ...state.currentFilters, ...params };
-                
-                const response = await fetch(
-                    `/alunos/buscar/?${new URLSearchParams(state.currentFilters)}`,
-                    {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    }
-                );
+        
+async function fetchAlunos(params = {}) {
+    if (state.isLoading) return;
     
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-    
-                const data = await response.json();
-                elements.alunosContainer.innerHTML = data.html;
-                
-                // Update URL with current filters
-                const url = new URL(window.location);
-                Object.entries(state.currentFilters).forEach(([key, value]) => {
-                    if (value) {
-                        url.searchParams.set(key, value);
-                    } else {
-                        url.searchParams.delete(key);
-                    }
-                });
-                window.history.pushState({}, '', url);
-    
-            } catch (error) {
-                console.error('Error fetching alunos:', error);
-                utils.showError('Por favor, tente novamente.', error.message);
-            } finally {
-                state.isLoading = false;
-                hideLoading();
-            }
+    try {
+        state.isLoading = true;
+        if (elements.loadingOverlay) {
+            elements.loadingOverlay.style.display = 'flex';
         }
+        
+        const response = await fetch(
+            `/alunos/buscar/?${new URLSearchParams(params)}`,
+            {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (elements.alunosContainer) {
+            elements.alunosContainer.innerHTML = data.html;
+        }
+
+    } catch (error) {
+        console.error('Error fetching alunos:', error);
+        if (elements.alunosContainer) {
+            elements.alunosContainer.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        <h5 class="alert-heading">Erro ao carregar os alunos</h5>
+                        <p>Por favor, tente novamente.</p>
+                        ${error ? `<hr><small class="text-muted">Detalhes: ${error.message}</small>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+    } finally {
+        state.isLoading = false;
+        if (elements.loadingOverlay) {
+            elements.loadingOverlay.style.display = 'none';
+        }
+    }
+}
     
         function updateTurnoChoices(nivel) {
             elements.turno.innerHTML = '<option value="">Selecione o Turno</option>';

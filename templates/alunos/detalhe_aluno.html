@@ -208,6 +208,9 @@
 </style>
 
 <div class="container mt-4">
+    <div class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
     <nav aria-label="breadcrumb" class="animated">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
@@ -435,7 +438,7 @@
             </div>
             
             <div class="action-buttons">
-                <a href="{% url 'lista_alunos' %}" class="btn btn-secondary">
+                <a href="{% url 'alunos:lista' %}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Voltar
                 </a>
                 
