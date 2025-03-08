@@ -471,7 +471,7 @@
     
         // Core functions
         
-async function fetchAlunos(params = {}) {
+        async function fetchAlunos(params = {}) {
     if (state.isLoading) return;
     
     try {
@@ -496,6 +496,9 @@ async function fetchAlunos(params = {}) {
         const data = await response.json();
         if (elements.alunosContainer) {
             elements.alunosContainer.innerHTML = data.html;
+            
+            // Adicione esta linha para atualizar o contador
+            document.getElementById('total-results').textContent = data.total_alunos;
         }
 
     } catch (error) {

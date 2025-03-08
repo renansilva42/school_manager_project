@@ -153,7 +153,11 @@ class AlunoListView(BaseAlunoView, ListView):
                 context,
                 request=self.request
             )
-            return JsonResponse({'html': html})
+            # Adicione o total de alunos na resposta JSON
+            return JsonResponse({
+                'html': html,
+                'total_alunos': context['paginator'].count  # Adiciona o total de alunos
+            })
         return super().render_to_response(context, **response_kwargs)
 
 
