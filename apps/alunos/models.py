@@ -45,22 +45,30 @@ class AlunoManager(models.Manager):
         return queryset
 
 def validate_image(fieldfile_obj):
-    megabyte_limit = 5.0
-    if hasattr(fieldfile_obj, 'size'):
-        if fieldfile_obj.size > megabyte_limit * 1024 * 1024:
-            raise ValidationError(f"Imagem muito grande. O tamanho máximo permitido é {megabyte_limit}MB")
-    elif hasattr(fieldfile_obj, 'getbuffer'):
-        if fieldfile_obj.getbuffer().nbytes > megabyte_limit * 1024 * 1024:
-            raise ValidationError(f"Imagem muito grande. O tamanho máximo permitido é {megabyte_limit}MB")
-        
+    """
+    Validate image file format and size
+    """
     # Validate file size
-    megabyte_limit = 5.0
-    if fieldfile_obj.size > megabyte_limit * 1024 * 1024:
-        raise ValidationError(f"Tamanho máximo da imagem é {megabyte_limit}MB")
-        
+    filesize = fieldfile_obj.size
+    megabyte_limit = 2.0
+    if filesize > megabyte_limit * 1024 * 1024:
+        raise ValidationError(f"Tamanho máximo do arquivo é {megabyte_limit}MB")
+
     # Validate image format
     valid_formats = ['image/jpeg', 'image/png', 'image/gif']
-    file_type = fieldfile_obj.content_type
+    
+    # Se o objeto for um InMemoryUploadedFile ou TemporaryUploadedFile
+    if hasattr(fieldfile_obj, 'content_type'):
+        file_type = fieldfile_obj.content_type
+    else:
+        # Se for um BytesIO, tente determinar o tipo pelo início do arquivo
+        try:
+            import imghdr
+            file_type = 'image/' + imghdr.what(None, fieldfile_obj.read(2048))
+            fieldfile_obj.seek(0)  # Retorna ao início do arquivo
+        except:
+            raise ValidationError("Não foi possível determinar o tipo do arquivo")
+
     if file_type not in valid_formats:
         raise ValidationError("Formato de imagem não suportado. Use JPEG, PNG ou GIF.")
 

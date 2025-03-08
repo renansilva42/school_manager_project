@@ -28,9 +28,15 @@ class BaseForm(forms.ModelForm):
             })
 
 class AlunoForm(BaseForm):
-    """
-    Form for student registration and editing with enhanced validation and UI features.
-    """
+    class Meta:
+        model = Aluno
+        fields = ['foto', ...]  # seus outros campos aqui
+        
+    def clean_foto(self):
+        foto = self.cleaned_data.get('foto')
+        if foto:
+            validate_image(foto)
+        return foto
     
     class Meta:
         model = Aluno
@@ -194,9 +200,8 @@ class AlunoForm(BaseForm):
             
         return instance
 
-class NotaForm(BaseForm):
-    """Enhanced form for grade registration"""
-    
+class NotaForm(BaseForm): 
+    """Enhanced form for gra    de registration"""  
     class Meta:
         model = Nota
         fields = ['disciplina', 'valor', 'bimestre', 'observacao']
