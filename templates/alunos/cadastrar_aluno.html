@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block extra_css %}
 <style>
+    /* Existing styles remain the same */
     .card-header {
         background-color: #007bff;
         color: white;
@@ -22,8 +23,26 @@
     .card-body {
         padding: 20px;
     }
+
+    /* Add new styles for camera container */
+    .camera-container {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    #camera-preview {
+        width: 100%;
+        max-width: 640px;
+        margin: 0 auto;
+    }
+
+    #photo-preview {
+        max-width: 100%;
+        height: auto;
+    }
 </style>
 {% endblock %}
+
 {% load crispy_forms_tags %}
 {% block title %}Cadastrar Aluno{% endblock %}
 {% block content %}
@@ -164,110 +183,117 @@
 
 
 <!-- Script para captura de foto -->
+<!-- Updated Script for photo capture -->
 <script>
-// Variáveis para os elementos da interface
-const fileInput = document.getElementById('id_foto');
-const uploadBtn = document.getElementById('upload-photo-btn');
-const takePhotoBtn = document.getElementById('take-photo-btn');
-const previewContainer = document.getElementById('preview-container');
-const photoPreview = document.getElementById('photo-preview');
-const removePhotoBtn = document.getElementById('remove-photo-btn');
-const cameraPreview = document.getElementById('camera-preview');
-const photoCanvas = document.getElementById('photo-canvas');
-const cameraControls = document.getElementById('camera-controls');
-const capturePhotoBtn = document.getElementById('capture-photo-btn');
-const cancelCameraBtn = document.getElementById('cancel-camera-btn');
-
-let stream = null;
-
-// Evento para o botão de upload de arquivo
-uploadBtn.addEventListener('click', () => {
-    fileInput.click();
-});
-
-// Evento para quando um arquivo é selecionado
-fileInput.addEventListener('change', (e) => {
-    if (fileInput.files && fileInput.files[0]) {
-        const reader = new FileReader();
+    // Variáveis para os elementos da interface
+    const fileInput = document.getElementById('id_foto');
+    const uploadBtn = document.getElementById('upload-photo-btn');
+    const takePhotoBtn = document.getElementById('take-photo-btn');
+    const previewContainer = document.getElementById('preview-container');
+    const photoPreview = document.getElementById('photo-preview');
+    const removePhotoBtn = document.getElementById('remove-photo-btn');
+    const cameraPreview = document.getElementById('camera-preview');
+    const photoCanvas = document.getElementById('photo-canvas');
+    const cameraControls = document.getElementById('camera-controls');
+    const capturePhotoBtn = document.getElementById('capture-photo-btn');
+    const cancelCameraBtn = document.getElementById('cancel-camera-btn');
+    
+    let stream = null;
+    
+    // Evento para o botão de upload de arquivo
+    uploadBtn.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // Evento para quando um arquivo é selecionado
+    fileInput.addEventListener('change', (e) => {
+        if (fileInput.files && fileInput.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                photoPreview.src = e.target.result;
+                previewContainer.style.display = 'block';
+                
+                // Esconder a câmera se estiver ativa
+                stopCamera();
+            };
+            
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+    });
+    
+    // Evento para o botão de remover foto
+    removePhotoBtn.addEventListener('click', () => {
+        fileInput.value = '';
+        photoPreview.src = '';
+        previewContainer.style.display = 'none';
+    });
+    
+    // Evento para o botão de tirar foto
+    takePhotoBtn.addEventListener('click', async () => {
+        try {
+            // Esconder o preview de imagem se estiver visível
+            previewContainer.style.display = 'none';
+            
+            // Iniciar a câmera
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'user',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                } 
+            });
+            
+            cameraPreview.srcObject = stream;
+            cameraPreview.style.display = 'block';
+            cameraControls.style.display = 'block';
+        } catch (err) {
+            console.error('Erro ao acessar a câmera:', err);
+            alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.');
+        }
+    });
+    
+    // Updated capture photo event
+    capturePhotoBtn.addEventListener('click', () => {
+        const context = photoCanvas.getContext('2d');
+        photoCanvas.width = cameraPreview.videoWidth;
+        photoCanvas.height = cameraPreview.videoHeight;
         
-        reader.onload = (e) => {
-            photoPreview.src = e.target.result;
+        context.drawImage(cameraPreview, 0, 0, photoCanvas.width, photoCanvas.height);
+        
+        // Convert to blob and create file
+        photoCanvas.toBlob((blob) => {
+            const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+    
+            // Show preview of captured photo
+            photoPreview.src = URL.createObjectURL(blob);
             previewContainer.style.display = 'block';
             
-            // Esconder a câmera se estiver ativa
+            // Stop camera and hide camera UI
             stopCamera();
-        };
+        }, 'image/jpeg', 0.8);
+    });
+    
+    // Evento para o botão de cancelar câmera
+    cancelCameraBtn.addEventListener('click', () => {
+        stopCamera();
+    });
+    
+    // Função para parar a câmera
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
         
-        reader.readAsDataURL(fileInput.files[0]);
+        cameraPreview.style.display = 'none';
+        cameraControls.style.display = 'none';
     }
-});
-
-// Evento para o botão de remover foto
-removePhotoBtn.addEventListener('click', () => {
-    fileInput.value = '';
-    photoPreview.src = '';
-    previewContainer.style.display = 'none';
-});
-
-// Evento para o botão de tirar foto
-takePhotoBtn.addEventListener('click', async () => {
-    try {
-        // Esconder o preview de imagem se estiver visível
-        previewContainer.style.display = 'none';
-        
-        // Iniciar a câmera
-        stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
-                facingMode: 'user',
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            } 
-        });
-        
-        cameraPreview.srcObject = stream;
-        cameraPreview.style.display = 'block';
-        cameraControls.style.display = 'block';
-    } catch (err) {
-        console.error('Erro ao acessar a câmera:', err);
-        alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.');
-    }
-});
-
-// Evento para o botão de capturar foto
-capturePhotoBtn.addEventListener('click', () => {
-    const context = photoCanvas.getContext('2d');
-    photoCanvas.width = cameraPreview.videoWidth;
-    photoCanvas.height = cameraPreview.videoHeight;
+    </script>
     
-    context.drawImage(cameraPreview, 0, 0, photoCanvas.width, photoCanvas.height);
-    
-    // Converter para blob antes de enviar
-    photoCanvas.toBlob((blob) => {
-        const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        fileInput.files = dataTransfer.files;
-    }, 'image/jpeg', 0.8);
-    
-    stopCamera();
-});
-
-// Evento para o botão de cancelar câmera
-cancelCameraBtn.addEventListener('click', () => {
-    stopCamera();
-});
-
-// Função para parar a câmera
-function stopCamera() {
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-        stream = null;
-    }
-    
-    cameraPreview.style.display = 'none';
-    cameraControls.style.display = 'none';
-}
-</script>
 
 <!-- Script para seleção dinâmica de turmas e turnos -->
 <script>
