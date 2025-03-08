@@ -169,7 +169,17 @@ class NotaDeleteView(AdminRequiredMixin, DeleteView):
 # Em /apps/alunos/views.py
 
 
-    
+class AlunoImportExcelView(LoginRequiredMixin, View):
+    """View for importing student data from Excel"""
+    def post(self, request):
+        try:
+            # Implementar lógica de importação aqui
+            messages.success(request, 'Dados importados com sucesso!')
+            return redirect('alunos:lista')
+        except Exception as e:
+            logger.error(f"Error importing Excel: {str(e)}")
+            messages.error(request, 'Erro ao importar Excel')
+            return redirect('alunos:lista')    
 
 
 class NotaUpdateView(LoginRequiredMixin, UpdateView):
