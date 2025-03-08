@@ -9,9 +9,12 @@ urlpatterns = [
          views.AlunoListView.as_view(), 
          name='lista'),
     
+    
     path('buscar/', 
          views.AlunoListView.as_view(), 
-         name='buscar'),
+         name='buscar_alunos'),
+    # ... other URLs
+
 
     # Detail View
     path('aluno/<uuid:pk>/', 

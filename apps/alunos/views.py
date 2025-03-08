@@ -97,13 +97,18 @@ class AlunoListView(BaseAlunoView, ListView):
     paginate_by = 12
     
     def get_queryset(self):
-        queryset = super().get_queryset()
-        form = AlunoFilterForm(self.request.GET)
-        
-        if form.is_valid():
-            queryset = self.apply_filters(queryset, form.cleaned_data)
-        
-        return queryset.select_related('created_by', 'updated_by').order_by('nome')
+        logger.debug("Starting get_queryset")
+        try:
+            queryset = super().get_queryset()
+            form = AlunoFilterForm(self.request.GET)
+            
+            if form.is_valid():
+                queryset = self.apply_filters(queryset, form.cleaned_data)
+            
+            return queryset.select_related('created_by', 'updated_by').order_by('nome')
+        except Exception as e:
+            logger.error(f"Error in get_queryset: {str(e)}")
+            return Aluno.objects.none()
     
     def apply_filters(self, queryset, cleaned_data):
         """Apply filters to queryset based on form data"""

@@ -356,16 +356,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    function fetchAlunos(params = {}) {
-    showLoading();
     
-    // Change this to use the correct URL
-    fetch(`/alunos/buscar/?${new URLSearchParams(params)}`, {
-    headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-    }
-})
-        .then(response => response.json())
+    function fetchAlunos(params = {}) {
+        showLoading();
+        
+        fetch(`/alunos/buscar/?${new URLSearchParams(params)}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
             document.getElementById('alunos-container').innerHTML = data.html;
             hideLoading();
@@ -373,9 +378,15 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('Error:', error);
             hideLoading();
-            alert('Erro ao carregar os alunos. Por favor, tente novamente.');
+            document.getElementById('alunos-container').innerHTML = `
+                <div class="alert alert-danger">
+                    Erro ao carregar os alunos. Por favor, tente novamente.
+                    <br>
+                    Detalhes: ${error.message}
+                </div>
+            `;
         });
-}
+    }
 
     // Function to update shift select
     function updateTurnoChoices(nivel) {
