@@ -4,10 +4,6 @@
 
 {% block content %}
 
-{% url 'alunos:lista' %}
-{% url 'alunos:detalhe' pk=aluno.pk %}
-{% url 'alunos:adicionar_nota' aluno_pk=aluno.pk %}
-
 <style>
     .filters-container {
         background-color: white;
@@ -270,7 +266,7 @@
         <h1>Lista de Alunos</h1>
         
         {% if user.groups.all.0.name == 'Administradores' %}
-        <a href="{% url 'cadastrar_aluno' %}" class="btn btn-primary animated">
+        <a href="{% url 'alunos:cadastrar' %}" class="btn btn-primary animated">
             <i class="fas fa-plus"></i> Cadastrar Novo Aluno
         </a>
         {% endif %}
