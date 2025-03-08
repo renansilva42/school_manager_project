@@ -127,7 +127,8 @@ class AlunoForm(BaseForm):
         """Setup fields that depend on nivel selection"""
         instance = self.instance
         if instance and instance.pk:
-            self.set_ano_choices(instance.nivel, instance.turno)
+            # Instead of calling non-existent set_ano_choices, use get_filtered_ano_choices directly
+            self.fields['ano'].choices = self.get_filtered_ano_choices(instance.nivel, instance.turno)
             if instance.nivel == 'EFI':
                 self.fields['turno'].widget.attrs['disabled'] = True
                 self.fields['turno'].initial = 'M'
