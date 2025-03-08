@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from .models import Aluno, Nota
 from PIL import Image
 import io
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 class BaseForm(forms.ModelForm):
     """Base form class with common functionality"""
@@ -30,19 +31,9 @@ class BaseForm(forms.ModelForm):
 class AlunoForm(BaseForm):
     class Meta:
         model = Aluno
-        fields = ['foto', ...]  # seus outros campos aqui
-        
-    def clean_foto(self):
-        foto = self.cleaned_data.get('foto')
-        if foto:
-            validate_image(foto)
-        return foto
-    
-    class Meta:
-        model = Aluno
         fields = [
             'nome', 'data_nascimento', 'cpf', 'rg', 'foto',
-            'nivel', 'turno', 'ano', 'turma', 'matricula',  # matricula is expected here
+            'nivel', 'turno', 'ano', 'turma', 'matricula',
             'email', 'telefone', 'endereco', 'cidade', 'uf',
             'nome_responsavel1', 'telefone_responsavel1',
             'nome_responsavel2', 'telefone_responsavel2',
@@ -114,28 +105,44 @@ class AlunoForm(BaseForm):
         return choices
 
     def clean_foto(self):
-        """Validate and process photo upload"""
+        """Valida e processa o upload da foto"""
         foto = self.cleaned_data.get('foto')
         if foto:
+            # Verifica o tipo de conteúdo
+            if not foto.content_type.startswith('image/'):
+                raise ValidationError(_("O arquivo enviado não é uma imagem."))
+            
+            # Verifica o tamanho do arquivo (máximo de 5MB)
+            max_size = 5 * 1024 * 1024  # 5MB
+            if foto.size > max_size:
+                raise ValidationError(_("A imagem excede o tamanho máximo de 5MB."))
+            
             try:
-                # Process image
+                # Processa a imagem
                 img = Image.open(foto)
-                # Convert to RGB if necessary
+                # Converte para RGB se necessário
                 if img.mode not in ('RGB', 'RGBA'):
                     img = img.convert('RGB')
-                # Resize if too large
+                # Redimensiona se for muito grande
                 if img.height > 800 or img.width > 800:
                     output_size = (800, 800)
                     img.thumbnail(output_size)
-                # Save optimized image
+                # Salva a imagem otimizada
                 output = io.BytesIO()
                 img.save(output, format='JPEG', quality=85, optimize=True)
                 output.seek(0)
                 
-                # Adicione o atributo size ao objeto BytesIO
-                output.size = output.getbuffer().nbytes
+                # Cria um objeto InMemoryUploadedFile para compatibilidade com Django
+                new_foto = InMemoryUploadedFile(
+                    output,
+                    None,
+                    foto.name,
+                    'image/jpeg',
+                    output.getbuffer().nbytes,
+                    None
+                )
                 
-                return output
+                return new_foto
             except Exception as e:
                 raise ValidationError(f"Erro ao processar imagem: {str(e)}")
         return foto
@@ -200,8 +207,9 @@ class AlunoForm(BaseForm):
             
         return instance
 
+# As classes NotaForm e AlunoFilterForm permanecem inalteradas
 class NotaForm(BaseForm): 
-    """Enhanced form for gra    de registration"""  
+    """Enhanced form for grade registration"""  
     class Meta:
         model = Nota
         fields = ['disciplina', 'valor', 'bimestre', 'observacao']
