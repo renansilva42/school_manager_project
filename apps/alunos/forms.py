@@ -125,6 +125,10 @@ class AlunoForm(BaseForm):
                 output = io.BytesIO()
                 img.save(output, format='JPEG', quality=85, optimize=True)
                 output.seek(0)
+                
+                # Adicione o atributo size ao objeto BytesIO
+                output.size = output.getbuffer().nbytes
+                
                 return output
             except Exception as e:
                 raise ValidationError(f"Erro ao processar imagem: {str(e)}")
