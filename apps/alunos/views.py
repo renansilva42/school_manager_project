@@ -166,6 +166,25 @@ class NotaDeleteView(AdminRequiredMixin, DeleteView):
             messages.error(request, 'Erro ao excluir nota.')
             return redirect('detalhe_aluno', pk=self.aluno.pk)
 
+# Em /apps/alunos/views.py
+
+class NotaUpdateView(LoginRequiredMixin, UpdateView):
+    model = Nota
+    form_class = NotaForm
+    template_name = 'alunos/nota_form.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        self.aluno = get_object_or_404(Aluno, pk=kwargs['aluno_pk'])
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_success_url(self):
+        return reverse_lazy('alunos:detalhe', kwargs={'pk': self.aluno.pk})
+    
+    def form_valid(self, form):
+        form.instance.aluno = self.aluno
+        messages.success(self.request, 'Nota atualizada com sucesso!')
+        return super().form_valid(form)
+
 class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
     """View for creating new students"""
     template_name = 'alunos/cadastrar_aluno.html'
