@@ -506,9 +506,17 @@ class Nota(models.Model):
         ordering = ['aluno', 'disciplina', 'bimestre']
         unique_together = ['aluno', 'disciplina', 'bimestre']
         indexes = [
-            models.Index(fields=['aluno', 'disciplina']),
-            # If you need to index by student name, use:
-            # models.Index(fields=['aluno__nome'])
+            models.Index(fields=['aluno', 'disciplina'])
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['cpf'],
+                name='unique_cpf'
+            ),
+            models.UniqueConstraint(
+                fields=['matricula'],
+                name='unique_matricula'
+            ),
         ]
 
     def __str__(self):
