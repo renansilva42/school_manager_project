@@ -145,6 +145,27 @@ class AlunoListView(BaseAlunoView, ListView):
             return JsonResponse({'html': html})
         return super().render_to_response(context, **response_kwargs)
 
+
+class NotaDeleteView(AdminRequiredMixin, DeleteView):
+    """View para exclusão de notas"""
+    model = Nota
+    template_name = 'alunos/confirmar_exclusao_nota.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        self.aluno = get_object_or_404(Aluno, pk=self.kwargs['aluno_pk'])
+        return super().dispatch(request, *args, **kwargs)
+    
+    def delete(self, request, *args, **kwargs):
+        try:
+            nota = self.get_object()
+            nota.delete()
+            messages.success(request, 'Nota excluída com sucesso!')
+            return redirect('detalhe_aluno', pk=self.aluno.pk)
+        except Exception as e:
+            logger.error(f"Erro ao excluir nota: {str(e)}")
+            messages.error(request, 'Erro ao excluir nota.')
+            return redirect('detalhe_aluno', pk=self.aluno.pk)
+
 class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
     """View for creating new students"""
     template_name = 'alunos/cadastrar_aluno.html'
