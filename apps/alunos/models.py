@@ -414,9 +414,15 @@ class Aluno(models.Model):
         return media
 
     def delete(self, *args, **kwargs):
-        """Soft delete implementation"""
-        self.ativo = False
-        self.save()
+        try:
+            # Primeiro remove a foto se existir
+            if self.foto:
+                self.foto.delete(save=False)
+            # Então executa a deleção normal
+            super().delete(*args, **kwargs)
+        except Exception as e:
+            logger.error(f"Erro ao excluir aluno {self.nome}: {str(e)}")
+            raise
 
 # ... [Nota model remains largely the same with similar improvements]
 

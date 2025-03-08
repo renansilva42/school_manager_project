@@ -29,7 +29,7 @@
                         <p><strong>Turma:</strong> {{ object.get_ano_display }} - {{ object.get_turno_display }}</p>
                     </div>
 
-                    <form method="post" class="text-center" id="deleteForm" action="{% url 'alunos:excluir' object.pk %}">
+                    <form method="post" class="text-center" id="deleteForm">
                         {% csrf_token %}
                         <div class="d-flex justify-content-center gap-3">
                             <a href="{% url 'alunos:detalhe' object.pk %}" 
@@ -38,8 +38,7 @@
                                 Cancelar
                             </a>
                             <button type="submit" 
-                                    class="btn btn-danger btn-lg"
-                                    id="confirmDeleteBtn">
+                                    class="btn btn-danger btn-lg">
                                 <i class="fas fa-trash-alt me-2"></i>
                                 Confirmar Exclusão
                             </button>
@@ -53,6 +52,16 @@
 
 {% block extra_js %}
 <script>
+
+document.getElementById('deleteForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (confirm('Tem certeza que deseja excluir este aluno? Esta ação não poderá ser desfeita.')) {
+        this.submit();
+    }
+});
+
+
 document.addEventListener('DOMContentLoaded', function() {
     const deleteForm = document.getElementById('deleteForm');
     const confirmBtn = document.getElementById('confirmDeleteBtn');

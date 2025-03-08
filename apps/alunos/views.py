@@ -304,34 +304,48 @@ class AlunoDeleteView(BaseAlunoView, DeleteView):
     
     def delete(self, request, *args, **kwargs):
         try:
+            logger.info(f"Iniciando processo de exclusão de aluno")
+            
             self.object = self.get_object()
             nome_aluno = self.object.nome
+            aluno_id = self.object.id
+            
+            logger.info(f"Aluno encontrado - ID: {aluno_id}, Nome: {nome_aluno}")
             
             # Remove a foto se existir
             if self.object.foto:
                 try:
+                    logger.debug(f"Tentando remover foto do aluno {nome_aluno}")
                     if os.path.exists(self.object.foto.path):
                         os.remove(self.object.foto.path)
+                        logger.info(f"Foto do aluno {nome_aluno} removida com sucesso")
                 except Exception as e:
                     logger.warning(f"Erro ao remover foto do aluno {nome_aluno}: {str(e)}")
             
             # Executa a deleção dentro de uma transação
             with transaction.atomic():
+                logger.debug(f"Iniciando transação para exclusão do aluno {nome_aluno}")
+                
                 # Remove notas relacionadas
+                notas_count = self.object.nota_set.count()
+                logger.info(f"Removendo {notas_count} notas relacionadas ao aluno {nome_aluno}")
                 self.object.nota_set.all().delete()
+                
                 # Remove o aluno
+                logger.debug(f"Executando exclusão do aluno {nome_aluno}")
                 self.object.delete()
+                
+                logger.info(f"Aluno {nome_aluno} e seus dados relacionados foram excluídos com sucesso")
                 
                 messages.success(
                     request,
                     f'O aluno "{nome_aluno}" foi excluído com sucesso!'
                 )
                 
-                logger.info(f"Aluno {nome_aluno} excluído com sucesso")
                 return HttpResponseRedirect(self.success_url)
                 
         except Exception as e:
-            logger.error(f"Erro ao excluir aluno: {str(e)}")
+            logger.error(f"Erro crítico ao excluir aluno: {str(e)}", exc_info=True)
             messages.error(
                 request,
                 'Não foi possível excluir o aluno. Por favor, tente novamente.'
