@@ -24,6 +24,7 @@ from io import BytesIO
 import uuid
 import logging
 from django.core.exceptions import ValidationError
+import os
 
 
 from django.urls import reverse_lazy
@@ -286,22 +287,32 @@ class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
             messages.error(self.request, 'Erro ao atualizar aluno.')
             return self.form_invalid(form)
 
-class AlunoDeleteView(AdminRequiredMixin, BaseAlunoView, DeleteView):
-    """View for deleting students"""
+class AlunoDeleteView(LoginRequiredMixin, DeleteView):
+    model = Aluno
     template_name = 'alunos/confirmar_exclusao.html'
-    success_url = reverse_lazy('lista_alunos')
+    success_url = reverse_lazy('alunos:lista')
     
     def delete(self, request, *args, **kwargs):
         try:
             aluno = self.get_object()
-            nome_aluno = aluno.nome
-            aluno.delete()
-            messages.success(request, f'Aluno "{nome_aluno}" excluído com sucesso!')
-            return redirect(self.success_url)
+            logger.info(f"Excluindo aluno: {aluno.nome} (ID: {aluno.id})")
+            
+            # Remover foto se existir
+            if aluno.foto:
+                try:
+                    os.remove(aluno.foto.path)
+                    logger.info(f"Foto do aluno removida: {aluno.foto.path}")
+                except Exception as e:
+                    logger.error(f"Erro ao remover foto: {str(e)}")
+            
+            response = super().delete(request, *args, **kwargs)
+            messages.success(request, 'Aluno excluído com sucesso!')
+            return response
+            
         except Exception as e:
-            logger.error(f"Error deleting student: {str(e)}")
+            logger.error(f"Erro ao excluir aluno: {str(e)}")
             messages.error(request, 'Erro ao excluir aluno.')
-            return redirect('detalhe_aluno', pk=self.kwargs['pk'])
+            return redirect('alunos:lista')
 
 class NotaCreateView(AdminRequiredMixin, CreateView):
     """View for adding grades"""

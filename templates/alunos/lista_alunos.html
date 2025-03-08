@@ -257,226 +257,361 @@
 </style>
 
 <div class="container mt-4">
-    <!-- Loading indicator -->
-    <div class="loading-overlay">
-        <div class="loading-spinner"></div>
-    </div>
-
+    <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Lista de Alunos</h1>
+        <div>
+            <h1 class="mb-0">Lista de Alunos</h1>
+            <p class="text-muted">Gerencie todos os alunos cadastrados</p>
+        </div>
         
         {% if user.groups.all.0.name == 'Administradores' %}
-        <a href="{% url 'alunos:cadastrar' %}" class="btn btn-primary animated">
-            <i class="fas fa-plus"></i> Cadastrar Novo Aluno
-        </a>
+        <div class="btn-group">
+            <a href="{% url 'alunos:cadastrar' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Novo Aluno
+            </a>
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
+                <i class="fas fa-file-import"></i> Importar
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="exportBtn">
+                <i class="fas fa-file-export"></i> Exportar
+            </button>
+        </div>
         {% endif %}
     </div>
-    
-    <div class="filters-container animated delay-1">
-        <div class="filters-title">
-            <i class="fas fa-filter"></i>
-            <h4 class="mb-0">Filtros</h4>
-        </div>
-        
-        <div class="row">
-            <div class="col-md-3 mb-3">
-                <label for="nivel">Nível de Ensino</label>
-                <select id="nivel" class="form-control">
-                    <option value="">Selecione o Nível</option>
-                    <option value="EFI">Ensino Fundamental Anos Iniciais</option>
-                    <option value="EFF">Ensino Fundamental Anos Finais</option>
-                </select>
-            </div>
-            
-            <div class="col-md-3 mb-3">
-                <label for="turno">Turno</label>
-                <select id="turno" class="form-control" disabled>
-                    <option value="">Selecione o Turno</option>
-                    <option value="M">Manhã</option>
-                    <option value="T">Tarde</option>
-                </select>
-            </div>
-            
-            <div class="col-md-3 mb-3">
-                <label for="ano">Ano</label>
-                <select id="ano" class="form-control" disabled>
-                    <option value="">Selecione o Ano</option>
-                </select>
-            </div>
-            
-            <div class="col-md-3 mb-3">
-                <label for="search">Buscar</label>
-                <div class="input-group">
-                    <input type="text" id="search" class="form-control" placeholder="Nome ou matrícula">
-                    <div class="input-group-append">
-                        <button type="button" id="search-button" class="btn btn-primary">
-                            <i class="fas fa-search"></i> Buscar
-                        </button>
-                    </div>
+
+    <!-- Filters Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-filter text-primary"></i>
+                    <span class="ms-2 fw-bold">Filtros</span>
                 </div>
+                <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+        <div class="collapse show" id="filterCollapse">
+            <div class="card-body">
+                <form id="filterForm" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label" for="nivel">Nível de Ensino</label>
+                        <select id="nivel" class="form-select">
+                            <option value="">Todos os Níveis</option>
+                            <option value="EFI">Ensino Fundamental I</option>
+                            <option value="EFF">Ensino Fundamental II</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label" for="turno">Turno</label>
+                        <select id="turno" class="form-select" disabled>
+                            <option value="">Todos os Turnos</option>
+                            <option value="M">Manhã</option>
+                            <option value="T">Tarde</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label" for="ano">Ano</label>
+                        <select id="ano" class="form-select" disabled>
+                            <option value="">Todos os Anos</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label" for="search">Buscar</label>
+                        <div class="input-group">
+                            <input type="text" id="search" class="form-control" placeholder="Nome, matrícula ou CPF">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-    
-    <div id="alunos-container">
-        <!-- Content will be loaded here via AJAX -->
+
+    <!-- Results Section -->
+    <div id="results-container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="text-muted">
+                <span id="total-results">0</span> alunos encontrados
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary btn-sm" id="viewGrid">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="viewList">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading-spinner" class="text-center py-5" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+
+        <!-- Results Grid -->
+        <div id="alunos-container" class="row g-4">
+            <!-- Content loaded via AJAX -->
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Navegação de páginas" class="mt-4">
+            <ul class="pagination justify-content-center" id="pagination">
+                <!-- Pagination content -->
+            </ul>
+        </nav>
     </div>
 </div>
 
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Importar Alunos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm">
+                    <div class="mb-3">
+                        <label class="form-label">Arquivo Excel</label>
+                        <input type="file" class="form-control" accept=".xlsx,.xls">
+                    </div>
+                    <div class="mb-3">
+                        <a href="#" class="text-decoration-none">
+                            <i class="fas fa-download"></i> Baixar modelo
+                        </a>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="importBtn">Importar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const nivelSelect = document.getElementById('nivel');
-    const turnoSelect = document.getElementById('turno');
-    const anoSelect = document.getElementById('ano');
-    const searchInput = document.getElementById('search');
-    const searchButton = document.getElementById('search-button');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cache DOM elements
+        const elements = {
+            nivel: document.getElementById('nivel'),
+            turno: document.getElementById('turno'),
+            ano: document.getElementById('ano'),
+            search: document.getElementById('search'),
+            searchButton: document.getElementById('search-button'),
+            alunosContainer: document.getElementById('alunos-container'),
+            loadingOverlay: document.querySelector('.loading-overlay')
+        };
     
-    // Define year options based on level and shift
-    const anoOptions = {
-        EFI: {
-            M: [
-                {value: '3', label: '3º Ano'},
-                {value: '4', label: '4º Ano'},
-                {value: '5', label: '5º Ano'}
-            ]
-        },
-        EFF: {
-            M: [
-                {value: '6', label: '6º Ano - Manhã'},
-                {value: '7', label: '7º Ano - Manhã'},
-                {value: '8', label: '8º Ano - Manhã'}
-            ],
-            T: [
-                {value: '6', label: '6º Ano - Tarde'},
-                {value: '7', label: '7º Ano - Tarde'},
-                {value: '8', label: '8º Ano - Tarde'},
-                {value: '901', label: '9º Ano - Turma 901'},
-                {value: '902', label: '9º Ano - Turma 902'}
-            ]
+        // Configuration object for year options
+        const anoOptions = {
+            EFI: {
+                M: [
+                    {value: '3', label: '3º Ano'},
+                    {value: '4', label: '4º Ano'},
+                    {value: '5', label: '5º Ano'}
+                ]
+            },
+            EFF: {
+                M: [
+                    {value: '6', label: '6º Ano - Manhã'},
+                    {value: '7', label: '7º Ano - Manhã'},
+                    {value: '8', label: '8º Ano - Manhã'}
+                ],
+                T: [
+                    {value: '6', label: '6º Ano - Tarde'},
+                    {value: '7', label: '7º Ano - Tarde'},
+                    {value: '8', label: '8º Ano - Tarde'},
+                    {value: '901', label: '9º Ano - Turma 901'},
+                    {value: '902', label: '9º Ano - Turma 902'}
+                ]
+            }
+        };
+    
+        // State management
+        const state = {
+            currentFilters: {},
+            isLoading: false
+        };
+    
+        // Utility functions
+        const utils = {
+            createOption: (value, label) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = label;
+                return option;
+            },
+            
+            showError: (message, error) => {
+                elements.alunosContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5 class="alert-heading">Erro ao carregar os alunos</h5>
+                        <p>${message}</p>
+                        ${error ? `<hr><small class="text-muted">Detalhes: ${error}</small>` : ''}
+                    </div>
+                `;
+            }
+        };
+    
+        // Core functions
+        async function fetchAlunos(params = {}) {
+            if (state.isLoading) return;
+            
+            try {
+                state.isLoading = true;
+                showLoading();
+                
+                // Update current filters
+                state.currentFilters = { ...state.currentFilters, ...params };
+                
+                const response = await fetch(
+                    `/alunos/buscar/?${new URLSearchParams(state.currentFilters)}`,
+                    {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }
+                );
+    
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+    
+                const data = await response.json();
+                elements.alunosContainer.innerHTML = data.html;
+                
+                // Update URL with current filters
+                const url = new URL(window.location);
+                Object.entries(state.currentFilters).forEach(([key, value]) => {
+                    if (value) {
+                        url.searchParams.set(key, value);
+                    } else {
+                        url.searchParams.delete(key);
+                    }
+                });
+                window.history.pushState({}, '', url);
+    
+            } catch (error) {
+                console.error('Error fetching alunos:', error);
+                utils.showError('Por favor, tente novamente.', error.message);
+            } finally {
+                state.isLoading = false;
+                hideLoading();
+            }
         }
-    };
-
     
-    function fetchAlunos(params = {}) {
-        showLoading();
-        
-        fetch(`/alunos/buscar/?${new URLSearchParams(params)}`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            document.getElementById('alunos-container').innerHTML = data.html;
-            hideLoading();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            hideLoading();
-            document.getElementById('alunos-container').innerHTML = `
-                <div class="alert alert-danger">
-                    Erro ao carregar os alunos. Por favor, tente novamente.
-                    <br>
-                    Detalhes: ${error.message}
-                </div>
-            `;
-        });
-    }
-
-    // Function to update shift select
-    function updateTurnoChoices(nivel) {
-        turnoSelect.innerHTML = '<option value="">Selecione o Turno</option>';
-        
-        if (nivel === 'EFI') {
-            const opt = document.createElement('option');
-            opt.value = 'M';
-            opt.textContent = 'Manhã';
-            turnoSelect.appendChild(opt);
-            turnoSelect.value = 'M';
-            turnoSelect.disabled = true;
+        function updateTurnoChoices(nivel) {
+            elements.turno.innerHTML = '<option value="">Selecione o Turno</option>';
             
-            fetchAlunos({nivel: nivel, turno: 'M'});
-        } else if (nivel === 'EFF') {
-            turnoSelect.disabled = false;
-            ['M', 'T'].forEach(value => {
-                const opt = document.createElement('option');
-                opt.value = value;
-                opt.textContent = value === 'M' ? 'Manhã' : 'Tarde';
-                turnoSelect.appendChild(opt);
+            if (nivel === 'EFI') {
+                elements.turno.appendChild(utils.createOption('M', 'Manhã'));
+                elements.turno.value = 'M';
+                elements.turno.disabled = true;
+                
+                fetchAlunos({nivel, turno: 'M'});
+            } else if (nivel === 'EFF') {
+                elements.turno.disabled = false;
+                ['M', 'T'].forEach(value => {
+                    elements.turno.appendChild(
+                        utils.createOption(value, value === 'M' ? 'Manhã' : 'Tarde')
+                    );
+                });
+                
+                fetchAlunos({nivel});
+            } else {
+                elements.turno.disabled = true;
+                fetchAlunos();
+            }
+            
+            updateAnoChoices(elements.turno.value, nivel);
+        }
+    
+        function updateAnoChoices(turno, nivel) {
+            elements.ano.innerHTML = '<option value="">Selecione o Ano</option>';
+            
+            if (nivel && turno && anoOptions[nivel]?.[turno]) {
+                elements.ano.disabled = false;
+                anoOptions[nivel][turno].forEach(({value, label}) => {
+                    elements.ano.appendChild(utils.createOption(value, label));
+                });
+            } else {
+                elements.ano.disabled = true;
+            }
+        }
+    
+        // Event handlers
+        function handleNivelChange() {
+            updateTurnoChoices(this.value);
+        }
+    
+        function handleTurnoChange() {
+            updateAnoChoices(this.value, elements.nivel.value);
+            fetchAlunos({
+                nivel: elements.nivel.value,
+                turno: this.value
             });
-            
-            fetchAlunos({nivel: nivel});
+        }
+    
+        function handleAnoChange() {
+            fetchAlunos({
+                nivel: elements.nivel.value,
+                turno: elements.turno.value,
+                ano: this.value
+            });
+        }
+    
+        function handleSearch(e) {
+            e.preventDefault();
+            fetchAlunos({
+                nivel: elements.nivel.value,
+                turno: elements.turno.value,
+                ano: elements.ano.value,
+                search: elements.search.value.trim()
+            });
+        }
+    
+        // Loading overlay functions
+        function showLoading() {
+            elements.loadingOverlay.style.display = 'flex';
+        }
+    
+        function hideLoading() {
+            elements.loadingOverlay.style.display = 'none';
+        }
+    
+        // Event listeners
+        elements.nivel.addEventListener('change', handleNivelChange);
+        elements.turno.addEventListener('change', handleTurnoChange);
+        elements.ano.addEventListener('change', handleAnoChange);
+        elements.searchButton.addEventListener('click', handleSearch);
+        elements.search.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSearch(e);
+            }
+        });
+    
+        // Initialize
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('nivel')) {
+            elements.nivel.value = urlParams.get('nivel');
+            updateTurnoChoices(elements.nivel.value);
         } else {
-            turnoSelect.disabled = true;
             fetchAlunos();
         }
-        
-        updateAnoChoices(turnoSelect.value, nivel);
-    }
-
-    // Function to update year select
-    function updateAnoChoices(turno, nivel) {
-        anoSelect.innerHTML = '<option value="">Selecione o Ano</option>';
-        
-        if (nivel && turno && anoOptions[nivel] && anoOptions[nivel][turno]) {
-            anoSelect.disabled = false;
-            anoOptions[nivel][turno].forEach(option => {
-                const opt = document.createElement('option');
-                opt.value = option.value;
-                opt.textContent = option.label;
-                anoSelect.appendChild(opt);
-            });
-        } else {
-            anoSelect.disabled = true;
-        }
-    }
-
-    // Event Listeners
-    nivelSelect.addEventListener('change', function() {
-        updateTurnoChoices(this.value);
     });
-
-    turnoSelect.addEventListener('change', function() {
-        updateAnoChoices(this.value, nivelSelect.value);
-        fetchAlunos({
-            nivel: nivelSelect.value,
-            turno: this.value
-        });
-    });
-
-    anoSelect.addEventListener('change', function() {
-        fetchAlunos({
-            nivel: nivelSelect.value,
-            turno: turnoSelect.value,
-            ano: this.value
-        });
-    });
-
-    searchButton.addEventListener('click', function() {
-        fetchAlunos({
-            nivel: nivelSelect.value,
-            turno: turnoSelect.value,
-            ano: anoSelect.value,
-            search: searchInput.value
-        });
-    });
-
-    // Loading overlay functions
-    function showLoading() {
-        document.querySelector('.loading-overlay').style.display = 'flex';
-    }
-
-    function hideLoading() {
-        document.querySelector('.loading-overlay').style.display = 'none';
-    }
-
-    // Initial load
-    fetchAlunos();
-});
-</script>
-{% endblock %}
+    </script>
+    {% endblock %}

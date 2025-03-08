@@ -3,189 +3,27 @@
 {% block title %}Confirmar Exclusão{% endblock %}
 
 {% block content %}
-<style>
-    .delete-container {
-        max-width: 600px;
-        margin: 0 auto;
-        background-color: white;
-        border-radius: 10px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        overflow: hidden;
-    }
-    
-    .delete-header {
-        background-color: #dc3545;
-        color: white;
-        padding: 1.5rem;
-        text-align: center;
-    }
-    
-    .delete-header i {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-    }
-    
-    .delete-header h2 {
-        margin: 0;
-    }
-    
-    .delete-content {
-        padding: 2rem;
-    }
-    
-    .delete-warning {
-        background-color: #fff8f8;
-        border-left: 4px solid #dc3545;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        border-radius: 0 4px 4px 0;
-    }
-    
-    .delete-warning p {
-        margin: 0;
-        color: #6c757d;
-    }
-    
-    .student-info {
-        background-color: #f8f9fa;
-        padding: 1.5rem;
-        border-radius: 8px;
-        margin-bottom: 1.5rem;
-    }
-    
-    .student-name {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: var(--primary-color);
-        margin-bottom: 0.5rem;
-    }
-    
-    .student-detail {
-        display: flex;
-        align-items: center;
-        margin-bottom: 0.5rem;
-        color: #666;
-    }
-    
-    .student-detail i {
-        width: 20px;
-        margin-right: 0.5rem;
-        color: var(--secondary-color);
-    }
-    
-    .delete-actions {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 2rem;
-    }
-    
-    .delete-actions .btn {
-        padding: 0.6rem 1.5rem;
-        display: flex;
-        align-items: center;
-    }
-    
-    .delete-actions .btn i {
-        margin-right: 0.5rem;
-    }
-    
-    /* Animações */
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-        20%, 40%, 60%, 80% { transform: translateX(5px); }
-    }
-    
-    .animated {
-        animation: fadeInUp 0.5s ease forwards;
-    }
-    
-    .shake {
-        animation: shake 0.8s ease;
-    }
-</style>
-
-<div class="container mt-5">
-    <div class="delete-container animated">
-        <div class="delete-header">
-            <i class="fas fa-exclamation-triangle"></i>
-            <h2>Confirmar Exclusão</h2>
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h4>Confirmar Exclusão</h4>
         </div>
-        
-        <div class="delete-content">
-            <div class="delete-warning shake">
-                <p><strong>Atenção!</strong> Esta ação não pode ser desfeita. Todos os dados do aluno serão permanentemente removidos do sistema.</p>
-            </div>
-            
-            <p>Você está prestes a excluir o seguinte aluno:</p>
-            
-            <div class="student-info">
-                <div class="student-name">{{ aluno.nome }}</div>
-                
-                <div class="student-detail">
-                    <i class="fas fa-id-card"></i>
-                    <span>Matrícula: {{ aluno.matricula }}</span>
-                </div>
-                
-                <div class="student-detail">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>{{ aluno.get_ano_display }} - {{ aluno.get_nivel_display }}</span>
-                </div>
-                
-                <div class="student-detail">
-                    <i class="fas fa-clock"></i>
-                    <span>Turno: {{ aluno.get_turno_display }}</span>
-                </div>
-                
-                <div class="student-detail">
-                    <i class="fas fa-users"></i>
-                    <span>Turma: {{ aluno.turma }}</span>
-                </div>
-            </div>
-            
-            <p>Tem certeza que deseja excluir este aluno?</p>
+        <div class="card-body">
+            <p>Você tem certeza que deseja excluir o aluno "{{ object.nome }}"?</p>
+            <p>Esta ação não poderá ser desfeita.</p>
             
             <form method="post">
                 {% csrf_token %}
-                
-                <div class="delete-actions">
-                    <a href="{% url 'detalhe_aluno' aluno.pk %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Cancelar
-                    </a>
-                    
+                <div class="btn-group">
                     <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash-alt"></i> Confirmar Exclusão
+                        <i class="fas fa-trash"></i> Confirmar Exclusão
                     </button>
+                    <a href="{% url 'alunos:detalhe' object.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Garantir que as animações sejam executadas corretamente
-        const elements = document.querySelectorAll('.animated');
-        elements.forEach(element => {
-            element.style.opacity = '0';
-        });
-        
-        setTimeout(() => {
-            elements.forEach(element => {
-                element.style.opacity = '1';
-            });
-        }, 100);
-    });
-</script>
 {% endblock %}
