@@ -227,6 +227,16 @@
         }
     </style>
     {% block extra_css %}{% endblock %}
+    <script>
+        // Adicione isso para requisições AJAX
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Configure o token CSRF para todas as requisições AJAX
+        document.addEventListener('DOMContentLoaded', function() {
+            const xhr = new XMLHttpRequest();
+            xhr.setRequestHeader('X-CSRFToken', csrftoken);
+        });
+    </script>
 </head>
 <body>
     <header>

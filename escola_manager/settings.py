@@ -19,6 +19,27 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'renansilvaia-dev-escolamanager.jl2jzj.easypanel.host']
 
+# Adicione esta nova configuração para CSRF
+CSRF_TRUSTED_ORIGINS = [
+    'https://renansilvaia-dev-escolamanager.jl2jzj.easypanel.host',
+    'http://renansilvaia-dev-escolamanager.jl2jzj.easypanel.host'
+]
+
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS += [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000'
+    ]
+
+# Configurações adicionais de segurança
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'Strict'
+SESSION_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_SECONDS = 31536000  # 1 ano
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
 INSTALLED_APPS = [
     'supabase',
     'django.contrib.admin',
