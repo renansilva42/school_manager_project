@@ -17,12 +17,14 @@ SECRET_KEY = 'your-secret-key-here'
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'renansilvaia-dev-escolamanager.jl2jzj.easypanel.host']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'renansilvaia-dev-escolamanager.jl2jzj.easypanel.host', 'app.escolamanager.com']
 
 # Adicione esta nova configuração para CSRF
 CSRF_TRUSTED_ORIGINS = [
     'https://renansilvaia-dev-escolamanager.jl2jzj.easypanel.host',
-    'http://renansilvaia-dev-escolamanager.jl2jzj.easypanel.host'
+    'http://renansilvaia-dev-escolamanager.jl2jzj.easypanel.host',
+    'https://app.escolamanager.com',
+    'http://app.escolamanager.com'
 ]
 
 if DEBUG:
