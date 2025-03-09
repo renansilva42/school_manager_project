@@ -67,6 +67,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
+# Configurações de Sessão
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 1209600  # 2 semanas em segundos
+SESSION_COOKIE_SECURE = True  # para HTTPS
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+
 # Aumentar limite de upload se necessário
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
