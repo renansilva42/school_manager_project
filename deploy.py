@@ -12,28 +12,43 @@ def executar_migracoes():
     print("Executando migrações...")
     os.system('python manage.py migrate')
 
-def criar_superusuario():
-    """Cria um superusuário se não existir"""
+def criar_superusuarios():
+    """Cria três superusuários se não existirem"""
     User = get_user_model()
     
-    # Pegar credenciais das variáveis de ambiente
-    EMAIL = os.getenv('DJANGO_SUPERUSER_EMAIL', 'admin@exemplo.com')
-    USERNAME = os.getenv('DJANGO_SUPERUSER_USERNAME', 'admin')
-    SENHA = os.getenv('DJANGO_SUPERUSER_PASSWORD', 'senhapadrao')
+    # Lista de superusuários para criar
+    superusers = [
+        {
+            'username': 'admin1',
+            'email': 'admin1@exemplo.com',
+            'password': 'senhapadrao1'
+        },
+        {
+            'username': 'admin2',
+            'email': 'admin2@exemplo.com',
+            'password': 'senhapadrao2'
+        },
+        {
+            'username': 'admin3',
+            'email': 'admin3@exemplo.com',
+            'password': 'senhapadrao3'
+        }
+    ]
     
-    try:
-        if not User.objects.filter(is_superuser=True).exists():
-            print("Criando superusuário...")
-            User.objects.create_superuser(
-                username=USERNAME,
-                email=EMAIL,
-                password=SENHA
-            )
-            print("Superusuário criado com sucesso!")
-        else:
-            print("Superusuário já existe.")
-    except Exception as e:
-        print(f"Erro ao criar superusuário: {e}")
+    for user_data in superusers:
+        try:
+            if not User.objects.filter(username=user_data['username']).exists():
+                print(f"Criando superusuário {user_data['username']}...")
+                User.objects.create_superuser(
+                    username=user_data['username'],
+                    email=user_data['email'],
+                    password=user_data['password']
+                )
+                print(f"Superusuário {user_data['username']} criado com sucesso!")
+            else:
+                print(f"Superusuário {user_data['username']} já existe.")
+        except Exception as e:
+            print(f"Erro ao criar superusuário {user_data['username']}: {e}")
 
 def verificar_banco():
     """Verifica se o banco de dados está disponível"""
@@ -47,6 +62,6 @@ def verificar_banco():
 if __name__ == "__main__":
     if verificar_banco():
         executar_migracoes()
-        criar_superusuario()
+        criar_superusuarios()
     else:
         print("Falha na conexão com o banco de dados!")
