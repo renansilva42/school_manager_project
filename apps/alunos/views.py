@@ -104,14 +104,28 @@ class AlunoListView(BaseAlunoView, ListView):
         logger.debug("Starting get_queryset")
         try:
             queryset = super().get_queryset()
-            logger.debug(f"Queryset count: {queryset.count()}")
             
-            # Add your filtering logic here
+            # Obter parâmetros da requisição
             nivel = self.request.GET.get('nivel')
+            turno = self.request.GET.get('turno')
+            ano = self.request.GET.get('ano')
+            search = self.request.GET.get('search')
+            
+            # Aplicar filtros
             if nivel:
                 queryset = queryset.filter(nivel=nivel)
-                logger.debug(f"Alunos após filtro nivel={nivel}: {queryset.count()}")
+            if turno:
+                queryset = queryset.filter(turno=turno)
+            if ano:
+                queryset = queryset.filter(ano=ano)
+            if search:
+                queryset = queryset.filter(
+                    Q(nome__icontains=search) |
+                    Q(matricula__icontains=search) |
+                    Q(cpf__icontains=search)
+                )
                 
+            logger.debug(f"Queryset final count: {queryset.count()}")
             return queryset
         except Exception as e:
             logger.error(f"Error in get_queryset: {str(e)}")

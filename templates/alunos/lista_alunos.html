@@ -494,7 +494,7 @@
                     <div class="col-md-3">
                         <label class="form-label" for="search">Buscar</label>
                         <div class="input-group">
-                            <input type="text" id="search" class="form-control" placeholder="Nome, matrícula ou CPF">
+                            <input type="text" id="search" name="search" class="form-control" placeholder="Nome, matrícula ou CPF">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-search"></i>
                             </button>
@@ -575,222 +575,180 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Cache DOM elements
-        const elements = {
-            nivel: document.getElementById('nivel'),
-            turno: document.getElementById('turno'),
-            ano: document.getElementById('ano'),
-            search: document.getElementById('search'),
-            searchButton: document.getElementById('search-button'),
-            alunosContainer: document.getElementById('alunos-container'),
-            loadingOverlay: document.querySelector('.loading-overlay')
-        };
-    
-        // Configuration object for year options
-        const anoOptions = {
-            EFI: {
-                M: [
-                    {value: '3', label: '3º Ano'},
-                    {value: '4', label: '4º Ano'},
-                    {value: '5', label: '5º Ano'}
-                ]
-            },
-            EFF: {
-                M: [
-                    {value: '6', label: '6º Ano - Manhã'},
-                    {value: '7', label: '7º Ano - Manhã'},
-                    {value: '8', label: '8º Ano - Manhã'}
-                ],
-                T: [
-                    {value: '6', label: '6º Ano - Tarde'},
-                    {value: '7', label: '7º Ano - Tarde'},
-                    {value: '8', label: '8º Ano - Tarde'},
-                    {value: '901', label: '9º Ano - Turma 901'},
-                    {value: '902', label: '9º Ano - Turma 902'}
-                ]
-            }
-        };
-    
-        // State management
-        const state = {
-            currentFilters: {},
-            isLoading: false
-        };
-    
-        // Utility functions
-        const utils = {
-            createOption: (value, label) => {
-                const option = document.createElement('option');
-                option.value = value;
-                option.textContent = label;
-                return option;
-            },
-            
-            showError: (message, error) => {
-                elements.alunosContainer.innerHTML = `
-                    <div class="alert alert-danger">
-                        <h5 class="alert-heading">Erro ao carregar os alunos</h5>
-                        <p>${message}</p>
-                        ${error ? `<hr><small class="text-muted">Detalhes: ${error}</small>` : ''}
-                    </div>
-                `;
-            }
-        };
-    
-        // Core functions
+    // Cache DOM elements
+    const elements = {
+        filterForm: document.getElementById('filterForm'),
+        nivel: document.getElementById('nivel'),
+        turno: document.getElementById('turno'),
+        ano: document.getElementById('ano'),
+        search: document.getElementById('search'),
+        alunosContainer: document.getElementById('alunos-container'),
+        loadingOverlay: document.querySelector('.loading-overlay')
+    };
+
+    // Configuration object for year options
+    const anoOptions = {
+        EFI: {
+            M: [
+                {value: '3', label: '3º Ano'},
+                {value: '4', label: '4º Ano'},
+                {value: '5', label: '5º Ano'}
+            ]
+        },
+        EFF: {
+            M: [
+                {value: '6', label: '6º Ano - Manhã'},
+                {value: '7', label: '7º Ano - Manhã'},
+                {value: '8', label: '8º Ano - Manhã'}
+            ],
+            T: [
+                {value: '6', label: '6º Ano - Tarde'},
+                {value: '7', label: '7º Ano - Tarde'},
+                {value: '8', label: '8º Ano - Tarde'},
+                {value: '901', label: '9º Ano - Turma 901'},
+                {value: '902', label: '9º Ano - Turma 902'}
+            ]
+        }
+    };
+
+    // State management
+    const state = {
+        isLoading: false
+    };
+
+    // Utility functions
+    const utils = {
+        createOption: (value, label) => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            return option;
+        }
+    };
+
+    // Core functions
+    async function fetchAlunos(params = {}) {
+        if (state.isLoading) return;
         
-        async function fetchAlunos(params = {}) {
-    if (state.isLoading) return;
-    
-    try {
-        state.isLoading = true;
-        if (elements.loadingOverlay) {
+        try {
+            state.isLoading = true;
             elements.loadingOverlay.style.display = 'flex';
-        }
-        
-        const response = await fetch(
-            `/alunos/buscar/?${new URLSearchParams(params)}`,
-            {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        if (elements.alunosContainer) {
-            elements.alunosContainer.innerHTML = data.html;
             
-            // Adicione esta linha para atualizar o contador
-            document.getElementById('total-results').textContent = data.total_alunos;
-        }
+            const queryParams = new URLSearchParams();
+            Object.entries(params).forEach(([key, value]) => {
+                if (value) queryParams.append(key, value);
+            });
+            
+            const response = await fetch(
+                `/alunos/buscar/?${queryParams.toString()}`,
+                {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }
+            );
 
-    } catch (error) {
-        console.error('Error fetching alunos:', error);
-        if (elements.alunosContainer) {
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            elements.alunosContainer.innerHTML = data.html;
+            document.getElementById('total-results').textContent = data.total_alunos;
+
+        } catch (error) {
+            console.error('Error fetching alunos:', error);
             elements.alunosContainer.innerHTML = `
-                <div class="col-12">
-                    <div class="alert alert-danger">
-                        <h5 class="alert-heading">Erro ao carregar os alunos</h5>
-                        <p>Por favor, tente novamente.</p>
-                        ${error ? `<hr><small class="text-muted">Detalhes: ${error.message}</small>` : ''}
-                    </div>
+                <div class="alert alert-danger">
+                    <h5>Erro ao carregar os alunos</h5>
+                    <p>Por favor, tente novamente.</p>
                 </div>
             `;
-        }
-    } finally {
-        state.isLoading = false;
-        if (elements.loadingOverlay) {
+        } finally {
+            state.isLoading = false;
             elements.loadingOverlay.style.display = 'none';
         }
     }
-}
-    
-        function updateTurnoChoices(nivel) {
-            elements.turno.innerHTML = '<option value="">Selecione o Turno</option>';
+
+    function updateTurnoChoices(nivel) {
+        elements.turno.innerHTML = '<option value="">Selecione o Turno</option>';
+        
+        if (nivel === 'EFI') {
+            elements.turno.appendChild(utils.createOption('M', 'Manhã'));
+            elements.turno.value = 'M';
+            elements.turno.disabled = true;
             
-            if (nivel === 'EFI') {
-                elements.turno.appendChild(utils.createOption('M', 'Manhã'));
-                elements.turno.value = 'M';
-                elements.turno.disabled = true;
-                
-                fetchAlunos({nivel, turno: 'M'});
-            } else if (nivel === 'EFF') {
-                elements.turno.disabled = false;
-                ['M', 'T'].forEach(value => {
-                    elements.turno.appendChild(
-                        utils.createOption(value, value === 'M' ? 'Manhã' : 'Tarde')
-                    );
-                });
-                
-                fetchAlunos({nivel});
-            } else {
-                elements.turno.disabled = true;
-                fetchAlunos();
-            }
+            fetchAlunos({nivel, turno: 'M'});
+        } else if (nivel === 'EFF') {
+            elements.turno.disabled = false;
+            ['M', 'T'].forEach(value => {
+                elements.turno.appendChild(
+                    utils.createOption(value, value === 'M' ? 'Manhã' : 'Tarde')
+                );
+            });
             
-            updateAnoChoices(elements.turno.value, nivel);
-        }
-    
-        function updateAnoChoices(turno, nivel) {
-            elements.ano.innerHTML = '<option value="">Selecione o Ano</option>';
-            
-            if (nivel && turno && anoOptions[nivel]?.[turno]) {
-                elements.ano.disabled = false;
-                anoOptions[nivel][turno].forEach(({value, label}) => {
-                    elements.ano.appendChild(utils.createOption(value, label));
-                });
-            } else {
-                elements.ano.disabled = true;
-            }
-        }
-    
-        // Event handlers
-        function handleNivelChange() {
-            updateTurnoChoices(this.value);
-        }
-    
-        function handleTurnoChange() {
-            updateAnoChoices(this.value, elements.nivel.value);
-            fetchAlunos({
-                nivel: elements.nivel.value,
-                turno: this.value
-            });
-        }
-    
-        function handleAnoChange() {
-            fetchAlunos({
-                nivel: elements.nivel.value,
-                turno: elements.turno.value,
-                ano: this.value
-            });
-        }
-    
-        function handleSearch(e) {
-            e.preventDefault();
-            fetchAlunos({
-                nivel: elements.nivel.value,
-                turno: elements.turno.value,
-                ano: elements.ano.value,
-                search: elements.search.value.trim()
-            });
-        }
-    
-        // Loading overlay functions
-        function showLoading() {
-            elements.loadingOverlay.style.display = 'flex';
-        }
-    
-        function hideLoading() {
-            elements.loadingOverlay.style.display = 'none';
-        }
-    
-        // Event listeners
-        elements.nivel.addEventListener('change', handleNivelChange);
-        elements.turno.addEventListener('change', handleTurnoChange);
-        elements.ano.addEventListener('change', handleAnoChange);
-        elements.searchButton.addEventListener('click', handleSearch);
-        elements.search.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                handleSearch(e);
-            }
-        });
-    
-        // Initialize
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('nivel')) {
-            elements.nivel.value = urlParams.get('nivel');
-            updateTurnoChoices(elements.nivel.value);
+            fetchAlunos({nivel});
         } else {
+            elements.turno.disabled = true;
+            elements.ano.disabled = true;
             fetchAlunos();
         }
+        
+        updateAnoChoices(elements.turno.value, nivel);
+    }
+
+    function updateAnoChoices(turno, nivel) {
+        elements.ano.innerHTML = '<option value="">Selecione o Ano</option>';
+        
+        if (nivel && turno && anoOptions[nivel]?.[turno]) {
+            elements.ano.disabled = false;
+            anoOptions[nivel][turno].forEach(({value, label}) => {
+                elements.ano.appendChild(utils.createOption(value, label));
+            });
+        } else {
+            elements.ano.disabled = true;
+        }
+    }
+
+    // Event Listeners
+    elements.filterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetchAlunos({
+            nivel: elements.nivel.value,
+            turno: elements.turno.value,
+            ano: elements.ano.value,
+            search: elements.search.value.trim()
+        });
     });
-    </script>
+
+    elements.nivel.addEventListener('change', function() {
+        updateTurnoChoices(this.value);
+    });
+
+    elements.turno.addEventListener('change', function() {
+        updateAnoChoices(this.value, elements.nivel.value);
+        fetchAlunos({
+            nivel: elements.nivel.value,
+            turno: this.value
+        });
+    });
+
+    elements.ano.addEventListener('change', function() {
+        fetchAlunos({
+            nivel: elements.nivel.value,
+            turno: elements.turno.value,
+            ano: this.value
+        });
+    });
+
+    // Initialize
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('nivel')) {
+        elements.nivel.value = urlParams.get('nivel');
+        updateTurnoChoices(elements.nivel.value);
+    } else {
+        fetchAlunos();
+    }
+});    
+</script>
         {% endblock %}
 
     {% endblock %}
