@@ -9,16 +9,22 @@ __pycache__/
 # Django specific
 *.log
 *.pot
-*.pyc
 __pycache__/
-migrations/
-*.sqlite3
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
 media/
 staticfiles/
 
-# Virtual environment (relative to escola_manager/)
-../venv/
-../venv3.10/
+# Virtual environment
+venv/
+venv3.10/
+env/
+ENV/
+.env
+.venv
+env.bak/
+venv.bak/
 
 # IDE and editor files
 .idea/
@@ -32,11 +38,13 @@ staticfiles/
 .DS_Store
 .AppleDouble
 .LSOverride
+._*
 
 # Windows
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+$RECYCLE.BIN/
 
 # Build and packaging
 dist/
@@ -51,22 +59,49 @@ build/
 .env.local
 .env.production
 .env.development
+.env.test
 
-# Node.js (if applicable, for frontend dependencies)
+# Node.js (if applicable)
 node_modules/
 npm-debug.log
 yarn-debug.log
 yarn-error.log
 
-# Supabase or other database dumps (optional)
+# Database
 *.dump
 *.sql
+*.sqlite3
 
 # Temporary files
 *.bak
 *.swp
 *~
 
-# Heroku or deployment files (optional)
-slugignore
-profile
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Deployment files
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
