@@ -424,6 +424,17 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
             logger.error(f"Error creating student: {str(e)}", exc_info=True)
             messages.error(self.request, f'Erro ao cadastrar aluno: {str(e)}')
             return self.form_invalid(form)
+        
+class AlunoDetailView(BaseAlunoView, DetailView):
+    """View for displaying detailed student information"""
+    template_name = 'alunos/detalhe_aluno.html'
+    context_object_name = 'aluno'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        aluno = self.get_object()
+        context['notas'] = aluno.nota_set.all().order_by('disciplina', 'bimestre')
+        return context
 
 class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
     template_name = 'alunos/editar_aluno.html'
