@@ -99,6 +99,17 @@ class Aluno(models.Model):
         help_text='Tamanho máximo permitido: 5MB'
     )
     
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Data de Criação"
+    )
+    
+    dados_adicionais = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name="Dados Adicionais"
+    )
+    
     def save(self, *args, **kwargs):
         """Método save aprimorado com logging"""
         logger.debug(f"Iniciando salvamento do aluno: {self.nome}")

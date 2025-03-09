@@ -28,6 +28,33 @@ class SupabaseService:
         query = query.order('nome')
         
         return query.execute()
+    
+    def sincronizar_com_supabase(self):
+        """
+        Sincroniza dados entre Supabase e banco local
+        """
+        try:
+            # Usa o método list_alunos já existente na classe
+            response = self.list_alunos()
+            
+            if response and hasattr(response, 'data'):
+                from apps.alunos.models import Aluno  # Importação local para evitar circular import
+                
+                for aluno_data in response.data:
+                    # Remove os campos que não queremos sincronizar
+                    aluno_data.pop('created_at', None)
+                    aluno_data.pop('dados_adicionais', None)
+                    
+                    # Atualiza ou cria o aluno no banco local
+                    Aluno.objects.update_or_create(
+                        id=aluno_data['id'],
+                        defaults=aluno_data
+                    )
+                return True
+            return False
+        except Exception as e:
+            print(f"Erro na sincronização com Supabase: {str(e)}")
+            return False
 
     def get_aluno(self, id):
         return self.client.table('alunos').select('*').eq('id', id).execute()
