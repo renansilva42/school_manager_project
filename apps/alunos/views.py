@@ -417,6 +417,9 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
                 # Create student in Supabase
                 response = db.create_aluno(data)
                 
+                if not response:
+                    raise Exception("Falha ao criar aluno no Supabase")
+                
                 messages.success(self.request, 'Aluno cadastrado com sucesso!')
                 return redirect('alunos:detalhe', pk=aluno_id)
                 
@@ -424,6 +427,7 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
             logger.error(f"Error creating student: {str(e)}", exc_info=True)
             messages.error(self.request, f'Erro ao cadastrar aluno: {str(e)}')
             return self.form_invalid(form)
+
         
 class AlunoDetailView(BaseAlunoView, DetailView):
     """View for displaying detailed student information"""
@@ -505,6 +509,9 @@ class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
                 # Update student in Supabase
                 response = db.update_aluno(aluno_id, data)
                 
+                if not response:
+                    raise Exception("Falha ao atualizar aluno no Supabase")
+                
                 messages.success(self.request, 'Aluno atualizado com sucesso!')
                 return redirect('alunos:detalhe', pk=aluno_id)
                 
@@ -530,6 +537,9 @@ class AlunoDeleteView(BaseAlunoView, DeleteView):
             
             # Delete student from Supabase
             response = db.delete_aluno(aluno_id)
+            
+            if not response:
+                raise Exception("Falha ao excluir aluno no Supabase")
             
             messages.success(request, 'Aluno excluído com sucesso!')
             return HttpResponseRedirect(self.success_url)
