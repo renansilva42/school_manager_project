@@ -1,6 +1,7 @@
 import os
 import django
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, Permission
 from django.db import connections
 from django.db.utils import OperationalError
 
@@ -16,9 +17,32 @@ def verificar_banco():
     except OperationalError:
         return False
 
+def criar_grupo_administradores():
+    """Cria o grupo Administradores com todas as permissões"""
+    try:
+        # Obtém ou cria o grupo Administradores
+        grupo_admin, created = Group.objects.get_or_create(name='Administradores')
+        
+        # Obtém todas as permissões disponíveis
+        todas_permissoes = Permission.objects.all()
+        
+        # Adiciona todas as permissões ao grupo
+        grupo_admin.permissions.set(todas_permissoes)
+        
+        print("Grupo Administradores configurado com todas as permissões!")
+        return grupo_admin
+    except Exception as e:
+        print(f"Erro ao configurar grupo Administradores: {e}")
+        return None
+
 def criar_superusuarios():
-    """Cria três superusuários usando variáveis de ambiente"""
+    """Cria superusuários com todas as permissões e os adiciona ao grupo Administradores"""
     User = get_user_model()
+    
+    # Cria/obtém o grupo Administradores
+    grupo_admin = criar_grupo_administradores()
+    if not grupo_admin:
+        return
     
     # Lista de superusuários para criar usando variáveis de ambiente
     superusers = []
@@ -36,18 +60,35 @@ def criar_superusuarios():
     
     for user_data in superusers:
         try:
-            if not User.objects.filter(username=user_data['username']).exists():
+            # Cria ou obtém o superusuário
+            user, created = User.objects.get_or_create(
+                username=user_data['username'],
+                email=user_data['email']
+            )
+            
+            if created:
+                user.set_password(user_data['password'])
                 print(f"Criando superusuário {user_data['username']}...")
-                User.objects.create_superuser(
-                    username=user_data['username'],
-                    email=user_data['email'],
-                    password=user_data['password']
-                )
-                print(f"Superusuário {user_data['username']} criado com sucesso!")
             else:
                 print(f"Superusuário {user_data['username']} já existe.")
+            
+            # Configura como superusuário
+            user.is_superuser = True
+            user.is_staff = True
+            
+            # Adiciona todas as permissões individuais
+            todas_permissoes = Permission.objects.all()
+            user.user_permissions.set(todas_permissoes)
+            
+            # Adiciona ao grupo Administradores
+            user.groups.add(grupo_admin)
+            
+            user.save()
+            
+            print(f"Superusuário {user_data['username']} configurado com todas as permissões!")
+            
         except Exception as e:
-            print(f"Erro ao criar superusuário {user_data['username']}: {e}")
+            print(f"Erro ao configurar superusuário {user_data['username']}: {e}")
 
 def executar_migracoes():
     """Executa as migrações do banco de dados"""
