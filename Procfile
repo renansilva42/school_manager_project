@@ -1,1 +1,1 @@
-web: gunicorn escola_manager.wsgi:application --log-file -c
+web: gunicorn escola_manager.wsgi:application
