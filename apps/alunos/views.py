@@ -303,6 +303,13 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
     template_name = 'alunos/cadastrar_aluno.html'
     form_class = AlunoForm
     
+    def get(self, request, *args, **kwargs):
+        # Clear any existing messages
+        storage = messages.get_messages(request)
+        storage.used = True  # Mark all messages as used
+        
+        return super().get(request, *args, **kwargs)
+    
     def form_valid(self, form):
         try:
             logger.info("Iniciando processo de cadastro de aluno")
