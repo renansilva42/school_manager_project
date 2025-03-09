@@ -1,4 +1,11 @@
 # test_connection.py
+import os
+import django
+
+# Configurar as settings do Django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'escola_manager.settings')
+django.setup()
+
 from services.database import SupabaseService
 
 def test_connection():
