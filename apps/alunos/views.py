@@ -3,32 +3,31 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
-from django.template.loader import render_to_string
-from django.http import JsonResponse
+from django.template.loader import render_to_string, get_template
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.db.models import Avg, Q
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.views import View  # Adicione este import
+from django.views import View
 from services.database import SupabaseService
 from .forms import AlunoForm, NotaForm, AlunoFilterForm
 from .models import Aluno, Nota
 from .mixins import AdminRequiredMixin
-from django.http import HttpResponse
-from django.template.loader import get_template
 from xhtml2pdf import pisa
 import xlsxwriter
+import pandas as pd
 from io import BytesIO
 import uuid
 import logging
-from django.core.exceptions import ValidationError
 import os
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
-
-
 from django.urls import reverse_lazy
+from django.conf import settings
+import os
+
+
 success_url = reverse_lazy('alunos:lista')
 
 logger = logging.getLogger(__name__)
@@ -198,17 +197,88 @@ class NotaDeleteView(AdminRequiredMixin, DeleteView):
 # Em /apps/alunos/views.py
 
 
-class AlunoImportExcelView(LoginRequiredMixin, View):
-    """View for importing student data from Excel"""
+class AlunoImportExcelView(LoginRequiredMixin, AdminRequiredMixin, View):
+    """View for importing students from Excel file"""
+    
     def post(self, request):
         try:
-            # Implementar lógica de importação aqui
-            messages.success(request, 'Dados importados com sucesso!')
-            return redirect('alunos:lista')
+            excel_file = request.FILES.get('file')
+            
+            if not excel_file:
+                raise ValidationError('Nenhum arquivo foi enviado')
+                
+            if not excel_file.name.endswith(('.xls', '.xlsx')):
+                raise ValidationError('O arquivo deve ser no formato Excel (.xls ou .xlsx)')
+
+            # Read Excel file
+            df = pd.read_excel(excel_file)
+            
+            required_columns = [
+                'nome', 'data_nascimento', 'cpf', 'matricula', 
+                'nivel', 'turno', 'ano'
+            ]
+            
+            # Validate columns
+            missing_columns = set(required_columns) - set(df.columns)
+            if missing_columns:
+                raise ValidationError(f'Colunas obrigatórias ausentes: {", ".join(missing_columns)}')
+
+            success_count = 0
+            errors = []
+            
+            # Process each row
+            for index, row in df.iterrows():
+                try:
+                    aluno_data = {
+                        'nome': row['nome'],
+                        'data_nascimento': pd.to_datetime(row['data_nascimento']).date(),
+                        'cpf': str(row['cpf']),
+                        'matricula': str(row['matricula']),
+                        'nivel': row['nivel'],
+                        'turno': row['turno'],
+                        'ano': str(row['ano']),
+                        'email': row.get('email', ''),
+                        'telefone': row.get('telefone', ''),
+                        'endereco': row.get('endereco', ''),
+                        'cidade': row.get('cidade', ''),
+                        'uf': row.get('uf', ''),
+                        'nome_responsavel1': row.get('nome_responsavel1', ''),
+                        'telefone_responsavel1': row.get('telefone_responsavel1', ''),
+                        'nome_responsavel2': row.get('nome_responsavel2', ''),
+                        'telefone_responsavel2': row.get('telefone_responsavel2', ''),
+                        'observacoes': row.get('observacoes', '')
+                    }
+                    
+                    form = AlunoForm(aluno_data)
+                    if form.is_valid():
+                        form.save()
+                        success_count += 1
+                    else:
+                        errors.append(f'Linha {index + 2}: {form.errors}')
+                        
+                except Exception as e:
+                    errors.append(f'Linha {index + 2}: {str(e)}')
+
+            # Prepare response message
+            if success_count > 0:
+                messages.success(request, f'{success_count} alunos importados com sucesso!')
+            
+            if errors:
+                error_message = "Erros durante a importação:\n" + "\n".join(errors)
+                messages.error(request, error_message)
+                
+            return JsonResponse({
+                'success': True,
+                'imported_count': success_count,
+                'errors': errors
+            })
+            
         except Exception as e:
             logger.error(f"Error importing Excel: {str(e)}")
-            messages.error(request, 'Erro ao importar Excel')
-            return redirect('alunos:lista')    
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
 
 
 class NotaUpdateView(LoginRequiredMixin, UpdateView):
@@ -415,6 +485,24 @@ class AlunoNotasAPIView(LoginRequiredMixin, View):  # Herda diretamente de View
         except Exception as e:
             logger.error(f"Error fetching grades: {str(e)}")
             return JsonResponse({'error': 'Erro ao buscar notas'}, status=400)
+
+class DownloadTemplateExcelView(LoginRequiredMixin, View):
+    def get(self, request):
+        try:
+            file_path = os.path.join(settings.STATIC_ROOT, 'excel', 'alunos_template.xlsx')
+            if os.path.exists(file_path):
+                with open(file_path, 'rb') as fh:
+                    response = HttpResponse(
+                        fh.read(),
+                        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    )
+                    response['Content-Disposition'] = 'attachment; filename=modelo_importacao_alunos.xlsx'
+                    return response
+            raise FileNotFoundError
+            
+        except Exception as e:
+            messages.error(request, 'Erro ao baixar o modelo de importação.')
+            return redirect('alunos:lista')
 
 class AlunoMediaAPIView(LoginRequiredMixin, View):  # Também atualize esta classe
     """API view for student averages"""

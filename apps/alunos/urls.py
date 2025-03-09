@@ -68,6 +68,10 @@ urlpatterns = [
          name=URL_NAMES['EXPORTAR_EXCEL']),
 
     path('importar/excel/', 
-         views.AlunoImportExcelView.as_view(), 
-         name=URL_NAMES['IMPORTAR_EXCEL']),
+     views.AlunoImportExcelView.as_view(), 
+     name='importar_excel'),
+     
+     path('download/template/', 
+          views.DownloadTemplateExcelView.as_view(), 
+          name='download_template'),
 ]

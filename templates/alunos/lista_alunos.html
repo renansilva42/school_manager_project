@@ -822,7 +822,57 @@ toggleView(savedView);
     } else {
         fetchAlunos();
     }
-});    
+});  
+
+// Add this JavaScript after the existing script
+
+document.getElementById('importBtn').addEventListener('click', async function() {
+    const fileInput = document.querySelector('#importForm input[type="file"]');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Por favor, selecione um arquivo Excel.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('{% url "alunos:importar_excel" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (data.imported_count > 0) {
+                alert(`${data.imported_count} alunos importados com sucesso!`);
+            }
+            
+            if (data.errors.length > 0) {
+                alert('Alguns erros ocorreram durante a importação:\n' + data.errors.join('\n'));
+            }
+            
+            // Reload the page or update the list
+            location.reload();
+        } else {
+            alert('Erro ao importar: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Erro ao processar a importação');
+    }
+    
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('importModal'));
+    modal.hide();
+});
+
 </script>
         {% endblock %}
 
