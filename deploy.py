@@ -1,12 +1,15 @@
 import os
 import django
+
+# Primeiro, configure o ambiente Django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'escola_manager.settings')
+django.setup()
+
+# Somente após o django.setup() importamos os modelos
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.db import connections
 from django.db.utils import OperationalError
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'escola_manager.settings')
-django.setup()
 
 def verificar_banco():
     """Verifica se o banco de dados está disponível"""
