@@ -161,24 +161,23 @@
         
         /* Responsividade */
         @media (max-width: 768px) {
-            .container {
-                padding: var(--spacing-md);
-                margin: 1rem;
-            }
-            
-            h1 {
-                font-size: 2rem;
-            }
-            
-            .button {
-                width: 100%;
-                margin: var(--spacing-sm) 0;
-            }
-            
-            .button-container {
-                flex-direction: column;
-            }
-        }
+    .container {
+        padding: var(--spacing-md);
+        margin: 1rem;
+        width: auto; /* Adicionar esta linha */
+        max-width: calc(100% - 2rem); /* Adicionar esta linha */
+    }
+    
+    .button {
+        width: calc(100% - var(--spacing-md) * 2); /* Modificar esta linha */
+        margin: var(--spacing-sm) auto; /* Modificar esta linha */
+    }
+    
+    .button-container {
+        flex-direction: column;
+        padding: 0 var(--spacing-md); /* Adicionar esta linha */
+    }
+}
     </style>
 </head>
 <body>

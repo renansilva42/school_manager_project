@@ -256,42 +256,67 @@
 
     /* Media Queries Otimizadas */
     @media (max-width: 768px) {
-        .student-header {
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            padding: 1.25rem;
-        }
-
-        .student-photo {
-            margin-right: 0;
-            margin-bottom: 1rem;
-            width: 80px;
-            height: 80px;
-        }
-
-        .badge-nivel {
-            position: static;
-            margin: 1rem auto;
-        }
-
-        .student-actions {
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .student-actions div {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-            width: 100%;
-        }
-
-        .student-actions a {
-            flex: 1;
-            text-align: center;
-        }
+    /* Esconder a opção de alternar entre Grid e Lista */
+    .view-toggle {
+        display: none !important;
     }
+
+    /* Ajustes no card do aluno */
+    .student-card {
+        padding: 1rem;
+    }
+
+    /* Ajuste do badge de nível */
+    .profile-badge {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        z-index: 1;
+    }
+
+    /* Ajustes no layout do conteúdo do card */
+    .card-body {
+        padding: 0.75rem;
+    }
+
+    .d-flex {
+        flex-direction: column;
+    }
+
+    /* Ajuste na foto/ícone do aluno */
+    .rounded-circle {
+        margin-bottom: 0.5rem;
+    }
+
+    /* Ajuste nas informações do aluno */
+    .card-title {
+        text-align: center;
+        margin-top: 0.5rem;
+    }
+
+    .text-muted {
+        text-align: center;
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    /* Ajuste nos detalhes do aluno */
+    .mb-3 p {
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Ajuste nos botões */
+    .d-flex.justify-content-between {
+        flex-direction: row;
+        margin-top: 1rem;
+    }
+
+    .btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+    }
+}
 
     /* Estilos específicos para os cards em partial_lista_alunos.html */
     .card {
