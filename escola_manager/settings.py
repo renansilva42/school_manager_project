@@ -165,6 +165,7 @@ LOGIN_REDIRECT_URL = '/'  # Isso redirecionará para a página inicial após o l
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
