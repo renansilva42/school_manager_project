@@ -7,33 +7,32 @@ from django.db.utils import OperationalError
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'escola_manager.settings')
 django.setup()
 
-def executar_migracoes():
-    """Executa as migrações do banco de dados"""
-    print("Executando migrações...")
-    os.system('python manage.py migrate')
+def verificar_banco():
+    """Verifica se o banco de dados está disponível"""
+    conexao = connections['default']
+    try:
+        conexao.cursor()
+        return True
+    except OperationalError:
+        return False
 
 def criar_superusuarios():
-    """Cria três superusuários se não existirem"""
+    """Cria três superusuários usando variáveis de ambiente"""
     User = get_user_model()
     
-    # Lista de superusuários para criar
-    superusers = [
-        {
-            'username': 'admin1',
-            'email': 'admin1@exemplo.com',
-            'password': 'senhapadrao1'
-        },
-        {
-            'username': 'admin2',
-            'email': 'admin2@exemplo.com',
-            'password': 'senhapadrao2'
-        },
-        {
-            'username': 'admin3',
-            'email': 'admin3@exemplo.com',
-            'password': 'senhapadrao3'
-        }
-    ]
+    # Lista de superusuários para criar usando variáveis de ambiente
+    superusers = []
+    for i in range(1, 4):  # Para os 3 superusuários
+        username = os.getenv(f'DJANGO_SUPERUSER_USERNAME{i}')
+        email = os.getenv(f'DJANGO_SUPERUSER_EMAIL{i}')
+        password = os.getenv(f'DJANGO_SUPERUSER_PASSWORD{i}')
+        
+        if username and email and password:
+            superusers.append({
+                'username': username,
+                'email': email,
+                'password': password
+            })
     
     for user_data in superusers:
         try:
@@ -50,18 +49,26 @@ def criar_superusuarios():
         except Exception as e:
             print(f"Erro ao criar superusuário {user_data['username']}: {e}")
 
-def verificar_banco():
-    """Verifica se o banco de dados está disponível"""
-    conexao = connections['default']
+def executar_migracoes():
+    """Executa as migrações do banco de dados"""
+    print("Verificando conexão com o banco de dados...")
+    if not verificar_banco():
+        print("Erro: Não foi possível conectar ao banco de dados!")
+        return False
+        
+    print("Executando migrações...")
     try:
-        conexao.cursor()
+        os.system('python manage.py migrate')
         return True
-    except OperationalError:
+    except Exception as e:
+        print(f"Erro durante as migrações: {e}")
         return False
 
 if __name__ == "__main__":
     if verificar_banco():
-        executar_migracoes()
-        criar_superusuarios()
+        if executar_migracoes():
+            criar_superusuarios()
+        else:
+            print("Falha ao executar migrações!")
     else:
         print("Falha na conexão com o banco de dados!")
