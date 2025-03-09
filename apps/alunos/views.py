@@ -26,7 +26,17 @@ import os
 from django.urls import reverse_lazy
 from django.conf import settings
 import os
+import base64
+from io import BytesIO
+import uuid
+from PIL import Image
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.exceptions import ValidationError
+from django.contrib import messages
+from django.db import transaction
+import logging
 
+logger = logging.getLogger(__name__)
 
 success_url = reverse_lazy('alunos:lista')
 
@@ -304,52 +314,132 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
     form_class = AlunoForm
     
     def get(self, request, *args, **kwargs):
-        # Clear any existing messages
         storage = messages.get_messages(request)
-        storage.used = True  # Mark all messages as used
-        
+        storage.used = True
         return super().get(request, *args, **kwargs)
     
     def form_valid(self, form):
         try:
             logger.info("Iniciando processo de cadastro de aluno")
+            
             with transaction.atomic():
                 aluno = form.save(commit=False)
-                # Convertendo UUID para string antes de salvar
                 aluno.id = str(uuid.uuid4())
                 
+                # Log dos dados recebidos
+                logger.debug(f"Dados do formulário: {form.cleaned_data}")
+                logger.debug(f"Arquivos recebidos: {self.request.FILES}")
                 logger.debug(f"Dados do aluno antes de salvar: {aluno.__dict__}")
                 
-                # Salva primeiro o aluno para ter o ID
-                aluno.save()
-                logger.info(f"Aluno salvo com ID: {aluno.id}")
+                # Processa foto base64 se existir
+                foto_base64 = self.request.POST.get('foto_base64')
+                if foto_base64 and foto_base64.startswith('data:image'):
+                    try:
+                        logger.debug("Processando foto base64 da câmera")
+                        # Extrai os dados base64
+                        format, imgstr = foto_base64.split(';base64,')
+                        ext = format.split('/')[-1]
+                        
+                        # Converte base64 para bytes
+                        imgdata = base64.b64decode(imgstr)
+                        
+                        # Processa a imagem
+                        buffer = BytesIO(imgdata)
+                        img = Image.open(buffer)
+                        
+                        # Converte para RGB se necessário
+                        if img.mode not in ('RGB', 'RGBA'):
+                            img = img.convert('RGB')
+                            logger.debug("Imagem convertida para RGB")
+                        
+                        # Redimensiona se necessário
+                        if img.height > 800 or img.width > 800:
+                            output_size = (800, 800)
+                            img.thumbnail(output_size)
+                            logger.debug(f"Imagem redimensionada para {output_size}")
+                        
+                        # Salva a imagem processada
+                        output = BytesIO()
+                        img.save(output, format='JPEG', quality=85, optimize=True)
+                        output.seek(0)
+                        
+                        # Cria um arquivo para o Django
+                        aluno.foto = InMemoryUploadedFile(
+                            output,
+                            'foto',
+                            f'camera_photo_{uuid.uuid4().hex[:8]}.jpg',
+                            'image/jpeg',
+                            output.getbuffer().nbytes,
+                            None
+                        )
+                        logger.info("Foto da câmera processada com sucesso")
+                        
+                    except Exception as e:
+                        logger.error(f"Erro ao processar foto base64: {str(e)}")
+                        raise ValidationError(f"Erro ao processar foto da câmera: {str(e)}")
                 
-                # Processa a foto se existir
-                if 'foto' in self.request.FILES:
+                # Processa foto do arquivo se existir
+                elif 'foto' in self.request.FILES:
                     try:
                         foto = self.request.FILES['foto']
-                        logger.debug(f"Processando foto: tamanho={foto.size}, tipo={foto.content_type}")
+                        logger.debug(f"Processando foto do arquivo: tamanho={foto.size}, tipo={foto.content_type}")
                         
-                        # Validação adicional da foto
                         if not foto.content_type.startswith('image/'):
                             raise ValidationError("Arquivo não é uma imagem válida")
                         
-                        aluno.foto = foto
-                        aluno.save()
-                        logger.info("Foto do aluno processada e salva com sucesso")
+                        # Processa a imagem
+                        img = Image.open(foto)
+                        
+                        # Converte para RGB se necessário
+                        if img.mode not in ('RGB', 'RGBA'):
+                            img = img.convert('RGB')
+                        
+                        # Redimensiona se necessário
+                        if img.height > 800 or img.width > 800:
+                            output_size = (800, 800)
+                            img.thumbnail(output_size)
+                        
+                        # Salva a imagem processada
+                        output = BytesIO()
+                        img.save(output, format='JPEG', quality=85, optimize=True)
+                        output.seek(0)
+                        
+                        aluno.foto = InMemoryUploadedFile(
+                            output,
+                            'foto',
+                            f"{foto.name.split('.')[0]}.jpg",
+                            'image/jpeg',
+                            output.getbuffer().nbytes,
+                            None
+                        )
+                        logger.info("Foto do arquivo processada com sucesso")
+                        
                     except Exception as e:
-                        logger.error(f"Erro ao processar foto: {str(e)}")
-                        raise
+                        logger.error(f"Erro ao processar foto do arquivo: {str(e)}")
+                        raise ValidationError(f"Erro ao processar foto: {str(e)}")
+                
+                # Salva o aluno
+                aluno.save()
+                logger.info(f"Aluno salvo com ID: {aluno.id}")
                 
                 messages.success(self.request, 'Aluno cadastrado com sucesso!')
                 logger.info(f"Cadastro do aluno {aluno.nome} finalizado com sucesso")
                 return redirect('alunos:detalhe', pk=aluno.id)
                 
+        except ValidationError as e:
+            logger.error(f"Erro de validação: {str(e)}")
+            messages.error(self.request, str(e))
+            return self.form_invalid(form)
+            
         except Exception as e:
-            logger.error(f"Erro no cadastro do aluno: {str(e)}")
+            logger.error(f"Erro no cadastro do aluno: {str(e)}", exc_info=True)
             messages.error(self.request, f'Erro ao cadastrar aluno: {str(e)}')
             return self.form_invalid(form)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
 
     def get_context_data(self, **kwargs):

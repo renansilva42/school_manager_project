@@ -52,7 +52,7 @@
 
     <!-- Nova seção de mensagens -->
     {% if messages %}
-    <div class="messages mb-4">
+    <div class="messages">
         {% for message in messages %}
         <div class="alert alert-{% if message.tags %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
             {{ message }}
@@ -254,28 +254,35 @@
     });
     
     // Updated capture photo event
-    capturePhotoBtn.addEventListener('click', () => {
-        const context = photoCanvas.getContext('2d');
-        photoCanvas.width = cameraPreview.videoWidth;
-        photoCanvas.height = cameraPreview.videoHeight;
-        
-        context.drawImage(cameraPreview, 0, 0, photoCanvas.width, photoCanvas.height);
-        
-        // Convert to blob and create file
-        photoCanvas.toBlob((blob) => {
-            const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            fileInput.files = dataTransfer.files;
+    // Em cadastrar_aluno.html
+capturePhotoBtn.addEventListener('click', () => {
+    const context = photoCanvas.getContext('2d');
+    photoCanvas.width = cameraPreview.videoWidth;
+    photoCanvas.height = cameraPreview.videoHeight;
     
-            // Show preview of captured photo
-            photoPreview.src = URL.createObjectURL(blob);
-            previewContainer.style.display = 'block';
-            
-            // Stop camera and hide camera UI
-            stopCamera();
-        }, 'image/jpeg', 0.8);
-    });
+    context.drawImage(cameraPreview, 0, 0, photoCanvas.width, photoCanvas.height);
+    
+    // Converter para base64
+    const base64Image = photoCanvas.toDataURL('image/jpeg');
+    
+    // Adicionar ao formulário como campo hidden
+    const fotoBase64Input = document.getElementById('id_foto_base64');
+    if (!fotoBase64Input) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'foto_base64';
+        input.id = 'id_foto_base64';
+        document.querySelector('form').appendChild(input);
+    }
+    document.getElementById('id_foto_base64').value = base64Image;
+    
+    // Mostrar preview
+    photoPreview.src = base64Image;
+    previewContainer.style.display = 'block';
+    
+    // Parar câmera
+    stopCamera();
+});
     
     // Evento para o botão de cancelar câmera
     cancelCameraBtn.addEventListener('click', () => {
