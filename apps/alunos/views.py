@@ -378,7 +378,8 @@ class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
                 
                 aluno.save()
                 messages.success(self.request, 'Aluno atualizado com sucesso!')
-                return redirect('detalhe_aluno', pk=aluno.id)
+                # Change this line to use the correct URL name
+                return redirect('alunos:detalhe', pk=aluno.id)
                 
         except Exception as e:
             logger.error(f"Error updating student: {str(e)}")
