@@ -308,7 +308,6 @@ class NotaUpdateView(LoginRequiredMixin, UpdateView):
         form.instance.aluno = self.aluno
         messages.success(self.request, 'Nota atualizada com sucesso!')
         return super().form_valid(form)
-
 class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
     template_name = 'alunos/cadastrar_aluno.html'
     form_class = AlunoForm
@@ -323,166 +322,185 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
             logger.info("Iniciando processo de cadastro de aluno")
             
             with transaction.atomic():
-                aluno = form.save(commit=False)
-                aluno.id = str(uuid.uuid4())
+                # Generate new UUID for student
+                aluno_id = str(uuid.uuid4())
                 
-                # Log dos dados recebidos
-                logger.debug(f"Dados do formulário: {form.cleaned_data}")
-                logger.debug(f"Arquivos recebidos: {self.request.FILES}")
-                logger.debug(f"Dados do aluno antes de salvar: {aluno.__dict__}")
+                # Prepare student data
+                data = form.cleaned_data.copy()
+                data['id'] = aluno_id
                 
-                # Processa foto base64 se existir
+                # Initialize Supabase service
+                db = SupabaseService()
+                
+                # Handle photo upload
+                photo_file = None
+                photo_url = None
+                
+                # Process base64 photo from camera
                 foto_base64 = self.request.POST.get('foto_base64')
                 if foto_base64 and foto_base64.startswith('data:image'):
                     try:
-                        logger.debug("Processando foto base64 da câmera")
-                        # Extrai os dados base64
+                        logger.debug("Processing base64 photo from camera")
                         format, imgstr = foto_base64.split(';base64,')
                         ext = format.split('/')[-1]
                         
-                        # Converte base64 para bytes
+                        # Convert base64 to bytes
                         imgdata = base64.b64decode(imgstr)
-                        
-                        # Processa a imagem
                         buffer = BytesIO(imgdata)
-                        img = Image.open(buffer)
                         
-                        # Converte para RGB se necessário
+                        # Process image
+                        img = Image.open(buffer)
                         if img.mode not in ('RGB', 'RGBA'):
                             img = img.convert('RGB')
-                            logger.debug("Imagem convertida para RGB")
                         
-                        # Redimensiona se necessário
+                        # Resize if necessary
                         if img.height > 800 or img.width > 800:
                             output_size = (800, 800)
                             img.thumbnail(output_size)
-                            logger.debug(f"Imagem redimensionada para {output_size}")
                         
-                        # Salva a imagem processada
+                        # Save processed image
                         output = BytesIO()
-                        img.save(output, format='JPEG', quality=85, optimize=True)
+                        img.save(output, format='JPEG', quality=85)
                         output.seek(0)
                         
-                        # Cria um arquivo para o Django
-                        aluno.foto = InMemoryUploadedFile(
+                        photo_file = InMemoryUploadedFile(
                             output,
                             'foto',
-                            f'camera_photo_{uuid.uuid4().hex[:8]}.jpg',
+                            f'camera_photo_{aluno_id}.jpg',
                             'image/jpeg',
                             output.getbuffer().nbytes,
                             None
                         )
-                        logger.info("Foto da câmera processada com sucesso")
                         
                     except Exception as e:
-                        logger.error(f"Erro ao processar foto base64: {str(e)}")
-                        raise ValidationError(f"Erro ao processar foto da câmera: {str(e)}")
+                        logger.error(f"Error processing base64 photo: {str(e)}")
                 
-                # Processa foto do arquivo se existir
+                # Process photo from file upload
                 elif 'foto' in self.request.FILES:
                     try:
-                        foto = self.request.FILES['foto']
-                        logger.debug(f"Processando foto do arquivo: tamanho={foto.size}, tipo={foto.content_type}")
+                        photo_file = self.request.FILES['foto']
+                        if not photo_file.content_type.startswith('image/'):
+                            raise ValidationError("Invalid image file")
                         
-                        if not foto.content_type.startswith('image/'):
-                            raise ValidationError("Arquivo não é uma imagem válida")
-                        
-                        # Processa a imagem
-                        img = Image.open(foto)
-                        
-                        # Converte para RGB se necessário
+                        img = Image.open(photo_file)
                         if img.mode not in ('RGB', 'RGBA'):
                             img = img.convert('RGB')
                         
-                        # Redimensiona se necessário
                         if img.height > 800 or img.width > 800:
                             output_size = (800, 800)
                             img.thumbnail(output_size)
                         
-                        # Salva a imagem processada
                         output = BytesIO()
-                        img.save(output, format='JPEG', quality=85, optimize=True)
+                        img.save(output, format='JPEG', quality=85)
                         output.seek(0)
                         
-                        aluno.foto = InMemoryUploadedFile(
+                        photo_file = InMemoryUploadedFile(
                             output,
                             'foto',
-                            f"{foto.name.split('.')[0]}.jpg",
+                            f"{photo_file.name.split('.')[0]}.jpg",
                             'image/jpeg',
                             output.getbuffer().nbytes,
                             None
                         )
-                        logger.info("Foto do arquivo processada com sucesso")
                         
                     except Exception as e:
-                        logger.error(f"Erro ao processar foto do arquivo: {str(e)}")
-                        raise ValidationError(f"Erro ao processar foto: {str(e)}")
+                        logger.error(f"Error processing uploaded photo: {str(e)}")
                 
-                # Salva o aluno
-                aluno.save()
-                logger.info(f"Aluno salvo com ID: {aluno.id}")
+                # Upload photo to Supabase if exists
+                if photo_file:
+                    photo_url = db.upload_photo(photo_file, aluno_id)
+                    if photo_url:
+                        data['foto'] = photo_url
+                    else:
+                        messages.warning(self.request, 'Aluno criado, mas houve um problema ao salvar a foto.')
+                
+                # Create student in Supabase
+                response = db.create_aluno(data)
                 
                 messages.success(self.request, 'Aluno cadastrado com sucesso!')
-                logger.info(f"Cadastro do aluno {aluno.nome} finalizado com sucesso")
-                return redirect('alunos:detalhe', pk=aluno.id)
+                return redirect('alunos:detalhe', pk=aluno_id)
                 
-        except ValidationError as e:
-            logger.error(f"Erro de validação: {str(e)}")
-            messages.error(self.request, str(e))
-            return self.form_invalid(form)
-            
         except Exception as e:
-            logger.error(f"Erro no cadastro do aluno: {str(e)}", exc_info=True)
+            logger.error(f"Error creating student: {str(e)}", exc_info=True)
             messages.error(self.request, f'Erro ao cadastrar aluno: {str(e)}')
             return self.form_invalid(form)
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
-        return kwargs
-
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Confirmar Exclusão'
-        return context
-    
-class AlunoDetailView(BaseAlunoView, DetailView):
-    """View for displaying detailed student information"""
-    template_name = 'alunos/detalhe_aluno.html'
-    context_object_name = 'aluno'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        aluno = self.get_object()
-        context['notas'] = aluno.nota_set.all().order_by('disciplina', 'bimestre')
-        return context
-
 class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
-    """View for updating student information"""
     template_name = 'alunos/editar_aluno.html'
     form_class = AlunoForm
     
     def form_valid(self, form):
         try:
             with transaction.atomic():
-                aluno = form.save(commit=False)
+                aluno_id = self.object.id
+                data = form.cleaned_data.copy()
                 
-                if 'foto' in self.request.FILES:
-                    photo_url = self.handle_photo_upload(aluno.id)
+                db = SupabaseService()
+                
+                # Handle photo upload
+                photo_file = None
+                
+                # Process base64 photo from camera
+                foto_base64 = self.request.POST.get('foto_base64')
+                if foto_base64 and foto_base64.startswith('data:image'):
+                    try:
+                        format, imgstr = foto_base64.split(';base64,')
+                        ext = format.split('/')[-1]
+                        
+                        imgdata = base64.b64decode(imgstr)
+                        buffer = BytesIO(imgdata)
+                        
+                        img = Image.open(buffer)
+                        if img.mode not in ('RGB', 'RGBA'):
+                            img = img.convert('RGB')
+                        
+                        if img.height > 800 or img.width > 800:
+                            output_size = (800, 800)
+                            img.thumbnail(output_size)
+                        
+                        output = BytesIO()
+                        img.save(output, format='JPEG', quality=85)
+                        output.seek(0)
+                        
+                        photo_file = InMemoryUploadedFile(
+                            output,
+                            'foto',
+                            f'camera_photo_{aluno_id}.jpg',
+                            'image/jpeg',
+                            output.getbuffer().nbytes,
+                            None
+                        )
+                        
+                    except Exception as e:
+                        logger.error(f"Error processing base64 photo: {str(e)}")
+                
+                # Process photo from file upload
+                elif 'foto' in self.request.FILES:
+                    photo_file = self.request.FILES['foto']
+                
+                # Upload new photo to Supabase if exists
+                if photo_file:
+                    # Delete old photo if exists
+                    if self.object.foto:
+                        db.delete_photo(aluno_id)
+                    
+                    # Upload new photo
+                    photo_url = db.upload_photo(photo_file, aluno_id)
                     if photo_url:
-                        aluno.foto_url = photo_url
+                        data['foto'] = photo_url
+                    else:
+                        messages.warning(self.request, 'Aluno atualizado, mas houve um problema ao salvar a foto.')
                 
-                aluno.save()
+                # Update student in Supabase
+                response = db.update_aluno(aluno_id, data)
+                
                 messages.success(self.request, 'Aluno atualizado com sucesso!')
-                # Change this line to use the correct URL name
-                return redirect('alunos:detalhe', pk=aluno.id)
+                return redirect('alunos:detalhe', pk=aluno_id)
                 
         except Exception as e:
             logger.error(f"Error updating student: {str(e)}")
             messages.error(self.request, 'Erro ao atualizar aluno.')
             return self.form_invalid(form)
-
 
 class AlunoDeleteView(BaseAlunoView, DeleteView):
     template_name = 'alunos/confirmar_exclusao.html'
@@ -490,53 +508,27 @@ class AlunoDeleteView(BaseAlunoView, DeleteView):
     
     def delete(self, request, *args, **kwargs):
         try:
-            logger.info(f"Iniciando processo de exclusão de aluno")
-            
             self.object = self.get_object()
-            nome_aluno = self.object.nome
             aluno_id = self.object.id
             
-            logger.info(f"Aluno encontrado - ID: {aluno_id}, Nome: {nome_aluno}")
+            db = SupabaseService()
             
-            # Remove a foto se existir
+            # Delete photo from Supabase if exists
             if self.object.foto:
-                try:
-                    logger.debug(f"Tentando remover foto do aluno {nome_aluno}")
-                    if os.path.exists(self.object.foto.path):
-                        os.remove(self.object.foto.path)
-                        logger.info(f"Foto do aluno {nome_aluno} removida com sucesso")
-                except Exception as e:
-                    logger.warning(f"Erro ao remover foto do aluno {nome_aluno}: {str(e)}")
+                db.delete_photo(aluno_id)
             
-            # Executa a deleção dentro de uma transação
-            with transaction.atomic():
-                logger.debug(f"Iniciando transação para exclusão do aluno {nome_aluno}")
-                
-                # Remove notas relacionadas
-                notas_count = self.object.nota_set.count()
-                logger.info(f"Removendo {notas_count} notas relacionadas ao aluno {nome_aluno}")
-                self.object.nota_set.all().delete()
-                
-                # Remove o aluno
-                logger.debug(f"Executando exclusão do aluno {nome_aluno}")
-                self.object.delete()
-                
-                logger.info(f"Aluno {nome_aluno} e seus dados relacionados foram excluídos com sucesso")
-                
-                messages.success(
-                    request,
-                    f'O aluno "{nome_aluno}" foi excluído com sucesso!'
-                )
-                
-                return HttpResponseRedirect(self.success_url)
-                
+            # Delete student from Supabase
+            response = db.delete_aluno(aluno_id)
+            
+            messages.success(request, 'Aluno excluído com sucesso!')
+            return HttpResponseRedirect(self.success_url)
+            
         except Exception as e:
-            logger.error(f"Erro crítico ao excluir aluno: {str(e)}", exc_info=True)
-            messages.error(
-                request,
-                'Não foi possível excluir o aluno. Por favor, tente novamente.'
-            )
+            logger.error(f"Error deleting student: {str(e)}")
+            messages.error(request, 'Erro ao excluir aluno.')
             return redirect('alunos:lista')
+
+
 
 class NotaCreateView(AdminRequiredMixin, CreateView):
     """View for adding grades"""
