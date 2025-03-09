@@ -174,9 +174,14 @@ class AlunoForm(BaseForm):
         return choices
 
     def clean_foto(self):
-        """Valida e processa o upload da foto"""
         foto = self.cleaned_data.get('foto')
-        if foto:
+        
+        # If no new photo was uploaded, return the current value
+        if not foto:
+            return foto
+            
+        # Check if this is a new file upload
+        if hasattr(foto, 'content_type'):
             # Verifica o tipo de conteúdo
             if not foto.content_type.startswith('image/'):
                 raise ValidationError(_("O arquivo enviado não é uma imagem."))
@@ -198,22 +203,12 @@ class AlunoForm(BaseForm):
                     img.thumbnail(output_size)
                 # Salva a imagem otimizada
                 output = io.BytesIO()
-                img.save(output, format='JPEG', quality=85, optimize=True)
-                output.seek(0)
                 
-                # Cria um objeto InMemoryUploadedFile para compatibilidade com Django
-                new_foto = InMemoryUploadedFile(
-                    output,
-                    None,
-                    foto.name,
-                    'image/jpeg',
-                    output.getbuffer().nbytes,
-                    None
-                )
+                return foto
                 
-                return new_foto
             except Exception as e:
-                raise ValidationError(f"Erro ao processar imagem: {str(e)}")
+                raise ValidationError(_("Erro ao processar a imagem."))
+                
         return foto
 
     def clean(self):
