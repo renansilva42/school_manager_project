@@ -16,9 +16,15 @@ from apps.alunos.models import Aluno
 def verificar_banco():
     """Verifica se o banco de dados está disponível"""
     try:
-        # Testa usando o SupabaseService que já sabemos que funciona
         from services.database import SupabaseService
         service = SupabaseService()
+        # Use the same connection details as SupabaseService
+        os.environ['SUPABASE_DB_NAME'] = service.db_name
+        os.environ['SUPABASE_DB_USER'] = service.db_user
+        os.environ['SUPABASE_DB_PASSWORD'] = service.db_password
+        os.environ['SUPABASE_DB_HOST'] = service.db_host
+        os.environ['SUPABASE_DB_PORT'] = service.db_port
+        
         response = service.list_alunos()
         return True if response else False
     except Exception as e:
