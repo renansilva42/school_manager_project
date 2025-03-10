@@ -16,12 +16,10 @@ from apps.alunos.models import Aluno
 def verificar_banco():
     """Verifica se o banco de dados está disponível"""
     try:
-        from services.database import SupabaseService
-        service = SupabaseService()
-        
-        # Testa a conexão tentando listar os alunos
-        response = service.list_alunos()
-        return True if response else False
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        return True
     except Exception as e:
         print(f"Erro na verificação do banco: {e}")
         return False
@@ -114,36 +112,11 @@ def executar_migracoes():
         print(f"Erro durante as migrações: {e}")
         return False
 
-def sincronizar_com_supabase():
-    """Sincroniza os dados dos alunos com o Supabase"""
-    print("Iniciando sincronização com Supabase...")
-    try:
-        supabase = SupabaseService()
-        # Busca todos os alunos do Supabase
-        response = supabase.list_alunos()
-        
-        if response and hasattr(response, 'data'):
-            for aluno_data in response.data:
-                # Atualiza ou cria o aluno no banco local
-                Aluno.objects.update_or_create(
-                    id=aluno_data['id'],
-                    defaults=aluno_data
-                )
-            print("Sincronização com Supabase concluída com sucesso!")
-        return True
-    except Exception as e:
-        print(f"Erro na sincronização com Supabase: {str(e)}")
-        return False
-
 if __name__ == "__main__":
     if verificar_banco():
         if executar_migracoes():
-            print("Iniciando sincronização com Supabase...")
-            if sincronizar_com_supabase():
-                print("Sincronização concluída. Configurando superusuários...")
-                criar_superusuarios()
-            else:
-                print("Falha na sincronização com Supabase!")
+            print("Migrações executadas com sucesso!")
+            criar_superusuarios()
         else:
             print("Falha ao executar migrações!")
     else:

@@ -12,7 +12,7 @@ from django.utils.decorators import method_decorator
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.views import View
-from services.database import SupabaseService
+from services.database import DatabaseService
 from .forms import AlunoForm, NotaForm, AlunoFilterForm
 from .models import Aluno, Nota
 from .mixins import AdminRequiredMixin
@@ -330,7 +330,7 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
                 data['id'] = aluno_id
                 
                 # Initialize Supabase service
-                db = SupabaseService()
+                db = DatabaseService()
                 
                 # Handle photo upload
                 photo_file = None
@@ -450,7 +450,7 @@ class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
                 aluno_id = self.object.id
                 data = form.cleaned_data.copy()
                 
-                db = SupabaseService()
+                db = DatabaseService()
                 
                 # Handle photo upload
                 photo_file = None
@@ -529,7 +529,7 @@ class AlunoDeleteView(BaseAlunoView, DeleteView):
             self.object = self.get_object()
             aluno_id = self.object.id
             
-            db = SupabaseService()
+            db = DatabaseService()
             
             # Delete photo from Supabase if exists
             if self.object.foto:
