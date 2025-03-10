@@ -18,7 +18,8 @@ def verificar_banco():
     try:
         from services.database import SupabaseService
         service = SupabaseService()
-        # Use the same connection details as SupabaseService
+        
+        # Set the database environment variables from the working Supabase connection
         os.environ['SUPABASE_DB_NAME'] = service.db_name
         os.environ['SUPABASE_DB_USER'] = service.db_user
         os.environ['SUPABASE_DB_PASSWORD'] = service.db_password
