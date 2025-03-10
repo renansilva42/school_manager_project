@@ -79,17 +79,20 @@ class AlunoForm(BaseForm):
                 img.save(output, format='JPEG', quality=85, optimize=True)
                 output.seek(0)
                 
-                # Cria um novo arquivo para o Django
+                # Gera um nome único para o arquivo
+                unique_filename = f'camera_photo_{uuid.uuid4().hex[:8]}.jpg'
+                
+                # Cria um novo arquivo para o Django com tamanho correto
                 cleaned_data['foto'] = InMemoryUploadedFile(
                     output,
-                    'foto',
-                    f'camera_photo_{uuid.uuid4().hex[:8]}.jpg',
+                    'ImageField',  # Alterado de 'foto' para 'ImageField'
+                    unique_filename,
                     'image/jpeg',
-                    output.getbuffer().nbytes,
+                    len(output.getvalue()),  # Usando len() para obter o tamanho correto
                     None
                 )
                 
-                logger.info("Foto da câmera processada com sucesso")
+                logger.info(f"Foto da câmera processada com sucesso: {unique_filename}")
                 
             except Exception as e:
                 logger.error(f"Erro ao processar foto da câmera: {str(e)}")
@@ -123,21 +126,29 @@ class AlunoForm(BaseForm):
                 img.save(output, format='JPEG', quality=85, optimize=True)
                 output.seek(0)
                 
-                # Criar novo arquivo
+                # Gera um nome único para o arquivo mantendo o nome original
+                original_name = foto_file.name.split('.')[0]
+                unique_filename = f"{original_name}_{uuid.uuid4().hex[:8]}.jpg"
+                
+                # Criar novo arquivo com tamanho correto
                 cleaned_data['foto'] = InMemoryUploadedFile(
                     output,
-                    'foto',
-                    f"{foto_file.name.split('.')[0]}.jpg",
+                    'ImageField',  # Alterado de 'foto' para 'ImageField'
+                    unique_filename,
                     'image/jpeg',
-                    output.getbuffer().nbytes,
+                    len(output.getvalue()),  # Usando len() para obter o tamanho correto
                     None
                 )
                 
-                logger.info("Foto do arquivo processada com sucesso")
+                logger.info(f"Foto do arquivo processada com sucesso: {unique_filename}")
                 
             except Exception as e:
                 logger.error(f"Erro ao processar arquivo de imagem: {str(e)}")
                 raise ValidationError(f"Erro ao processar imagem: {str(e)}")
+        
+        # Validação adicional para campos obrigatórios
+        self.validate_nivel_combinations(cleaned_data)
+        self.validate_unique_fields(cleaned_data)
         
         return cleaned_data
 
