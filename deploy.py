@@ -15,11 +15,14 @@ from apps.alunos.models import Aluno
 
 def verificar_banco():
     """Verifica se o banco de dados está disponível"""
-    conexao = connections['default']
     try:
-        conexao.cursor()
-        return True
-    except OperationalError:
+        # Testa usando o SupabaseService que já sabemos que funciona
+        from services.database import SupabaseService
+        service = SupabaseService()
+        response = service.list_alunos()
+        return True if response else False
+    except Exception as e:
+        print(f"Erro na verificação do banco: {e}")
         return False
 
 def criar_grupo_administradores():
