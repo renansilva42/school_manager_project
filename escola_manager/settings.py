@@ -86,7 +86,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
 
 MIDDLEWARE = [
-    'your_app.middlewares.EnsureMediaDirectoryMiddleware',
+    'core.middleware.EnsureMediaDirectoryMiddleware',  # Corrigido aqui
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
