@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.db import connections
 from django.db.utils import OperationalError
-from services.database import SupabaseService
+from services.database import DatabaseService
 from apps.alunos.models import Aluno
 
 def verificar_banco():
