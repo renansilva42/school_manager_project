@@ -63,6 +63,11 @@ SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# Configuração para ambiente de produção (Heroku)
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 # Configurações de Sessão

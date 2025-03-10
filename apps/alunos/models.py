@@ -8,6 +8,9 @@ import re
 import os
 import uuid
 import logging
+from io import BytesIO 
+from django.core.files.uploadedfile import InMemoryUploadedFile 
+
 
 logger = logging.getLogger(__name__)
 
@@ -110,33 +113,44 @@ class Aluno(models.Model):
         verbose_name="Dados Adicionais"
     )
     
+    def get_upload_path(instance, filename):
+        ext = filename.split('.')[-1]
+        filename = f"{uuid.uuid4()}.{ext}"
+        return os.path.join('alunos', 'fotos', filename)
+
+    foto = models.ImageField(
+        upload_to=get_upload_path,
+        null=True,
+        blank=True
+    )
+
     def save(self, *args, **kwargs):
-        """Método save aprimorado com logging"""
-        logger.debug(f"Iniciando salvamento do aluno: {self.nome}")
-        
-        if self.pk:
-            self.version += 1
-            logger.debug(f"Atualizando versão para: {self.version}")
-        
-        # Processar foto se presente
         if self.foto:
             try:
+                # Garantir que o diretório existe
+                upload_path = os.path.dirname(self.foto.path)
+                os.makedirs(upload_path, exist_ok=True)
+                
+                # Processar e otimizar a imagem
                 img = Image.open(self.foto)
-                logger.debug(f"Processando foto: {self.foto.name}")
+                img = img.convert('RGB')
+                img.thumbnail((800, 800))
                 
-                if img.height > 800 or img.width > 800:
-                    output_size = (800, 800)
-                    img.thumbnail(output_size)
-                    logger.debug("Foto redimensionada")
-                    
-                # Salvar imagem otimizada
-                img.save(self.foto.path, quality=85, optimize=True)
-                logger.info("Foto processada e salva com sucesso")
-                
+                # Salvar a imagem otimizada
+                output = BytesIO()
+                img.save(output, format='JPEG', quality=85)
+                output.seek(0)
+                self.foto = InMemoryUploadedFile(
+                    output,
+                    'ImageField',
+                    f"{uuid.uuid4()}.jpg",
+                    'image/jpeg',
+                    output.tell(),
+                    None
+                )
             except Exception as e:
-                logger.error(f"Erro ao processar foto: {str(e)}")
-                raise ValidationError(f"Erro ao processar imagem: {str(e)}")
-        
+                logger.error(f"Erro ao processar imagem: {e}")
+                
         super().save(*args, **kwargs)
         logger.info(f"Aluno {self.nome} salvo com sucesso")
     

@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 from .constants import URL_NAMES
+from django.conf import settings
+from django.conf.urls.static import static
 
 app_name = 'alunos'
 
@@ -75,3 +77,6 @@ urlpatterns = [
           views.DownloadTemplateExcelView.as_view(), 
           name='download_template'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

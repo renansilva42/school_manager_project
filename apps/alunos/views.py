@@ -35,12 +35,15 @@ from django.core.exceptions import ValidationError
 from django.contrib import messages
 from django.db import transaction
 import logging
+from django.http import Http404
 
 logger = logging.getLogger(__name__)
 
 success_url = reverse_lazy('alunos:lista')
 
 logger = logging.getLogger(__name__)
+
+
 
 
 class AlunoExportPDFView(LoginRequiredMixin, View):
