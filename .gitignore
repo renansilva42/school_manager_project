@@ -104,4 +104,4 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
+MANIFESTvenv3.10/
