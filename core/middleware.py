@@ -2,6 +2,9 @@ import logging
 from django.urls import NoReverseMatch
 from django.http import HttpResponseServerError
 from django.template.loader import render_to_string
+import os
+from django.conf import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,3 +31,14 @@ class URLErrorMiddleware:
             }
             content = render_to_string('errors/url_error.html', context)
             return HttpResponseServerError(content)
+        
+class EnsureMediaDirectoryMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        # Criar diretórios necessários
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, 'alunos', 'fotos'), exist_ok=True)
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        return response

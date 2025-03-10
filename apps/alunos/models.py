@@ -118,38 +118,35 @@ class Aluno(models.Model):
         filename = f"{uuid.uuid4()}.{ext}"
         return os.path.join('alunos', 'fotos', filename)
 
-    foto = models.ImageField(
-        upload_to=get_upload_path,
-        null=True,
-        blank=True
-    )
-
     def save(self, *args, **kwargs):
-        if self.foto:
+        if self.foto and hasattr(self.foto, 'file'):
             try:
-                # Garantir que o diretório existe
-                upload_path = os.path.dirname(self.foto.path)
-                os.makedirs(upload_path, exist_ok=True)
-                
-                # Processar e otimizar a imagem
                 img = Image.open(self.foto)
                 img = img.convert('RGB')
-                img.thumbnail((800, 800))
                 
-                # Salvar a imagem otimizada
+                # Redimensionar se necessário
+                if img.height > 800 or img.width > 800:
+                    output_size = (800, 800)
+                    img.thumbnail(output_size)
+                
+                # Salvar em buffer
                 output = BytesIO()
                 img.save(output, format='JPEG', quality=85)
                 output.seek(0)
+                
+                # Atualizar o arquivo
                 self.foto = InMemoryUploadedFile(
                     output,
                     'ImageField',
-                    f"{uuid.uuid4()}.jpg",
+                    f"{self.id}_{uuid.uuid4().hex[:8]}.jpg",
                     'image/jpeg',
                     output.tell(),
                     None
                 )
             except Exception as e:
                 logger.error(f"Erro ao processar imagem: {e}")
+        
+        super().save(*args, **kwargs)
                 
         super().save(*args, **kwargs)
         logger.info(f"Aluno {self.nome} salvo com sucesso")
