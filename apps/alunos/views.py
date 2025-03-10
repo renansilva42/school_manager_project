@@ -447,6 +447,14 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
             logger.error(f"Error creating student: {str(e)}", exc_info=True)
             messages.error(self.request, f'Erro ao cadastrar aluno: {str(e)}')
             return self.form_invalid(form)
+        
+        if photo_file:
+                    try:
+                        photo_url = db.upload_photo(photo_file, aluno_id)
+                        logger.info(f"Arquivo salvo em: {photo_url}")
+                    except Exception as e:
+                        logger.error(f"Erro ao salvar arquivo: {str(e)}")
+                        messages.warning(self.request, 'Aluno criado, mas houve um problema ao salvar a foto.')
 
         
 class AlunoDetailView(BaseAlunoView, DetailView):

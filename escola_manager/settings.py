@@ -200,6 +200,18 @@ X_FRAME_OPTIONS = 'DENY'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# Em desenvolvimento, adicione isso:
+if DEBUG:
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    
+    
+BACKUP_MEDIA_ROOT = os.path.join(MEDIA_ROOT, 'backup')
+os.makedirs(BACKUP_MEDIA_ROOT, exist_ok=True)
+os.makedirs(os.path.join(BACKUP_MEDIA_ROOT, 'alunos', 'fotos'), exist_ok=True)    
+
+
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True

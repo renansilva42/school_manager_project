@@ -1,1 +1,1 @@
-web: python deploy.py && gunicorn escola_manager.wsgi:application
+web: python deploy.py && gunicorn -c gunicorn.conf.py escola_manager.wsgi:application

@@ -223,9 +223,9 @@
     <div class="student-profile animated">
         <div class="profile-header d-flex align-items-center">
             {% if aluno.foto %}
-                <img src="{{ aluno.foto.url }}" alt="Foto do aluno" class="profile-image">
+                <img src="{{ aluno.foto.url }}" alt="Foto do aluno">
             {% else %}
-                <img src="{% static 'img/default-user.png' %}" alt="Foto padrão" class="profile-image">
+                <img src="{% static 'img/default-avatar.png' %}" alt="Foto padrão">
             {% endif %}
             
             <div>

@@ -4,31 +4,40 @@ from django.core.validators import MinValueValidator, MaxValueValidator, RegexVa
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from io import BytesIO
 import re
 import os
 import uuid
 import logging
-from io import BytesIO 
-from django.core.files.uploadedfile import InMemoryUploadedFile 
-
 
 logger = logging.getLogger(__name__)
 
-
+# Validators
 phone_regex = RegexValidator(
-        regex=r'^\(\d{2}\) \d{4,5}-\d{4}$',
-        message="Formato do telefone deve ser: (99) 99999-9999"
-    )
-    
+    regex=r'^\(\d{2}\) \d{4,5}-\d{4}$',
+    message="Formato do telefone deve ser: (99) 99999-9999"
+)
+
 class AnoChoices(models.TextChoices):
-        ANO_3 = '3', '3º Ano'
-        ANO_4 = '4', '4º Ano'
-        ANO_5 = '5', '5º Ano'
-        ANO_6 = '6', '6º Ano'
-        ANO_7 = '7', '7º Ano'
-        ANO_8 = '8', '8º Ano'
-        ANO_901 = '901', '9º Ano - Turma 901'
-        ANO_902 = '902', '9º Ano - Turma 902'   
+    ANO_3 = '3', '3º Ano'
+    ANO_4 = '4', '4º Ano'
+    ANO_5 = '5', '5º Ano'
+    ANO_6 = '6', '6º Ano'
+    ANO_7 = '7', '7º Ano'
+    ANO_8 = '8', '8º Ano'
+    ANO_901 = '901', '9º Ano - Turma 901'
+    ANO_902 = '902', '9º Ano - Turma 902'
+
+class NivelChoices(models.TextChoices):
+    EFI = 'EFI', 'Ensino Fundamental Anos Iniciais'
+    EFF = 'EFF', 'Ensino Fundamental Anos Finais'
+    
+class TurnoChoices(models.TextChoices):
+    MANHA = 'M', 'Manhã'
+    TARDE = 'T', 'Tarde'
 
 class AlunoManager(models.Manager):
     """Custom manager for Aluno model with additional query methods"""
@@ -53,32 +62,29 @@ class AlunoManager(models.Manager):
         return queryset
 
 def validate_image(fieldfile_obj):
-    """
-    Validate image file format and size
-    """
-    # Validate file size
-    filesize = fieldfile_obj.size
-    megabyte_limit = 2.0
-    if filesize > megabyte_limit * 1024 * 1024:
-        raise ValidationError(f"Tamanho máximo do arquivo é {megabyte_limit}MB")
+    """Validate image file format and size"""
+    try:
+        # Validate file size
+        filesize = fieldfile_obj.size
+        megabyte_limit = 5.0
+        if filesize > megabyte_limit * 1024 * 1024:
+            raise ValidationError(f"Tamanho máximo do arquivo é {megabyte_limit}MB")
 
-    # Validate image format
-    valid_formats = ['image/jpeg', 'image/png', 'image/gif']
-    
-    # Se o objeto for um InMemoryUploadedFile ou TemporaryUploadedFile
-    if hasattr(fieldfile_obj, 'content_type'):
-        file_type = fieldfile_obj.content_type
-    else:
-        # Se for um BytesIO, tente determinar o tipo pelo início do arquivo
-        try:
+        # Validate image format
+        valid_formats = ['image/jpeg', 'image/png', 'image/gif']
+        
+        if hasattr(fieldfile_obj, 'content_type'):
+            file_type = fieldfile_obj.content_type
+        else:
             import imghdr
             file_type = 'image/' + imghdr.what(None, fieldfile_obj.read(2048))
-            fieldfile_obj.seek(0)  # Retorna ao início do arquivo
-        except:
-            raise ValidationError("Não foi possível determinar o tipo do arquivo")
+            fieldfile_obj.seek(0)
 
-    if file_type not in valid_formats:
-        raise ValidationError("Formato de imagem não suportado. Use JPEG, PNG ou GIF.")
+        if file_type not in valid_formats:
+            raise ValidationError("Formato de imagem não suportado. Use JPEG, PNG ou GIF.")
+    except Exception as e:
+        logger.error(f"Erro na validação da imagem: {str(e)}")
+        raise ValidationError("Erro ao validar imagem. Verifique o formato e tamanho do arquivo.")
 
 def aluno_foto_path(instance, filename):
     """Gera um caminho único para a foto do aluno"""
@@ -89,7 +95,7 @@ def aluno_foto_path(instance, filename):
 class Aluno(models.Model):
     id = models.CharField(
         primary_key=True,
-        max_length=36,  # Tamanho suficiente para um UUID
+        max_length=36,
         editable=False
     )
     
@@ -112,15 +118,39 @@ class Aluno(models.Model):
         blank=True,
         verbose_name="Dados Adicionais"
     )
-    
-    def get_upload_path(instance, filename):
-        ext = filename.split('.')[-1]
-        filename = f"{uuid.uuid4()}.{ext}"
-        return os.path.join('alunos', 'fotos', filename)
+
+    def backup_image(self, image_path):
+        """Cria um backup da imagem"""
+        try:
+            if default_storage.exists(image_path):
+                with default_storage.open(image_path, 'rb') as f:
+                    backup_path = f"backup/alunos/fotos/{os.path.basename(image_path)}"
+                    os.makedirs(os.path.dirname(backup_path), exist_ok=True)
+                    default_storage.save(backup_path, ContentFile(f.read()))
+                    logger.info(f"Backup criado em: {backup_path}")
+        except FileNotFoundError as e:
+            logger.error(f"Arquivo não encontrado: {str(e)}")
+        except PermissionError as e:
+            logger.error(f"Erro de permissão ao criar backup: {str(e)}")
+        except Exception as e:
+            logger.error(f"Erro ao criar backup da imagem: {str(e)}")
 
     def save(self, *args, **kwargs):
+        if not self.id:
+            self.id = str(uuid.uuid4())
+            logger.info(f"Novo ID gerado: {self.id}")
+
         if self.foto and hasattr(self.foto, 'file'):
             try:
+                logger.info(f"Iniciando processamento da foto para {self.nome}")
+                
+                # Criar backup da foto antiga se existir
+                if self.pk:
+                    old_instance = Aluno.objects.get(pk=self.pk)
+                    if old_instance.foto:
+                        logger.info(f"Criando backup da foto antiga: {old_instance.foto.path}")
+                        self.backup_image(old_instance.foto.path)
+
                 img = Image.open(self.foto)
                 img = img.convert('RGB')
                 
@@ -143,13 +173,25 @@ class Aluno(models.Model):
                     output.tell(),
                     None
                 )
-            except Exception as e:
-                logger.error(f"Erro ao processar imagem: {e}")
-        
-        super().save(*args, **kwargs)
+
+                # Criar backup da nova foto após o processamento
+                self.backup_image(self.foto.path)
+                logger.info(f"Foto processada com sucesso para {self.nome}")
                 
+            except Exception as e:
+                logger.error(f"Erro ao processar imagem para {self.nome}: {e}")
+                raise ValidationError(f"Erro ao processar imagem: {str(e)}")
+
+        if self.pk:
+            self.version += 1
+
         super().save(*args, **kwargs)
         logger.info(f"Aluno {self.nome} salvo com sucesso")
+
+    # Resto do código permanece igual...
+    # (Mantenha todos os outros campos e métodos da classe Aluno exatamente como estão)
+
+# Mantenha a classe Nota exatamente como está
     
 
     
