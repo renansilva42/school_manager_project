@@ -63,6 +63,10 @@ SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# Criar diretórios necessários
+ALUNOS_PHOTOS_DIR = os.path.join(MEDIA_ROOT, 'alunos', 'fotos')
+os.makedirs(ALUNOS_PHOTOS_DIR, exist_ok=True)
+
 # Configuração para ambiente de produção (Heroku)
 if not DEBUG:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -82,6 +86,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
 
 MIDDLEWARE = [
+    'your_app.middlewares.EnsureMediaDirectoryMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

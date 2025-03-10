@@ -74,7 +74,7 @@
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <input type="hidden" name="foto" id="foto-input">
+        <input type="hidden" name="foto_base64" id="id_foto_base64">
         <!-- Seção de Foto -->
         <div class="form-group">
             <label for="id_foto">Foto do Aluno</label>
@@ -263,7 +263,7 @@
     
     // Updated capture photo event
     
-capturePhotoBtn.addEventListener('click', () => {
+    capturePhotoBtn.addEventListener('click', () => {
     const context = photoCanvas.getContext('2d');
     photoCanvas.width = cameraPreview.videoWidth;
     photoCanvas.height = cameraPreview.videoHeight;
@@ -272,16 +272,6 @@ capturePhotoBtn.addEventListener('click', () => {
     
     // Converter para base64
     const base64Image = photoCanvas.toDataURL('image/jpeg');
-    
-    // Adicionar ao formulário como campo hidden
-    const fotoBase64Input = document.getElementById('id_foto_base64');
-    if (!fotoBase64Input) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'foto_base64';
-        input.id = 'id_foto_base64';
-        document.querySelector('form').appendChild(input);
-    }
     document.getElementById('id_foto_base64').value = base64Image;
     
     // Mostrar preview
