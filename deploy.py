@@ -19,13 +19,7 @@ def verificar_banco():
         from services.database import SupabaseService
         service = SupabaseService()
         
-        # Set the database environment variables from the working Supabase connection
-        os.environ['SUPABASE_DB_NAME'] = service.db_name
-        os.environ['SUPABASE_DB_USER'] = service.db_user
-        os.environ['SUPABASE_DB_PASSWORD'] = service.db_password
-        os.environ['SUPABASE_DB_HOST'] = service.db_host
-        os.environ['SUPABASE_DB_PORT'] = service.db_port
-        
+        # Testa a conexão tentando listar os alunos
         response = service.list_alunos()
         return True if response else False
     except Exception as e:

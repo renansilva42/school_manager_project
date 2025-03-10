@@ -4,6 +4,12 @@ from django.conf import settings
 class SupabaseService:
     def __init__(self):
         self.client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        # Adicione os atributos de conexão
+        self.db_name = settings.DATABASES['default']['NAME']
+        self.db_user = settings.DATABASES['default']['USER']
+        self.db_password = settings.DATABASES['default']['PASSWORD']
+        self.db_host = settings.DATABASES['default']['HOST']
+        self.db_port = settings.DATABASES['default']['PORT']
 
     def list_alunos(self, filters=None):
         query = self.client.table('alunos').select('*')
