@@ -45,6 +45,15 @@ logger = logging.getLogger(__name__)
 
 class AlunoExportPDFView(LoginRequiredMixin, View):
     """View for exporting student data to PDF"""
+    
+    def get_object(self, queryset=None):
+        try:
+            aluno = super().get_object(queryset)
+            return aluno
+        except Aluno.DoesNotExist:
+            messages.error(self.request, 'Aluno não encontrado')
+            return redirect('alunos:lista')
+    
     def get(self, request, aluno_pk):
         try:
             aluno = get_object_or_404(Aluno, pk=aluno_pk)
@@ -64,6 +73,14 @@ class AlunoExportPDFView(LoginRequiredMixin, View):
             return redirect('alunos:detalhe', pk=aluno_pk)
 
 class AlunoExportExcelView(LoginRequiredMixin, View):
+    def get_object(self, queryset=None):
+        try:
+            aluno = super().get_object(queryset)
+            return aluno
+        except Aluno.DoesNotExist:
+            messages.error(self.request, 'Aluno não encontrado')
+            return redirect('alunos:lista')
+    
     """View for exporting student data to Excel"""
     def get(self, request, aluno_pk):
         try:
@@ -439,10 +456,26 @@ class AlunoDetailView(BaseAlunoView, DetailView):
         aluno = self.get_object()
         context['notas'] = aluno.nota_set.all().order_by('disciplina', 'bimestre')
         return context
+    
+    def get_object(self, queryset=None):
+        try:
+            aluno = super().get_object(queryset)
+            return aluno
+        except Aluno.DoesNotExist:
+            messages.error(self.request, 'Aluno não encontrado')
+            return redirect('alunos:lista')
 
 class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
     template_name = 'alunos/editar_aluno.html'
     form_class = AlunoForm
+    
+    def get_object(self, queryset=None):
+        try:
+            aluno = super().get_object(queryset)
+            return aluno
+        except Aluno.DoesNotExist:
+            messages.error(self.request, 'Aluno não encontrado')
+            return redirect('alunos:lista')
     
     def form_valid(self, form):
         try:
@@ -524,6 +557,14 @@ class AlunoDeleteView(BaseAlunoView, DeleteView):
     template_name = 'alunos/confirmar_exclusao.html'
     success_url = reverse_lazy('alunos:lista')
     
+    def get_object(self, queryset=None):
+        try:
+            aluno = super().get_object(queryset)
+            return aluno
+        except Aluno.DoesNotExist:
+            messages.error(self.request, 'Aluno não encontrado')
+            return redirect('alunos:lista')
+    
     def delete(self, request, *args, **kwargs):
         try:
             self.object = self.get_object()
@@ -556,6 +597,14 @@ class NotaCreateView(AdminRequiredMixin, CreateView):
     model = Nota
     form_class = NotaForm
     template_name = 'alunos/adicionar_nota.html'
+    
+    def get_object(self, queryset=None):
+        try:
+            aluno = super().get_object(queryset)
+            return aluno
+        except Aluno.DoesNotExist:
+            messages.error(self.request, 'Aluno não encontrado')
+            return redirect('alunos:lista')
     
     def dispatch(self, request, *args, **kwargs):
         self.aluno = get_object_or_404(Aluno, pk=self.kwargs['aluno_pk'])
