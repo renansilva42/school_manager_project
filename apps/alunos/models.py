@@ -97,10 +97,9 @@ def validate_image(fieldfile_obj):
 
 def aluno_foto_path(instance, filename):
     """Gera um caminho único para a foto do aluno"""
-    ext = filename.split('.')[-1]
-    new_name = f"{instance.id}_{uuid.uuid4().hex[:8]}.{ext}"
-    return f'alunos/fotos/{new_name}'  # Caminho relativo
-
+    ext = filename.split('.')[-1].lower()
+    new_name = f"{uuid.uuid4().hex}.{ext}"
+    return f'media/alunos/fotos/{new_name}' 
 class Aluno(models.Model):
     id = models.CharField(
         primary_key=True,
@@ -129,37 +128,23 @@ class Aluno(models.Model):
     )
 
     def backup_image(self, image_path):
-        """Cria um backup da imagem"""
+        """Cria um backup da imagem no S3"""
         try:
             if default_storage.exists(image_path):
                 with default_storage.open(image_path, 'rb') as f:
                     backup_path = f"backup/alunos/fotos/{os.path.basename(image_path)}"
-                    os.makedirs(os.path.dirname(backup_path), exist_ok=True)
                     default_storage.save(backup_path, ContentFile(f.read()))
                     logger.info(f"Backup criado em: {backup_path}")
-        except FileNotFoundError as e:
-            logger.error(f"Arquivo não encontrado: {str(e)}")
-        except PermissionError as e:
-            logger.error(f"Erro de permissão ao criar backup: {str(e)}")
         except Exception as e:
             logger.error(f"Erro ao criar backup da imagem: {str(e)}")
 
     def save(self, *args, **kwargs):
         if not self.id:
             self.id = str(uuid.uuid4())
-            logger.info(f"Novo ID gerado: {self.id}")
-
+            
         if self.foto and hasattr(self.foto, 'file'):
             try:
-                logger.info(f"Iniciando processamento da foto para {self.nome}")
-                
-                # Criar backup da foto antiga se existir
-                if self.pk:
-                    old_instance = Aluno.objects.get(pk=self.pk)
-                    if old_instance.foto:
-                        logger.info(f"Criando backup da foto antiga: {old_instance.foto.path}")
-                        self.backup_image(old_instance.foto.path)
-
+                # Processar imagem
                 img = Image.open(self.foto)
                 img = img.convert('RGB')
                 
@@ -173,26 +158,22 @@ class Aluno(models.Model):
                 img.save(output, format='JPEG', quality=85)
                 output.seek(0)
                 
-                # Atualizar o arquivo
+                # Gerar nome único
+                filename = f"{uuid.uuid4().hex}.jpg"
+                
+                # Salvar no S3
                 self.foto = InMemoryUploadedFile(
                     output,
                     'ImageField',
-                    f"{self.id}_{uuid.uuid4().hex[:8]}.jpg",
+                    filename,
                     'image/jpeg',
                     output.tell(),
                     None
                 )
-
-                # Criar backup da nova foto após o processamento
-                self.backup_image(self.foto.path)
-                logger.info(f"Foto processada com sucesso para {self.nome}")
                 
             except Exception as e:
                 logger.error(f"Erro ao processar imagem para {self.nome}: {e}")
                 raise ValidationError(f"Erro ao processar imagem: {str(e)}")
-
-        if self.pk:
-            self.version += 1
 
         super().save(*args, **kwargs)
         logger.info(f"Aluno {self.nome} salvo com sucesso")
