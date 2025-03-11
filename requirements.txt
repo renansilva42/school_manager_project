@@ -42,7 +42,6 @@ multidict==6.1.0
 nh3==0.2.20
 openai==0.27.0
 packaging==24.2
-Pillow==9.0.1
 pkginfo==1.12.1.2
 postgrest-py==0.10.2
 propcache==0.3.0
