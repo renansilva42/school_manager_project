@@ -196,10 +196,6 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
-# Configurações para arquivos de mídia
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
 # Em desenvolvimento, adicione isso:
 if DEBUG:
     STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
