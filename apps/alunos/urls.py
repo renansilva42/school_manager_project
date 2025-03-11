@@ -76,6 +76,10 @@ urlpatterns = [
      path('download/template/', 
           views.DownloadTemplateExcelView.as_view(), 
           name='download_template'),
+     
+     path('api/<uuid:pk>/foto/', 
+         views.AlunoFotoView.as_view(), 
+         name='aluno-foto'),
 ]
 
 if settings.DEBUG:

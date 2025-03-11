@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from core.views import home
 from django.contrib.auth import views as auth_views
+from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -15,6 +16,11 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
+urlpatterns += [
+    path('api/alunos/<uuid:pk>/foto/', 
+         views.AlunoFotoView.as_view(), 
+         name='aluno-foto'),
+]
 
 # Configuração para servir arquivos de mídia em desenvolvimento
 if settings.DEBUG:

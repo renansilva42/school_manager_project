@@ -36,14 +36,49 @@ from django.contrib import messages
 from django.db import transaction
 import logging
 from django.http import Http404
+from rest_framework import generics
+from rest_framework.parsers import MultiPartParser
+from rest_framework.response import Response
+from django.core.files.storage import default_storage
+from django.shortcuts import get_object_or_404
+from .serializers import AlunoFotoSerializer
+from .models import Aluno
+from rest_framework import serializers
 
-logger = logging.getLogger(__name__)
 
 success_url = reverse_lazy('alunos:lista')
 
 logger = logging.getLogger(__name__)
 
-
+class AlunoFotoView(generics.UpdateAPIView):
+    serializer_class = AlunoFotoSerializer
+    parser_classes = (MultiPartParser,)
+    
+    def get_object(self):
+        return get_object_or_404(Aluno, pk=self.kwargs['pk'])
+    
+    def perform_update(self, serializer):
+        try:
+            aluno = self.get_object()
+            
+            # Remove foto antiga se existir
+            if aluno.foto:
+                try:
+                    default_storage.delete(aluno.foto.name)
+                except Exception as e:
+                    logger.warning(f"Erro ao deletar foto antiga: {e}")
+            
+            # Gera nome único para arquivo
+            foto = serializer.validated_data['foto']
+            ext = foto.name.split('.')[-1].lower()
+            novo_nome = f"alunos/fotos/{aluno.id}_{uuid.uuid4().hex[:8]}.{ext}"
+            
+            # Salva nova foto
+            serializer.save(foto=novo_nome)
+            
+        except Exception as e:
+            logger.error(f"Erro ao processar foto: {e}")
+            raise serializers.ValidationError(f"Erro ao processar imagem: {str(e)}")
 
 
 class AlunoExportPDFView(LoginRequiredMixin, View):
