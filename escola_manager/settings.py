@@ -5,6 +5,37 @@ from dotenv import load_dotenv
 # Carrega as variáveis do arquivo .env
 load_dotenv()
 
+# Verificação de variáveis de ambiente críticas
+def check_env_variables():
+    required_vars = [
+        'DB_NAME',
+        'DB_USER',
+        'DB_PASSWORD',
+        'DB_HOST',
+        'SUPABASE_URL',
+        'SUPABASE_KEY'
+    ]
+    
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    
+    if missing_vars:
+        print(f"WARNING: As seguintes variáveis de ambiente estão faltando: {', '.join(missing_vars)}")
+
+check_env_variables()
+
+# Configurações AWS
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-2')
+AWS_DEFAULT_ACL = None
+
+# Adicione uma verificação para garantir que AWS_STORAGE_BUCKET_NAME existe
+if AWS_STORAGE_BUCKET_NAME:
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+else:
+    AWS_S3_CUSTOM_DOMAIN = None
+
 # Obtém as variáveis de ambiente
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
@@ -53,7 +84,10 @@ INSTALLED_APPS = [
     'apps.alunos',
     'apps.usuarios',
     'apps.chatbot',
+    'apps.relatorios',  # Adicionado
     'django_extensions',
+    'rest_framework',  # Adicionado
+    'storages',  # Adicionado para AWS S3
 ]
 
 SUPABASE_URL = os.getenv('SUPABASE_URL')
@@ -94,8 +128,9 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
 
 MIDDLEWARE = [
-    'core.middleware.EnsureMediaDirectoryMiddleware',  # Corrigido aqui
+    'core.middleware.EnsureMediaDirectoryMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Adicionado
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -118,6 +153,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.media',  # Adicionado
                 'django.template.context_processors.static',
             ],
         },
@@ -161,22 +197,6 @@ LOGGING = {
             'style': '{',
         },
     },
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'ERROR',
-            'class': 'logging.FileHandler',
-            'filename': 'logs/url_errors.log',
-        },
-    },
-    'loggers': {
-        'core.middleware': {
-            'handlers': ['file'],
-            'level': 'ERROR',
-            'propagate': True,
-        },
-    },
     'handlers': {
         'file': {
             'level': 'DEBUG',
@@ -189,6 +209,12 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
+        'url_errors': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/url_errors.log',
+            'formatter': 'verbose',
+        }
     },
     'loggers': {
         'apps.alunos': {
@@ -196,7 +222,12 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
-    },
+        'core.middleware': {
+            'handlers': ['url_errors'],
+            'level': 'ERROR',
+            'propagate': True,
+        }
+    }
 }
 
 # Configurações de segurança
@@ -204,16 +235,33 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
-# Em desenvolvimento, adicione isso:
 if DEBUG:
-    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+    STATIC_URL = '/static/'
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+    MEDIA_URL = '/media/'
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+else:
+    # Configurações para produção
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
     
+    if AWS_STORAGE_BUCKET_NAME and AWS_S3_CUSTOM_DOMAIN:
+        DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+        MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+    else:
+        # Fallback para armazenamento local se AWS não estiver configurado
+        DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+        MEDIA_URL = '/media/'
+        MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
     
 BACKUP_MEDIA_ROOT = os.path.join(MEDIA_ROOT, 'backup')
+os.makedirs('logs', exist_ok=True)  # Criar diretório de logs
+os.makedirs(MEDIA_ROOT, exist_ok=True)
+os.makedirs(ALUNOS_PHOTOS_DIR, exist_ok=True)
 os.makedirs(BACKUP_MEDIA_ROOT, exist_ok=True)
-os.makedirs(os.path.join(BACKUP_MEDIA_ROOT, 'alunos', 'fotos'), exist_ok=True)    
+os.makedirs(os.path.join(BACKUP_MEDIA_ROOT, 'alunos', 'fotos'), exist_ok=True)
 
 
 LANGUAGE_CODE = 'pt-br'
@@ -234,11 +282,6 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # settings.py
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-2')
-AWS_DEFAULT_ACL = None
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
 MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
