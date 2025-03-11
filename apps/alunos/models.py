@@ -99,7 +99,7 @@ def aluno_foto_path(instance, filename):
     """Gera um caminho único para a foto do aluno"""
     ext = filename.split('.')[-1]
     new_name = f"{instance.id}_{uuid.uuid4().hex[:8]}.{ext}"
-    return f'alunos/fotos/{new_name}'
+    return f'alunos/fotos/{new_name}'  # Caminho relativo
 
 class Aluno(models.Model):
     id = models.CharField(

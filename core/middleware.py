@@ -35,10 +35,16 @@ class URLErrorMiddleware:
 class EnsureMediaDirectoryMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-        # Criar diretórios necessários
+        # Garantir que os diretórios existam
         os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-        os.makedirs(os.path.join(settings.MEDIA_ROOT, 'alunos', 'fotos'), exist_ok=True)
+        os.makedirs(settings.ALUNOS_PHOTOS_DIR, exist_ok=True)
+        
+        # Tentar definir permissões
+        try:
+            os.chmod(settings.MEDIA_ROOT, 0o755)
+            os.chmod(settings.ALUNOS_PHOTOS_DIR, 0o755)
+        except:
+            pass
 
     def __call__(self, request):
-        response = self.get_response(request)
-        return response
+        return self.get_response(request)

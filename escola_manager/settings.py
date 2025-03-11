@@ -59,14 +59,21 @@ INSTALLED_APPS = [
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
+# Configuração de mídia
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 ALUNOS_PHOTOS_DIR = os.path.join(MEDIA_ROOT, 'alunos/fotos')
 
-# Criar diretórios necessários
+# Criar diretórios com permissões corretas
 os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(ALUNOS_PHOTOS_DIR, exist_ok=True)
 
+# Tentar definir permissões (pode não funcionar no Easypanel)
+try:
+    os.chmod(MEDIA_ROOT, 0o755)
+    os.chmod(ALUNOS_PHOTOS_DIR, 0o755)
+except:
+    pass
 
 # Configuração para ambiente de produção (Heroku)
 if not DEBUG:

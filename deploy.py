@@ -121,3 +121,22 @@ if __name__ == "__main__":
             print("Falha ao executar migrações!")
     else:
         print("Falha na conexão com o banco de dados!")
+        
+def verificar_diretorios():
+    """Verifica e cria diretórios necessários"""
+    media_root = os.environ.get('MEDIA_ROOT', '/workspace/media')
+    fotos_dir = os.path.join(media_root, 'alunos/fotos')
+    
+    os.makedirs(media_root, exist_ok=True)
+    os.makedirs(fotos_dir, exist_ok=True)
+    
+    try:
+        os.chmod(media_root, 0o755)
+        os.chmod(fotos_dir, 0o755)
+    except:
+        pass
+
+# Na função principal
+if __name__ == "__main__":
+    verificar_diretorios()
+    # ... resto do código

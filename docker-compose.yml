@@ -6,11 +6,10 @@ services:
     volumes:
       - .:/app
       - static_volume:/app/staticfiles
-      - media_volume:/app/media
-    ports:
-      - "8000:8000"
+      - media_volume:/workspace/media
     environment:
       - DJANGO_SETTINGS_MODULE=escola_manager.settings
+      - MEDIA_ROOT=/workspace/media
 
 volumes:
   static_volume:
