@@ -236,40 +236,49 @@ class AlunoForm(BaseForm):
     def clean_foto(self):
         foto = self.cleaned_data.get('foto')
         
-        # If no new photo was uploaded, return the current value
         if not foto:
             return foto
             
-        # Check if this is a new file upload
-        if hasattr(foto, 'content_type'):
-            # Verifica o tipo de conteúdo
+        try:
+            # Validate file type
             if not foto.content_type.startswith('image/'):
                 raise ValidationError(_("O arquivo enviado não é uma imagem."))
             
-            # Verifica o tamanho do arquivo (máximo de 5MB)
+            # Validate file size
             max_size = 5 * 1024 * 1024  # 5MB
             if foto.size > max_size:
                 raise ValidationError(_("A imagem excede o tamanho máximo de 5MB."))
             
-            try:
-                # Processa a imagem
-                img = Image.open(foto)
-                # Converte para RGB se necessário
-                if img.mode not in ('RGB', 'RGBA'):
-                    img = img.convert('RGB')
-                # Redimensiona se for muito grande
-                if img.height > 800 or img.width > 800:
-                    output_size = (800, 800)
-                    img.thumbnail(output_size)
-                # Salva a imagem otimizada
-                output = io.BytesIO()
+            # Process image
+            img = Image.open(foto)
+            
+            # Convert to RGB if needed
+            if img.mode not in ('RGB', 'RGBA'):
+                img = img.convert('RGB')
                 
-                return foto
+            # Resize if too large
+            if img.height > 800 or img.width > 800:
+                output_size = (800, 800)
+                img.thumbnail(output_size)
                 
-            except Exception as e:
-                raise ValidationError(_("Erro ao processar a imagem."))
-                
-        return foto
+            # Save optimized image
+            output = BytesIO()
+            img.save(output, format='JPEG', quality=85, optimize=True)
+            output.seek(0)
+            
+            # Create new InMemoryUploadedFile
+            return InMemoryUploadedFile(
+                output,
+                'ImageField',
+                f"{uuid.uuid4().hex}.jpg",
+                'image/jpeg',
+                output.tell(),
+                None
+            )
+            
+        except Exception as e:
+            logger.error(f"Erro ao processar imagem: {str(e)}")
+            raise ValidationError(_("Erro ao processar a imagem."))
 
     def clean(self):
         """Enhanced validation logic"""

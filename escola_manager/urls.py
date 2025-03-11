@@ -13,7 +13,8 @@ urlpatterns = [
     path('usuarios/', include('apps.usuarios.urls')),
     path('relatorios/', include('apps.relatorios.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
 
 # Configuração para servir arquivos de mídia em desenvolvimento
 if settings.DEBUG:

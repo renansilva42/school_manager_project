@@ -64,6 +64,9 @@ class AlunoManager(models.Manager):
 def validate_image(fieldfile_obj):
     """Validate image file format and size"""
     try:
+        if not fieldfile_obj:
+            return
+            
         # Validate file size
         filesize = fieldfile_obj.size
         megabyte_limit = 5.0
@@ -82,6 +85,12 @@ def validate_image(fieldfile_obj):
 
         if file_type not in valid_formats:
             raise ValidationError("Formato de imagem não suportado. Use JPEG, PNG ou GIF.")
+            
+        # Validate image dimensions
+        img = Image.open(fieldfile_obj)
+        if img.height > 2000 or img.width > 2000:
+            raise ValidationError("Dimensões máximas permitidas: 2000x2000 pixels")
+            
     except Exception as e:
         logger.error(f"Erro na validação da imagem: {str(e)}")
         raise ValidationError("Erro ao validar imagem. Verifique o formato e tamanho do arquivo.")
