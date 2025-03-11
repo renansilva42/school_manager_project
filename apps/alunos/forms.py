@@ -10,6 +10,8 @@ import logging
 import base64
 from io import BytesIO
 import uuid
+import os
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +51,10 @@ class AlunoForm(BaseForm):
         foto_base64 = cleaned_data.get('foto_base64')
         foto_file = cleaned_data.get('foto')
         
+        # Garantir que o diretório de destino existe
+        upload_path = os.path.join(settings.MEDIA_ROOT, 'alunos/fotos')
+        os.makedirs(upload_path, exist_ok=True)
+        
         # Processa foto base64 se existir
         if foto_base64 and foto_base64.startswith('data:image'):
             try:
@@ -80,15 +86,14 @@ class AlunoForm(BaseForm):
                 output.seek(0)
                 
                 # Gera um nome único para o arquivo
-                unique_filename = f'camera_photo_{uuid.uuid4().hex[:8]}.jpg'
-                
-                # Cria um novo arquivo para o Django com tamanho correto
+                unique_filename = f'alunos/fotos/camera_photo_{uuid.uuid4().hex[:8]}.jpg'
+
                 cleaned_data['foto'] = InMemoryUploadedFile(
                     output,
-                    'ImageField',  # Alterado de 'foto' para 'ImageField'
-                    unique_filename,
+                    'ImageField',
+                    unique_filename,  # Nome do arquivo com o caminho relativo
                     'image/jpeg',
-                    len(output.getvalue()),  # Usando len() para obter o tamanho correto
+                    len(output.getvalue()),
                     None
                 )
                 
@@ -128,15 +133,14 @@ class AlunoForm(BaseForm):
                 
                 # Gera um nome único para o arquivo mantendo o nome original
                 original_name = foto_file.name.split('.')[0]
-                unique_filename = f"{original_name}_{uuid.uuid4().hex[:8]}.jpg"
-                
-                # Criar novo arquivo com tamanho correto
+                unique_filename = f"alunos/fotos/{original_name}_{uuid.uuid4().hex[:8]}.jpg"
+
                 cleaned_data['foto'] = InMemoryUploadedFile(
                     output,
-                    'ImageField',  # Alterado de 'foto' para 'ImageField'
-                    unique_filename,
+                    'ImageField',
+                    unique_filename,  # Nome do arquivo com o caminho relativo
                     'image/jpeg',
-                    len(output.getvalue()),  # Usando len() para obter o tamanho correto
+                    len(output.getvalue()),
                     None
                 )
                 

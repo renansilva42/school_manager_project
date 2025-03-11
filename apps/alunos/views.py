@@ -531,71 +531,35 @@ class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
                 
                 db = DatabaseService()
                 
-                # Handle photo upload
-                photo_file = None
-                
-                # Process base64 photo from camera
-                foto_base64 = self.request.POST.get('foto_base64')
-                if foto_base64 and foto_base64.startswith('data:image'):
+                # Processamento da foto
+                photo_file = self.request.FILES.get('foto')
+                if photo_file:
                     try:
-                        format, imgstr = foto_base64.split(';base64,')
-                        ext = format.split('/')[-1]
+                        # Gere um nome de arquivo relativo
+                        filename = f"alunos/fotos/{uuid.uuid4().hex}.jpg"
                         
-                        imgdata = base64.b64decode(imgstr)
-                        buffer = BytesIO(imgdata)
+                        # Use o storage do Django para salvar o arquivo
+                        from django.core.files.storage import default_storage
+                        path = default_storage.save(filename, photo_file)
                         
-                        img = Image.open(buffer)
-                        if img.mode not in ('RGB', 'RGBA'):
-                            img = img.convert('RGB')
-                        
-                        if img.height > 800 or img.width > 800:
-                            output_size = (800, 800)
-                            img.thumbnail(output_size)
-                        
-                        output = BytesIO()
-                        img.save(output, format='JPEG', quality=85)
-                        output.seek(0)
-                        
-                        photo_file = InMemoryUploadedFile(
-                            output,
-                            'foto',
-                            f'camera_photo_{aluno_id}.jpg',
-                            'image/jpeg',
-                            output.getbuffer().nbytes,
-                            None
-                        )
+                        # Atualize o caminho da foto nos dados
+                        data['foto'] = path
                         
                     except Exception as e:
-                        logger.error(f"Error processing base64 photo: {str(e)}")
-                
-                # Process photo from file upload
-                elif 'foto' in self.request.FILES:
-                    photo_file = self.request.FILES['foto']
-                
-                # Upload new photo to Supabase if exists
-                if photo_file:
-                    # Delete old photo if exists
-                    if self.object.foto:
-                        db.delete_photo(aluno_id)
-                    
-                    # Upload new photo
-                    photo_url = db.upload_photo(photo_file, aluno_id)
-                    if photo_url:
-                        data['foto'] = photo_url
-                    else:
-                        messages.warning(self.request, 'Aluno atualizado, mas houve um problema ao salvar a foto.')
-                
-                # Update student in Supabase
+                        logger.error(f"Erro ao processar foto: {str(e)}")
+                        messages.warning(self.request, 'Erro ao processar a foto.')
+                        
+                # Atualize o aluno no banco de dados
                 response = db.update_aluno(aluno_id, data)
                 
                 if not response:
-                    raise Exception("Falha ao atualizar aluno no Supabase")
+                    raise Exception("Falha ao atualizar aluno no banco de dados")
                 
                 messages.success(self.request, 'Aluno atualizado com sucesso!')
                 return redirect('alunos:detalhe', pk=aluno_id)
                 
         except Exception as e:
-            logger.error(f"Error updating student: {str(e)}")
+            logger.error(f"Erro ao atualizar aluno: {str(e)}")
             messages.error(self.request, 'Erro ao atualizar aluno.')
             return self.form_invalid(form)
 
