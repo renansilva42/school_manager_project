@@ -59,13 +59,14 @@ INSTALLED_APPS = [
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
-# For handling image uploads
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# Adicione estas configurações
 ALUNOS_PHOTOS_DIR = os.path.join(MEDIA_ROOT, 'alunos/fotos')
+
+# Criar diretórios necessários
+os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(ALUNOS_PHOTOS_DIR, exist_ok=True)
+
 
 # Configuração para ambiente de produção (Heroku)
 if not DEBUG:
