@@ -77,3 +77,4 @@ django-storages==1.14.5
 boto3==1.34.69
 djangorestframework==3.14.0
 Pillow==10.2.0
+whitenoise==6.0.0
