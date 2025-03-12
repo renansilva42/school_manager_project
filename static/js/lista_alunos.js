@@ -1,44 +1,222 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const searchButton = document.getElementById('search-button');
-    const searchInput = document.getElementById('search-input');
-    const nivelFilter = document.getElementById('nivel-filter');
-    const turnoFilter = document.getElementById('turno-filter');
-    const anoFilter = document.getElementById('ano-filter');
-    
-    // Função para buscar alunos
-    function fetchAlunos(params) {
-        fetch(`/alunos/buscar?${new URLSearchParams(params)}`)
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('alunos-container');
-                container.innerHTML = data.html;
-            })
-            .catch(error => {
-                console.error('Erro ao buscar alunos:', error);
-                notificationSystem.showError('Erro ao buscar alunos');
-            });
+// Constants and configurations
+const ANO_OPTIONS = {
+    EFI: {
+        M: [
+            {value: '3', label: '3º Ano'},
+            {value: '4', label: '4º Ano'},
+            {value: '5', label: '5º Ano'}
+        ]
+    },
+    EFF: {
+        M: [
+            {value: '6', label: '6º Ano - Manhã'},
+            {value: '7', label: '7º Ano - Manhã'},
+            {value: '8', label: '8º Ano - Manhã'}
+        ],
+        T: [
+            {value: '6', label: '6º Ano - Tarde'},
+            {value: '7', label: '7º Ano - Tarde'},
+            {value: '8', label: '8º Ano - Tarde'},
+            {value: '901', label: '9º Ano - Turma 901'},
+            {value: '902', label: '9º Ano - Turma 902'}
+        ]
     }
-    
-    // Event listener para o botão de busca
-    searchButton.addEventListener('click', () => {
-        const params = {
-            search: searchInput.value,
-            nivel: nivelFilter.value,
-            turno: turnoFilter.value,
-            ano: anoFilter.value
+};
+
+class AlunosManager {
+    constructor() {
+        this.initializeElements();
+        this.initializeState();
+        this.initializeEventListeners();
+        this.initializeView();
+    }
+
+    initializeElements() {
+        this.elements = {
+            filterForm: document.getElementById('filterForm'),
+            nivel: document.getElementById('nivel'),
+            turno: document.getElementById('turno'),
+            ano: document.getElementById('ano'),
+            search: document.getElementById('search'),
+            alunosContainer: document.getElementById('alunos-container'),
+            loadingOverlay: document.querySelector('.loading-overlay'),
+            viewGrid: document.getElementById('viewGrid'),
+            viewList: document.getElementById('viewList'),
+            totalResults: document.getElementById('total-results')
         };
-        fetchAlunos(params);
-    });
-    
-    // Event listeners para os filtros dropdown
-    [nivelFilter, turnoFilter, anoFilter].forEach(filter => {
-        filter.addEventListener('change', () => {
-            const params = {
-                nivel: nivelFilter.value,
-                turno: turnoFilter.value,
-                ano: anoFilter.value
-            };
-            fetchAlunos(params);
+    }
+
+    initializeState() {
+        this.state = {
+            isLoading: false
+        };
+    }
+
+    initializeView() {
+        const savedView = localStorage.getItem('alunosView') || 'grid';
+        this.toggleView(savedView);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('nivel')) {
+            this.elements.nivel.value = urlParams.get('nivel');
+            this.updateTurnoChoices(this.elements.nivel.value);
+        } else {
+            this.fetchAlunos();
+        }
+    }
+
+    initializeEventListeners() {
+        // View toggle listeners
+        this.elements.viewGrid.addEventListener('click', () => this.toggleView('grid'));
+        this.elements.viewList.addEventListener('click', () => this.toggleView('list'));
+
+        // Form listeners
+        this.elements.filterForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleFormSubmit();
         });
-    });
+
+        this.elements.nivel.addEventListener('change', () => {
+            this.updateTurnoChoices(this.elements.nivel.value);
+        });
+
+        this.elements.turno.addEventListener('change', () => {
+            this.handleTurnoChange();
+        });
+
+        this.elements.ano.addEventListener('change', () => {
+            this.handleAnoChange();
+        });
+    }
+
+    toggleView(view) {
+        const {alunosContainer, viewGrid, viewList} = this.elements;
+        
+        if (view === 'grid') {
+            alunosContainer.classList.remove('list-view');
+            alunosContainer.classList.add('row', 'g-4');
+            viewGrid.classList.add('active');
+            viewList.classList.remove('active');
+        } else {
+            alunosContainer.classList.add('list-view');
+            alunosContainer.classList.remove('row', 'g-4');
+            viewList.classList.add('active');
+            viewGrid.classList.remove('active');
+        }
+        
+        localStorage.setItem('alunosView', view);
+    }
+
+    async fetchAlunos(params = {}) {
+        if (this.state.isLoading) return;
+        
+        try {
+            this.state.isLoading = true;
+            this.elements.loadingOverlay.style.display = 'flex';
+            
+            const queryParams = new URLSearchParams(
+                Object.entries(params).filter(([_, value]) => value)
+            );
+            
+            const response = await fetch(`/alunos/buscar/?${queryParams.toString()}`, {
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            this.elements.alunosContainer.innerHTML = data.html;
+            this.elements.totalResults.textContent = data.total_alunos;
+
+        } catch (error) {
+            console.error('Error fetching alunos:', error);
+            this.elements.alunosContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <h5>Erro ao carregar os alunos</h5>
+                    <p>Por favor, tente novamente.</p>
+                </div>
+            `;
+        } finally {
+            this.state.isLoading = false;
+            this.elements.loadingOverlay.style.display = 'none';
+        }
+    }
+
+    updateTurnoChoices(nivel) {
+        const {turno} = this.elements;
+        turno.innerHTML = '<option value="">Selecione o Turno</option>';
+        
+        if (nivel === 'EFI') {
+            this.addOption(turno, 'M', 'Manhã');
+            turno.value = 'M';
+            turno.disabled = true;
+            this.fetchAlunos({nivel, turno: 'M'});
+        } else if (nivel === 'EFF') {
+            turno.disabled = false;
+            ['M', 'T'].forEach(value => {
+                this.addOption(turno, value, value === 'M' ? 'Manhã' : 'Tarde');
+            });
+            this.fetchAlunos({nivel});
+        } else {
+            turno.disabled = true;
+            this.elements.ano.disabled = true;
+            this.fetchAlunos();
+        }
+        
+        this.updateAnoChoices(turno.value, nivel);
+    }
+
+    updateAnoChoices(turno, nivel) {
+        const {ano} = this.elements;
+        ano.innerHTML = '<option value="">Selecione o Ano</option>';
+        
+        if (nivel && turno && ANO_OPTIONS[nivel]?.[turno]) {
+            ano.disabled = false;
+            ANO_OPTIONS[nivel][turno].forEach(({value, label}) => {
+                this.addOption(ano, value, label);
+            });
+        } else {
+            ano.disabled = true;
+        }
+    }
+
+    addOption(select, value, label) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        select.appendChild(option);
+    }
+
+    handleFormSubmit() {
+        const {nivel, turno, ano, search} = this.elements;
+        this.fetchAlunos({
+            nivel: nivel.value,
+            turno: turno.value,
+            ano: ano.value,
+            search: search.value.trim()
+        });
+    }
+
+    handleTurnoChange() {
+        const {nivel, turno} = this.elements;
+        this.updateAnoChoices(turno.value, nivel.value);
+        this.fetchAlunos({
+            nivel: nivel.value,
+            turno: turno.value
+        });
+    }
+
+    handleAnoChange() {
+        const {nivel, turno, ano} = this.elements;
+        this.fetchAlunos({
+            nivel: nivel.value,
+            turno: turno.value,
+            ano: ano.value
+        });
+    }
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    new AlunosManager();
 });
