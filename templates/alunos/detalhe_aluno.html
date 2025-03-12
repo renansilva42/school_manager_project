@@ -686,8 +686,11 @@
 
     // Função para fechar o modal
     function closeModal() {
-        resetZoom();
-        bootstrap.Modal.getInstance(modal).hide();
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            resetZoom();
+            modalInstance.hide();
+        }
     }
 
     // Função para resetar o zoom
@@ -698,20 +701,20 @@
     }
 
     // Evento de clique no botão fechar
-    closeButton.addEventListener('click', function(e) {
+    closeButton.addEventListener('click', (e) => {
         e.stopPropagation();
         closeModal();
     });
 
     // Evento de clique no fundo do modal
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target === closeButton) {
             closeModal();
         }
     });
 
     // Evento de clique na imagem para zoom
-    modalImage.addEventListener('click', function(e) {
+    modalImage.addEventListener('click', (e) => {
         e.stopPropagation();
         isZoomed = !isZoomed;
         modalImage.style.transform = isZoomed ? 'scale(2)' : 'scale(1)';
@@ -719,10 +722,15 @@
     });
 
     // Fechar com ESC
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeModal();
         }
+    });
+
+    // Prevenir propagação do clique no conteúdo do modal
+    document.querySelector('.modal-content').addEventListener('click', (e) => {
+        e.stopPropagation();
     });
 });
 </script>

@@ -400,3 +400,69 @@
   max-width: 100%;
   flex: 0 0 100%;
 }
+
+/* Corrigir a rotação do chevron */
+.btn-link[aria-expanded="false"] .fa-chevron-down {
+  transform: rotate(0deg);
+  transition: transform 0.3s ease;
+}
+
+.btn-link[aria-expanded="true"] .fa-chevron-down {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
+}
+
+/* Melhorar estilos grid/lista */
+.btn-group .btn.active {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+  border-color: var(--primary-color) !important;
+}
+
+.list-view .student-card {
+  flex-direction: row !important;
+  align-items: center !important;
+  margin-bottom: 1rem;
+}
+
+.list-view .student-photo {
+  width: 60px;
+  height: 60px;
+  margin-right: 1rem;
+}
+
+.list-view .student-info {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Adicionar/modificar no style.css */
+.modal-dialog.modal-lg {
+  max-width: 90vw;
+  margin: 1.75rem auto;
+}
+
+.modal-content {
+  background: rgba(0, 0, 0, 0.95);
+  border: none;
+}
+
+.btn-close-white {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1050;
+  background-color: white;
+  opacity: 0.8;
+  padding: 0.5rem;
+  border-radius: 50%;
+}
+
+.modal-img {
+  max-height: 85vh;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+  cursor: zoom-in;
+}

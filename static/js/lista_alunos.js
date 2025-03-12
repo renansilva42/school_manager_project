@@ -66,6 +66,18 @@ class AlunosManager {
     }
 
     initializeEventListeners() {
+
+        const filterButton = document.querySelector('[data-bs-toggle="collapse"]');
+        if (filterButton) {
+            filterButton.addEventListener('click', () => {
+                const icon = filterButton.querySelector('.fa-chevron-down');
+                if (icon) {
+                    const isExpanded = filterButton.getAttribute('aria-expanded') === 'true';
+                    icon.style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+                    icon.style.transition = 'transform 0.3s ease';
+                }
+            });
+        }
         // View toggle listeners
         this.elements.viewGrid.addEventListener('click', () => this.toggleView('grid'));
         this.elements.viewList.addEventListener('click', () => this.toggleView('list'));
