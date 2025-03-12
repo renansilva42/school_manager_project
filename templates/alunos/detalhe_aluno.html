@@ -286,6 +286,7 @@
 
     /* Add these styles to your existing <style> section */
 .modal-dialog.modal-lg {
+    z-index: 1050; /* Aumentar o z-index */
     max-width: 90vw;
     margin: 1.75rem auto;
     display: flex;
@@ -294,6 +295,7 @@
 }
 
 .modal-content {
+    z-index: 1051; /* Garantir que o conteúdo fique acima do dialog */
     background: rgba(0, 0, 0, 0.95);
     border: none;
     border-radius: 15px;
@@ -354,15 +356,20 @@
     }
 
     .modal-body {
+        z-index: 1052; /* Garantir que o corpo do modal fique acima do content */
+        position: relative; /* Importante para o z-index funcionar */
         height: 100%;
     }
 
     .modal-img {
+        z-index: 1053; /* Garantir que a imagem fique acima do body */
+        position: relative; /* Importante para o z-index funcionar */
         max-height: 80vh;
         width: auto;
     }
 
     .btn-close-white {
+        z-index: 1054; /* Garantir que o botão de fechar fique na camada mais alta */
         padding: 0.5rem;
         top: 0.5rem;
         right: 0.5rem;
