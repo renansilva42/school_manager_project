@@ -219,6 +219,7 @@
     justify-content: center;
     color: white;
     transition: opacity 0.3s ease;
+    pointer-events: none; /* Importante para evitar que a lupa fique permanente */
 }
 
 .profile-img-container:hover .profile-img-hover {
@@ -321,10 +322,51 @@
 /* Mobile optimizations */
 @media (max-width: 768px) {
     .modal-dialog.modal-lg {
-        max-width: 95vw;
-        margin: 0.5rem auto;
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        max-width: none;
     }
 
+    .modal-content {
+        height: 100%;
+        border-radius: 0;
+        background: rgba(0, 0, 0, 0.9);
+    }
+
+    .modal-body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .modal-img {
+        max-width: 100%;
+        max-height: 90vh;
+        object-fit: contain;
+    }
+
+    .btn-close-white {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1050;
+        background-color: white;
+        opacity: 0.8;
+        padding: 0.75rem;
+        border-radius: 50%;
+    }
+
+    /* Ajuste para o hover da imagem em dispositivos móveis */
+    .profile-img-container:hover .profile-img-hover {
+        opacity: 0; /* Não mostrar o hover em dispositivos móveis */
+    }
+
+    /* Mostrar a lupa apenas no toque ativo */
+    .profile-img-container:active .profile-img-hover {
+        opacity: 1;
+    }
     .modal-img {
         max-height: 80vh;
     }
@@ -396,14 +438,12 @@
             <div class="modal fade" id="fotoModal" tabindex="-1" aria-labelledby="fotoModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
                     <div class="modal-content">
-                        <div class="modal-header border-0">
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body text-center p-0">
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <div class="modal-body">
                             {% if aluno.foto %}
-                                <img src="{{ aluno.foto.url }}" class="img-fluid modal-img" alt="Foto ampliada do aluno">
+                                <img src="{{ aluno.foto.url }}" class="modal-img" alt="Foto ampliada do aluno">
                             {% else %}
-                                <img src="{% static 'img/default-avatar.png' %}" class="img-fluid modal-img" alt="Foto padrão ampliada">
+                                <img src="{% static 'img/default-avatar.png' %}" class="modal-img" alt="Foto padrão ampliada">
                             {% endif %}
                         </div>
                     </div>
@@ -634,54 +674,30 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Garantir que as animações sejam executadas corretamente
-        const elements = document.querySelectorAll('.animated');
-        elements.forEach(element => {
-            element.style.opacity = '0';
-        });
-        
-        setTimeout(() => {
-            elements.forEach(element => {
-                element.style.opacity = '1';
-            });
-        }, 100);
+    // Inicializar o modal corretamente
+    const fotoModal = new bootstrap.Modal(document.getElementById('fotoModal'), {
+        keyboard: true,
+        backdrop: true
+    });
 
-    // Initialize modal with custom options
-        const fotoModal = new bootstrap.Modal(document.getElementById('fotoModal'), {
-            backdrop: 'static',
-            keyboard: true
-        });
+    // Adicionar evento de clique no botão close
+    document.querySelector('.btn-close-white').addEventListener('click', function() {
+        fotoModal.hide();
+    });
 
-        // Add keyboard support for closing modal
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                fotoModal.hide();
-            }
-        });
-
-        // Add swipe support for mobile devices
-        let touchstartX = 0;
-        let touchendX = 0;
-        
-        const modalElement = document.getElementById('fotoModal');
-        
-        modalElement.addEventListener('touchstart', e => {
-            touchstartX = e.changedTouches[0].screenX;
-        });
-
-        modalElement.addEventListener('touchend', e => {
-            touchendX = e.changedTouches[0].screenX;
-            handleSwipe();
-        });
-
-        function handleSwipe() {
-            if (touchendX < touchstartX - 50) { // Swipe left
-                fotoModal.hide();
-            }
-            if (touchendX > touchstartX + 50) { // Swipe right
-                fotoModal.hide();
-            }
+    // Adicionar evento de tecla Esc
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            fotoModal.hide();
         }
     });
+
+    // Adicionar evento de clique no backdrop
+    document.getElementById('fotoModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            fotoModal.hide();
+        }
+    });
+});
 </script>
 {% endblock %}
