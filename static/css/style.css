@@ -346,6 +346,22 @@
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
+
+  .modal-dialog.modal-lg {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+}
+
+.modal-img {
+    max-height: 80vh;
+}
+
+.btn-close-white {
+    top: 10px;
+    right: 10px;
+    padding: 0.5rem;
+}
+
   .student-card {
       padding: var(--spacing-md);
   }
@@ -439,30 +455,70 @@
 }
 
 /* Adicionar/modificar no style.css */
+.modal {
+  z-index: 1050 !important; /* Aumentar para garantir que fique acima de outros elementos */
+}
+
+.modal-backdrop {
+  z-index: 1040 !important; /* Manter abaixo do modal */
+}
+
 .modal-dialog.modal-lg {
+  z-index: 1051 !important; /* Aumentar para ficar acima do modal base */
   max-width: 90vw;
   margin: 1.75rem auto;
+  position: relative;
 }
 
 .modal-content {
   background: rgba(0, 0, 0, 0.95);
   border: none;
+  border-radius: 15px;
+  position: relative;
+  z-index: 1052 !important; /* Aumentar para ficar acima do dialog */
+}
+
+.modal-body {
+  position: relative;
+  z-index: 1053 !important; /* Aumentar para ficar acima do content */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
 }
 
 .btn-close-white {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 1050;
+  top: 15px;
+  right: 15px;
+  z-index: 1054 !important; /* Maior z-index para garantir que fique sempre visível */
   background-color: white;
   opacity: 0.8;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.btn-close-white:hover {
+  opacity: 1;
 }
 
 .modal-img {
+  max-width: 100%;
   max-height: 85vh;
   object-fit: contain;
+  cursor: pointer;
   transition: transform 0.3s ease;
-  cursor: zoom-in;
+}
+
+/* Adicionar novos estilos para controle de zoom */
+.modal-img.zoomed {
+  transform: scale(2);
+  cursor: zoom-out;
 }
