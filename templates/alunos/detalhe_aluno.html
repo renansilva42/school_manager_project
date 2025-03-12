@@ -249,8 +249,9 @@
 }
 
 .modal-content {
-    background: transparent;
+    background: rgba(0, 0, 0, 0.9);
     border: none;
+    border-radius: 15px;
 }
 
 .modal-body img {
@@ -278,6 +279,82 @@
     .delay-1 { animation-delay: 0.1s; }
     .delay-2 { animation-delay: 0.2s; }
     .delay-3 { animation-delay: 0.3s; }
+
+    /* Add these styles to your existing <style> section */
+.modal-dialog.modal-lg {
+    max-width: 90vw;
+    margin: 1.75rem auto;
+}
+
+.modal-content {
+    background: rgba(0, 0, 0, 0.9);
+    border: none;
+    border-radius: 15px;
+}
+
+.modal-header {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
+    padding: 1rem;
+}
+
+.btn-close-white {
+    background-color: white;
+    opacity: 0.8;
+    padding: 0.75rem;
+    border-radius: 50%;
+    transition: opacity 0.3s ease;
+}
+
+.btn-close-white:hover {
+    opacity: 1;
+}
+
+.modal-img {
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 10px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .modal-dialog.modal-lg {
+        max-width: 95vw;
+        margin: 0.5rem auto;
+    }
+
+    .modal-img {
+        max-height: 80vh;
+    }
+
+    .btn-close-white {
+        padding: 0.5rem;
+    }
+
+    /* Improve touch target size for mobile */
+    .profile-img-container {
+        width: 150px;
+        height: 150px;
+    }
+
+    .profile-img-hover {
+        font-size: 1.5rem;
+    }
+}
+
+/* Add touch feedback for mobile devices */
+@media (hover: none) {
+    .profile-img-hover {
+        background: rgba(0,0,0,0.3);
+        opacity: 1;
+    }
+
+    .profile-img-container:active {
+        transform: scale(0.95);
+    }
+}
 </style>
 
 <div class="container mt-4">
@@ -309,7 +386,7 @@
         
             <div>
                 <h1 class="profile-name">{{ aluno.nome }}</h1>
-                <div class="profile-matricula">Matrícula ofc: {{ aluno.matricula }}</div>
+                <div class="profile-matricula">Matrícula: {{ aluno.matricula }}</div>
             </div>
             
             <span class="profile-badge badge-{{ aluno.nivel|lower }}">
@@ -317,13 +394,16 @@
             </span>
             <!-- Modal para a foto ampliada -->
             <div class="modal fade" id="fotoModal" tabindex="-1" aria-labelledby="fotoModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
                     <div class="modal-content">
-                        <div class="modal-body text-center">
+                        <div class="modal-header border-0">
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center p-0">
                             {% if aluno.foto %}
-                                <img src="{{ aluno.foto.url }}" class="img-fluid" alt="Foto ampliada do aluno">
+                                <img src="{{ aluno.foto.url }}" class="img-fluid modal-img" alt="Foto ampliada do aluno">
                             {% else %}
-                                <img src="{% static 'img/default-avatar.png' %}" class="img-fluid" alt="Foto padrão ampliada">
+                                <img src="{% static 'img/default-avatar.png' %}" class="img-fluid modal-img" alt="Foto padrão ampliada">
                             {% endif %}
                         </div>
                     </div>
@@ -565,6 +645,43 @@
                 element.style.opacity = '1';
             });
         }, 100);
+
+    // Initialize modal with custom options
+        const fotoModal = new bootstrap.Modal(document.getElementById('fotoModal'), {
+            backdrop: 'static',
+            keyboard: true
+        });
+
+        // Add keyboard support for closing modal
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                fotoModal.hide();
+            }
+        });
+
+        // Add swipe support for mobile devices
+        let touchstartX = 0;
+        let touchendX = 0;
+        
+        const modalElement = document.getElementById('fotoModal');
+        
+        modalElement.addEventListener('touchstart', e => {
+            touchstartX = e.changedTouches[0].screenX;
+        });
+
+        modalElement.addEventListener('touchend', e => {
+            touchendX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchendX < touchstartX - 50) { // Swipe left
+                fotoModal.hide();
+            }
+            if (touchendX > touchstartX + 50) { // Swipe right
+                fotoModal.hide();
+            }
+        }
     });
 </script>
 {% endblock %}
