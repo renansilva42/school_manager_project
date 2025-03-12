@@ -257,10 +257,8 @@
 }
 
 .modal-body {
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    position: relative;
+    z-index: 1; /* Garantir que a imagem fique abaixo do botão de fechar */
 }
 
     /* Animações */
@@ -292,12 +290,12 @@
     min-height: calc(100vh - 3.5rem);
 }
 
-    .modal-content {
+.modal-content {
     background: rgba(0, 0, 0, 0.95);
     border: none;
     border-radius: 15px;
     position: relative;
-    }
+}
 
 .modal-header {
     position: absolute;
@@ -308,10 +306,10 @@
 }
 
 .btn-close-white {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    z-index: 1050;
+    position: fixed; /* Alterado de absolute para fixed */
+    top: 20px;
+    right: 20px;
+    z-index: 9999; /* Aumentado o z-index */
     background-color: white;
     opacity: 0.8;
     padding: 0.75rem;
@@ -676,75 +674,50 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const modal = document.getElementById('fotoModal');
-        const modalImage = document.querySelector('.modal-img');
-        const modalBody = document.querySelector('.modal-body');
-        let isZoomed = false;
-    
-        // Inicializar o modal
-        const fotoModal = new bootstrap.Modal(modal, {
-            keyboard: true,
-            backdrop: true
-        });
-    
-        // Função para resetar o zoom
-        function resetZoom() {
-            isZoomed = false;
-            modalImage.style.transform = 'scale(1)';
-        }
-    
-        // Evento de clique na imagem para zoom
-        modalImage.addEventListener('click', function(e) {
-            e.stopPropagation();
-            isZoomed = !isZoomed;
-            modalImage.style.transform = isZoomed ? 'scale(2)' : 'scale(1)';
-        });
-    
-        // Fechar modal ao clicar fora da imagem
-        modalBody.addEventListener('click', function(e) {
-            if (e.target === modalBody) {
-                resetZoom();
-                fotoModal.hide();
-            }
-        });
-    
-        // Fechar com o botão
-        document.querySelector('.btn-close-white').addEventListener('click', function() {
-            resetZoom();
-            fotoModal.hide();
-        });
-    
-        // Fechar com ESC
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                resetZoom();
-                fotoModal.hide();
-            }
-        });
-    
-        // Resetar zoom ao fechar o modal
-        modal.addEventListener('hidden.bs.modal', function() {
-            resetZoom();
-        });
-    
-        // Suporte para dispositivos touch
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let lastTouchEnd = 0;
-    
-        modalImage.addEventListener('touchstart', function(e) {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-        });
-    
-        modalImage.addEventListener('touchend', function(e) {
-            const now = Date.now();
-            if (now - lastTouchEnd <= 300) {
-                isZoomed = !isZoomed;
-                modalImage.style.transform = isZoomed ? 'scale(2)' : 'scale(1)';
-            }
-            lastTouchEnd = now;
-        });
+    const modal = document.getElementById('fotoModal');
+    const modalImage = document.querySelector('.modal-img');
+    const modalBody = document.querySelector('.modal-body');
+    const closeButton = document.querySelector('.btn-close-white');
+    let isZoomed = false;
+
+    // Função para fechar o modal
+    function closeModal() {
+        resetZoom();
+        bootstrap.Modal.getInstance(modal).hide();
+    }
+
+    // Função para resetar o zoom
+    function resetZoom() {
+        isZoomed = false;
+        modalImage.style.transform = 'scale(1)';
+    }
+
+    // Evento de clique no botão fechar
+    closeButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        closeModal();
     });
+
+    // Evento de clique no fundo do modal
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal || e.target === modalBody) {
+            closeModal();
+        }
+    });
+
+    // Prevenir que cliques na imagem fechem o modal
+    modalImage.addEventListener('click', function(e) {
+        e.stopPropagation();
+        isZoomed = !isZoomed;
+        modalImage.style.transform = isZoomed ? 'scale(2)' : 'scale(1)';
+    });
+
+    // Fechar com ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+});
     </script>
 {% endblock %}
