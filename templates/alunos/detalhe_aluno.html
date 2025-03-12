@@ -257,8 +257,11 @@
 }
 
 .modal-body {
-    position: relative;
-    z-index: 1; /* Garantir que a imagem fique abaixo do botão de fechar */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+    height: 100%;
 }
 
     /* Animações */
@@ -327,6 +330,8 @@
     max-height: 85vh;
     object-fit: contain;
     border-radius: 10px;
+    transition: transform 0.3s ease;
+    cursor: zoom-in;
 }
 
 /* Mobile optimizations */
@@ -676,7 +681,6 @@
     document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('fotoModal');
     const modalImage = document.querySelector('.modal-img');
-    const modalBody = document.querySelector('.modal-body');
     const closeButton = document.querySelector('.btn-close-white');
     let isZoomed = false;
 
@@ -690,6 +694,7 @@
     function resetZoom() {
         isZoomed = false;
         modalImage.style.transform = 'scale(1)';
+        modalImage.style.cursor = 'zoom-in';
     }
 
     // Evento de clique no botão fechar
@@ -700,16 +705,17 @@
 
     // Evento de clique no fundo do modal
     modal.addEventListener('click', function(e) {
-        if (e.target === modal || e.target === modalBody) {
+        if (e.target === modal) {
             closeModal();
         }
     });
 
-    // Prevenir que cliques na imagem fechem o modal
+    // Evento de clique na imagem para zoom
     modalImage.addEventListener('click', function(e) {
         e.stopPropagation();
         isZoomed = !isZoomed;
         modalImage.style.transform = isZoomed ? 'scale(2)' : 'scale(1)';
+        modalImage.style.cursor = isZoomed ? 'zoom-out' : 'zoom-in';
     });
 
     // Fechar com ESC
@@ -719,5 +725,5 @@
         }
     });
 });
-    </script>
+</script>
 {% endblock %}
