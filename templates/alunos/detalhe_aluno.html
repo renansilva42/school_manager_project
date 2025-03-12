@@ -5,6 +5,15 @@
 
 {% block content %}
 <style>
+
+.modal {
+    z-index: 1049; /* Base z-index para o modal */
+}
+
+.modal-backdrop {
+    z-index: 1048; /* Garantir que o backdrop fique abaixo de tudo */
+}
+
     .student-profile {
         background-color: white;
         border-radius: 10px;
