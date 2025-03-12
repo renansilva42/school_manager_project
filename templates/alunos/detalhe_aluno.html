@@ -5,15 +5,17 @@
 
 {% block content %}
 <style>
-
-.modal {
-    z-index: 1050;
-}
-
-.modal-backdrop {
-    z-index: 1040;
-}
-
+    /* Variáveis e Configurações Gerais */
+    :root {
+        --modal-z-index: 1050;
+        --modal-backdrop-z-index: 1040;
+        --modal-dialog-z-index: 1051;
+        --modal-content-z-index: 1052;
+        --modal-body-z-index: 1053;
+        --modal-close-z-index: 1054;
+    }
+    
+    /* Perfil do Estudante */
     .student-profile {
         background-color: white;
         border-radius: 10px;
@@ -29,16 +31,51 @@
         position: relative;
     }
     
-    .profile-img {
-        width: 150px;
-        height: 150px;
-        border-radius: 50%;
-        border: 5px solid white;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        object-fit: cover;
-        margin-right: 2rem;
+    /* Imagem do Perfil e Container */
+    .profile-img-container {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 1rem 1rem 0;
+        cursor: pointer;
+        transition: transform 0.3s ease;
     }
     
+    .profile-img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        object-fit: cover;
+    }
+    
+    .profile-img-hover {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        border-radius: 50%;
+        opacity: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+    }
+    
+    .profile-img-container:hover {
+        transform: scale(1.05);
+    }
+    
+    .profile-img-container:hover .profile-img-hover {
+        opacity: 1;
+    }
+    
+    /* Informações do Perfil */
     .profile-name {
         font-size: 2rem;
         margin-bottom: 0.5rem;
@@ -72,6 +109,7 @@
         padding: 2rem;
     }
     
+    /* Seções de Informação */
     .info-section {
         margin-bottom: 2rem;
     }
@@ -96,6 +134,7 @@
         color: #333;
     }
     
+    /* Botões de Ação */
     .action-buttons {
         display: flex;
         gap: 1rem;
@@ -112,12 +151,7 @@
         margin-right: 0.5rem;
     }
     
-    .tab-content {
-        padding: 1.5rem;
-        background-color: white;
-        border-radius: 0 0 10px 10px;
-    }
-    
+    /* Abas e Conteúdo */
     .nav-tabs {
         border-bottom: none;
     }
@@ -145,6 +179,13 @@
         margin-right: 0.5rem;
     }
     
+    .tab-content {
+        padding: 1.5rem;
+        background-color: white;
+        border-radius: 0 0 10px 10px;
+    }
+    
+    /* Timeline */
     .timeline {
         position: relative;
         padding-left: 2rem;
@@ -196,84 +237,77 @@
         color: var(--primary-color);
     }
     
-    .profile-img-container {
-    position: relative;
-    width: 120px;
-    height: 120px;
-    margin: 0 1rem 1rem 0;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-}
-
-.profile-img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 3px solid white;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-    object-fit: cover;
-}
-
-.profile-img-hover {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    border-radius: 50%;
-    opacity: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    transition: opacity 0.3s ease;
-    pointer-events: none; /* Importante para evitar que a lupa fique permanente */
-}
-
-.profile-img-container:hover .profile-img-hover {
-    opacity: 1;
-}
-
-.profile-img-container:hover {
-    transform: scale(1.05);
-}
-
-@media (max-width: 768px) {
-    .profile-img-container {
-        width: 100px;
-        height: 100px;
-        margin: 0 auto 1rem;
+    /* Modal */
+    .modal {
+        z-index: var(--modal-z-index);
+        background-color: rgba(0, 0, 0, 0.85);
     }
     
-    .profile-header {
-        padding: 1.5rem;
-        flex-direction: column;
-        text-align: center;
+    .modal-backdrop {
+        z-index: var(--modal-backdrop-z-index);
     }
     
-    .profile-badge {
-        position: static;
-        margin-top: 1rem;
+    .modal-dialog.modal-lg {
+        z-index: var(--modal-dialog-z-index);
+        position: relative;
+        max-width: 90vw;
+        margin: 1.75rem auto;
+        display: flex;
+        align-items: center;
+        min-height: calc(100vh - 3.5rem);
     }
-}
-
-.modal-content {
-    background: rgba(0, 0, 0, 0.95);
-    border: none;
-    border-radius: 15px;
-    position: relative;
-}
-
-.modal-body {
-    position: relative;
-    z-index: 1053;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 2rem;
-}
-
+    
+    .modal-content {
+        background: rgba(0, 0, 0, 0.95);
+        border: none;
+        border-radius: 15px;
+        position: relative;
+        z-index: var(--modal-content-z-index);
+    }
+    
+    .modal-body {
+        position: relative;
+        z-index: var(--modal-body-z-index);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+    }
+    
+    .modal-img {
+        max-width: 100%;
+        max-height: 85vh;
+        object-fit: contain;
+        cursor: zoom-in;
+        transition: transform 0.3s ease;
+    }
+    
+    .modal-img.zoomed {
+        cursor: zoom-out;
+    }
+    
+    .btn-close-white {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        z-index: var(--modal-close-z-index);
+        background-color: white;
+        opacity: 0.8;
+        padding: 0.75rem;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: opacity 0.3s ease;
+    }
+    
+    .btn-close-white:hover {
+        opacity: 1;
+    }
+    
     /* Animações */
     @keyframes fadeInUp {
         from {
@@ -293,138 +327,82 @@
     .delay-1 { animation-delay: 0.1s; }
     .delay-2 { animation-delay: 0.2s; }
     .delay-3 { animation-delay: 0.3s; }
-
-    /* Add these styles to your existing <style> section */
-.modal-dialog.modal-lg {
-    z-index: 1051;
-    position: relative;
-    max-width: 90vw;
-    margin: 1.75rem auto;
-    display: flex;
-    align-items: center;
-    min-height: calc(100vh - 3.5rem);
-}
-
-.modal-content {
-    background: rgba(0, 0, 0, 0.95);
-    border: none;
-    border-radius: 15px;
-    position: relative;
-    z-index: 1052;
-}
-
-.modal-header {
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 1;
-    padding: 1rem;
-}
-
-.btn-close-white {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    z-index: 1054;
-    background-color: white;
-    opacity: 0.8;
-    padding: 0.75rem;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.btn-close-white:hover {
-    opacity: 1;
-}
-
-.modal-img {
-    max-width: 100%;
-    max-height: 85vh;
-    object-fit: contain;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-}
-
-/* Mobile optimizations */
-@media (max-width: 768px) {
-    .modal-dialog.modal-lg {
-        margin: 0;
-        width: 100%;
-        height: 100vh;
-        max-width: none;
+    
+    /* Media Queries */
+    @media (max-width: 768px) {
+        .profile-img-container {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 1rem;
+        }
+        
+        .profile-header {
+            padding: 1.5rem;
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .profile-badge {
+            position: static;
+            margin-top: 1rem;
+        }
+    
+        .modal-dialog.modal-lg {
+            margin: 0;
+            width: 100%;
+            height: 100vh;
+            max-width: none;
+        }
+    
+        .modal-content {
+            height: 100%;
+            border-radius: 0;
+        }
+    
+        .modal-body {
+            height: 100%;
+        }
+    
+        .modal-img {
+            max-height: 80vh;
+            width: auto;
+        }
+    
+        .btn-close-white {
+            padding: 0.5rem;
+            top: 0.5rem;
+            right: 0.5rem;
+        }
+    
+        .profile-img-container:hover .profile-img-hover {
+            opacity: 0;
+        }
+    
+        .profile-img-container:active .profile-img-hover {
+            opacity: 1;
+        }
+    
+        .profile-img-container {
+            width: 150px;
+            height: 150px;
+        }
+    
+        .profile-img-hover {
+            font-size: 1.5rem;
+        }
     }
-
-    .modal-content {
-        height: 100%;
-        border-radius: 0;
+    
+    @media (hover: none) {
+        .profile-img-hover {
+            background: rgba(0,0,0,0.3);
+            opacity: 1;
+        }
+    
+        .profile-img-container:active {
+            transform: scale(0.95);
+        }
     }
-
-    .modal-body {
-        z-index: 1052; /* Garantir que o corpo do modal fique acima do content */
-        position: relative; /* Importante para o z-index funcionar */
-        height: 100%;
-    }
-
-    .modal-img {
-        z-index: 1053; /* Garantir que a imagem fique acima do body */
-        position: relative; /* Importante para o z-index funcionar */
-        max-height: 80vh;
-        width: auto;
-    }
-
-    .btn-close-white {
-        z-index: 1054; /* Garantir que o botão de fechar fique na camada mais alta */
-        padding: 0.5rem;
-        top: 0.5rem;
-        right: 0.5rem;
-    }
-
-    /* Ajuste para o hover da imagem em dispositivos móveis */
-    .profile-img-container:hover .profile-img-hover {
-        opacity: 0; /* Não mostrar o hover em dispositivos móveis */
-    }
-
-    /* Mostrar a lupa apenas no toque ativo */
-    .profile-img-container:active .profile-img-hover {
-        opacity: 1;
-    }
-    .modal-img {
-        max-height: 80vh;
-    }
-
-    .btn-close-white {
-        padding: 0.5rem;
-    }
-
-    /* Improve touch target size for mobile */
-    .profile-img-container {
-        width: 150px;
-        height: 150px;
-    }
-
-    .profile-img-hover {
-        font-size: 1.5rem;
-    }
-}
-
-/* Add touch feedback for mobile devices */
-@media (hover: none) {
-    .profile-img-hover {
-        background: rgba(0,0,0,0.3);
-        opacity: 1;
-    }
-
-    .profile-img-container:active {
-        transform: scale(0.95);
-    }
-}
-</style>
-
+    </style>
 <div class="container mt-4">
     <div class="loading-overlay">
         <div class="loading-spinner"></div>
@@ -700,51 +678,50 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('fotoModal');
-    const modalImage = document.getElementById('modalImage');
-    const closeButton = document.querySelector('.btn-close-white');
+    const modal = document.querySelector('.modal');
+    const modalImg = document.querySelector('.modal-img');
+    const closeBtn = document.querySelector('.btn-close-white');
     let isZoomed = false;
 
-    function toggleZoom(e) {
-        e.stopPropagation();
-        isZoomed = !isZoomed;
-        modalImage.classList.toggle('zoomed');
-    }
-
-    function resetZoom() {
-        if (isZoomed) {
-            isZoomed = false;
-            modalImage.classList.remove('zoomed');
+    // Função para fechar o modal
+    function closeModal() {
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
         }
     }
 
-    // Click na imagem
-    modalImage.addEventListener('click', toggleZoom);
+    // Click na imagem para zoom
+    modalImg.addEventListener('click', function(e) {
+        e.stopPropagation();
+        isZoomed = !isZoomed;
+        this.style.transform = isZoomed ? 'scale(1.5)' : 'scale(1)';
+        this.classList.toggle('zoomed', isZoomed);
+    });
 
-    // Click no backdrop
+    // Click no backdrop para fechar
     modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            resetZoom();
-            bootstrap.Modal.getInstance(modal).hide();
+        if (e.target === modal || e.target.classList.contains('modal-body')) {
+            closeModal();
         }
     });
 
     // Click no botão fechar
-    closeButton.addEventListener('click', function() {
-        resetZoom();
-        bootstrap.Modal.getInstance(modal).hide();
-    });
+    closeBtn.addEventListener('click', closeModal);
 
-    // Tecla ESC
+    // Tecla ESC para fechar
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            resetZoom();
-            bootstrap.Modal.getInstance(modal).hide();
+            closeModal();
         }
     });
 
-    // Reset ao fechar modal
-    modal.addEventListener('hidden.bs.modal', resetZoom);
+    // Reset zoom ao fechar modal
+    modal.addEventListener('hidden.bs.modal', function() {
+        modalImg.style.transform = 'scale(1)';
+        isZoomed = false;
+        modalImg.classList.remove('zoomed');
+    });
 });
 </script>
 {% endblock %}
