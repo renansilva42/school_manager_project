@@ -250,15 +250,17 @@
 }
 
 .modal-content {
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.95);
     border: none;
     border-radius: 15px;
+    position: relative;
 }
 
-.modal-body img {
-    max-height: 80vh;
-    border-radius: 10px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+.modal-body {
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
     /* Animações */
@@ -285,13 +287,17 @@
 .modal-dialog.modal-lg {
     max-width: 90vw;
     margin: 1.75rem auto;
+    display: flex;
+    align-items: center;
+    min-height: calc(100vh - 3.5rem);
 }
 
-.modal-content {
-    background: rgba(0, 0, 0, 0.9);
+    .modal-content {
+    background: rgba(0, 0, 0, 0.95);
     border: none;
     border-radius: 15px;
-}
+    position: relative;
+    }
 
 .modal-header {
     position: absolute;
@@ -302,10 +308,15 @@
 }
 
 .btn-close-white {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1050;
     background-color: white;
     opacity: 0.8;
     padding: 0.75rem;
     border-radius: 50%;
+    cursor: pointer;
     transition: opacity 0.3s ease;
 }
 
@@ -314,6 +325,7 @@
 }
 
 .modal-img {
+    max-width: 100%;
     max-height: 85vh;
     object-fit: contain;
     border-radius: 10px;
@@ -324,38 +336,28 @@
     .modal-dialog.modal-lg {
         margin: 0;
         width: 100%;
-        height: 100%;
+        height: 100vh;
         max-width: none;
     }
 
     .modal-content {
         height: 100%;
         border-radius: 0;
-        background: rgba(0, 0, 0, 0.9);
     }
 
     .modal-body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
+        height: 100%;
     }
 
     .modal-img {
-        max-width: 100%;
-        max-height: 90vh;
-        object-fit: contain;
+        max-height: 80vh;
+        width: auto;
     }
 
     .btn-close-white {
-        position: fixed;
-        top: 1rem;
-        right: 1rem;
-        z-index: 1050;
-        background-color: white;
-        opacity: 0.8;
-        padding: 0.75rem;
-        border-radius: 50%;
+        padding: 0.5rem;
+        top: 0.5rem;
+        right: 0.5rem;
     }
 
     /* Ajuste para o hover da imagem em dispositivos móveis */
@@ -439,11 +441,11 @@
                 <div class="modal-dialog modal-dialog-centered modal-lg">
                     <div class="modal-content">
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                        <div class="modal-body">
+                        <div class="modal-body" id="modalBody">
                             {% if aluno.foto %}
-                                <img src="{{ aluno.foto.url }}" class="modal-img" alt="Foto ampliada do aluno">
+                                <img src="{{ aluno.foto.url }}" class="modal-img" alt="Foto ampliada do aluno" id="modalImage">
                             {% else %}
-                                <img src="{% static 'img/default-avatar.png' %}" class="modal-img" alt="Foto padrão ampliada">
+                                <img src="{% static 'img/default-avatar.png' %}" class="modal-img" alt="Foto padrão ampliada" id="modalImage">
                             {% endif %}
                         </div>
                     </div>
@@ -674,30 +676,75 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar o modal corretamente
-    const fotoModal = new bootstrap.Modal(document.getElementById('fotoModal'), {
-        keyboard: true,
-        backdrop: true
-    });
-
-    // Adicionar evento de clique no botão close
-    document.querySelector('.btn-close-white').addEventListener('click', function() {
-        fotoModal.hide();
-    });
-
-    // Adicionar evento de tecla Esc
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            fotoModal.hide();
+        const modal = document.getElementById('fotoModal');
+        const modalImage = document.querySelector('.modal-img');
+        const modalBody = document.querySelector('.modal-body');
+        let isZoomed = false;
+    
+        // Inicializar o modal
+        const fotoModal = new bootstrap.Modal(modal, {
+            keyboard: true,
+            backdrop: true
+        });
+    
+        // Função para resetar o zoom
+        function resetZoom() {
+            isZoomed = false;
+            modalImage.style.transform = 'scale(1)';
         }
-    });
-
-    // Adicionar evento de clique no backdrop
-    document.getElementById('fotoModal').addEventListener('click', function(e) {
-        if (e.target === this) {
+    
+        // Evento de clique na imagem para zoom
+        modalImage.addEventListener('click', function(e) {
+            e.stopPropagation();
+            isZoomed = !isZoomed;
+            modalImage.style.transform = isZoomed ? 'scale(2)' : 'scale(1)';
+        });
+    
+        // Fechar modal ao clicar fora da imagem
+        modalBody.addEventListener('click', function(e) {
+            if (e.target === modalBody) {
+                resetZoom();
+                fotoModal.hide();
+            }
+        });
+    
+        // Fechar com o botão
+        document.querySelector('.btn-close-white').addEventListener('click', function() {
+            resetZoom();
             fotoModal.hide();
-        }
+        });
+    
+        // Fechar com ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                resetZoom();
+                fotoModal.hide();
+            }
+        });
+    
+        // Resetar zoom ao fechar o modal
+        modal.addEventListener('hidden.bs.modal', function() {
+            resetZoom();
+        });
+    
+        // Suporte para dispositivos touch
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let lastTouchEnd = 0;
+    
+        modalImage.addEventListener('touchstart', function(e) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+    
+        modalImage.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                isZoomed = !isZoomed;
+                modalImage.style.transform = isZoomed ? 'scale(2)' : 'scale(1)';
+            }
+            lastTouchEnd = now;
+        });
     });
-});
-</script>
+    </script>
 {% endblock %}
