@@ -373,3 +373,30 @@
       margin: var(--spacing-xs) !important;
   }
 }
+
+/* Adicione ao style.css */
+.collapsed .fa-chevron-down {
+  transform: rotate(180deg);
+}
+
+.fa-chevron-down {
+  transition: transform 0.3s ease;
+}
+
+/* Adicione ao style.css */
+.btn-group .active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.list-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.list-view .col-md-4 {
+  width: 100%;
+  max-width: 100%;
+  flex: 0 0 100%;
+}

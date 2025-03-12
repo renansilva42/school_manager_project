@@ -94,14 +94,20 @@ class AlunosManager {
         
         if (view === 'grid') {
             alunosContainer.classList.remove('list-view');
-            alunosContainer.classList.add('row', 'g-4');
             viewGrid.classList.add('active');
             viewList.classList.remove('active');
+            viewGrid.classList.add('btn-primary');
+            viewGrid.classList.remove('btn-outline-secondary');
+            viewList.classList.add('btn-outline-secondary');
+            viewList.classList.remove('btn-primary');
         } else {
             alunosContainer.classList.add('list-view');
-            alunosContainer.classList.remove('row', 'g-4');
             viewList.classList.add('active');
             viewGrid.classList.remove('active');
+            viewList.classList.add('btn-primary');
+            viewList.classList.remove('btn-outline-secondary');
+            viewGrid.classList.add('btn-outline-secondary');
+            viewGrid.classList.remove('btn-primary');
         }
         
         localStorage.setItem('alunosView', view);
