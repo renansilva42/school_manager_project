@@ -66,15 +66,25 @@ class AlunosManager {
     }
 
     initializeEventListeners() {
-
+        // Fix for the filter collapse button
         const filterButton = document.querySelector('[data-bs-toggle="collapse"]');
         if (filterButton) {
+            // Initial state setup
+            const icon = filterButton.querySelector('.fa-chevron-down');
+            if (icon) {
+                // Check if the collapse is initially expanded
+                const isCollapsed = filterButton.classList.contains('collapsed');
+                icon.style.transform = isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)';
+                icon.style.transition = 'transform 0.3s ease';
+            }
+            
+            // Add event listener for click
             filterButton.addEventListener('click', () => {
                 const icon = filterButton.querySelector('.fa-chevron-down');
                 if (icon) {
-                    const isExpanded = filterButton.getAttribute('aria-expanded') === 'true';
-                    icon.style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
-                    icon.style.transition = 'transform 0.3s ease';
+                    // Toggle rotation based on the current state
+                    const isCollapsed = filterButton.classList.contains('collapsed');
+                    icon.style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
                 }
             });
         }
@@ -104,24 +114,27 @@ class AlunosManager {
     toggleView(view) {
         const {alunosContainer, viewGrid, viewList} = this.elements;
         
+        // Reset all button states first
+        viewGrid.classList.remove('active', 'btn-primary');
+        viewList.classList.remove('active', 'btn-primary');
+        viewGrid.classList.add('btn-outline-secondary');
+        viewList.classList.add('btn-outline-secondary');
+        
         if (view === 'grid') {
+            // Apply grid view
             alunosContainer.classList.remove('list-view');
-            viewGrid.classList.add('active');
-            viewList.classList.remove('active');
-            viewGrid.classList.add('btn-primary');
+            // Update button states
+            viewGrid.classList.add('active', 'btn-primary');
             viewGrid.classList.remove('btn-outline-secondary');
-            viewList.classList.add('btn-outline-secondary');
-            viewList.classList.remove('btn-primary');
         } else {
+            // Apply list view
             alunosContainer.classList.add('list-view');
-            viewList.classList.add('active');
-            viewGrid.classList.remove('active');
-            viewList.classList.add('btn-primary');
+            // Update button states
+            viewList.classList.add('active', 'btn-primary');
             viewList.classList.remove('btn-outline-secondary');
-            viewGrid.classList.add('btn-outline-secondary');
-            viewGrid.classList.remove('btn-primary');
         }
         
+        // Save preference
         localStorage.setItem('alunosView', view);
     }
 
