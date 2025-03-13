@@ -239,12 +239,15 @@
     
     /* Modal */
     .modal {
-    transition: opacity 0.3s ease-in-out; /* Transição suave para o modal */
-    }
-    
-    .modal-backdrop {
-        z-index: var(--modal-backdrop-z-index);
-    }
+    z-index: 1050 !important;
+}
+.modal-backdrop {
+    z-index: 1040 !important;
+}
+
+.modal-dialog {
+    z-index: 1051 !important;
+}
     
     .modal-dialog.modal-lg {
         z-index: var(--modal-dialog-z-index);
@@ -257,12 +260,9 @@
     }
     
     .modal-content {
-        background: rgba(0, 0, 0, 0.95);
-        border: none;
-        border-radius: 15px;
-        position: relative;
-        z-index: var(--modal-content-z-index);
-    }
+    z-index: 1052 !important;
+}
+
     
     .modal-body {
         position: relative;
@@ -287,22 +287,23 @@
     }
     
     .btn-close-white {
-        position: fixed;
-        top: 15px;
-        right: 15px;
-        z-index: var(--modal-close-z-index);
-        background-color: white;
-        opacity: 0.8;
-        padding: 0.75rem;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: opacity 0.3s ease;
-    }
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 1060 !important;
+    background-color: white;
+    opacity: 0.8;
+    padding: 0.75rem;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+    pointer-events: auto;
+}
     
     .btn-close-white:hover {
         opacity: 1;
@@ -436,7 +437,7 @@
                 {{ aluno.get_nivel_display }}
             </span>
             <!-- Modal para a foto ampliada -->
-            <div class="modal fade" id="fotoModal" tabindex="-1" aria-labelledby="fotoModalLabel" aria-hidden="true" data-bs-backdrop="true">
+            <div class="modal fade" id="fotoModal" tabindex="-1" aria-labelledby="fotoModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
                     <div class="modal-content">
                         <button type="button" class="btn-close-white" data-bs-dismiss="modal" aria-label="Close">×</button>
@@ -676,17 +677,18 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
     const modalElement = document.getElementById('fotoModal');
-    const modal = new bootstrap.Modal(modalElement, {
-        backdrop: true,
-        keyboard: true
-    });
     const modalImg = document.querySelector('.modal-img');
     const closeBtn = document.querySelector('.btn-close-white');
     let isZoomed = false;
 
-    document.querySelector('.profile-img-container').addEventListener('click', function(e) {
-        e.preventDefault();
-        modal.show();
+    // Garante que o backdrop não bloqueie interações
+    modalElement.addEventListener('show.bs.modal', function() {
+        setTimeout(function() {
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.style.pointerEvents = 'none';
+            }
+        }, 10);
     });
 
     modalImg.addEventListener('click', function(e) {
@@ -696,20 +698,29 @@
         this.classList.toggle('zoomed', isZoomed);
     });
 
-    closeBtn.addEventListener('click', function() {
-        modal.hide();
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && modal._isShown) {
-            modal.hide();
+    // Fechar o modal clicando fora da imagem
+    modalElement.addEventListener('click', function(e) {
+        if (e.target === modalElement || e.target.classList.contains('modal-body')) {
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            modalInstance.hide();
         }
     });
 
+    // Resetar o zoom quando o modal for fechado
     modalElement.addEventListener('hidden.bs.modal', function() {
         modalImg.style.transform = 'scale(1)';
         isZoomed = false;
         modalImg.classList.remove('zoomed');
+    });
+
+    // Fechar com ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance && modalInstance._isShown) {
+                modalInstance.hide();
+            }
+        }
     });
 });
 </script>
