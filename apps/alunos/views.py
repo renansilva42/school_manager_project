@@ -366,6 +366,7 @@ class NotaUpdateView(LoginRequiredMixin, UpdateView):
 class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
     template_name = 'alunos/cadastrar_aluno.html'
     form_class = AlunoForm
+    success_url = reverse_lazy('alunos:lista')
     
     def get(self, request, *args, **kwargs):
         storage = messages.get_messages(request)
@@ -482,14 +483,6 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
             logger.error(f"Error creating student: {str(e)}", exc_info=True)
             messages.error(self.request, f'Erro ao cadastrar aluno: {str(e)}')
             return self.form_invalid(form)
-        
-        if photo_file:
-                    try:
-                        photo_url = db.upload_photo(photo_file, aluno_id)
-                        logger.info(f"Arquivo salvo em: {photo_url}")
-                    except Exception as e:
-                        logger.error(f"Erro ao salvar arquivo: {str(e)}")
-                        messages.warning(self.request, 'Aluno criado, mas houve um problema ao salvar a foto.')
 
         
 class AlunoDetailView(BaseAlunoView, DetailView):
@@ -525,6 +518,8 @@ class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
     
     def form_valid(self, form):
         try:
+            logger.info("Iniciando processo de atualização de aluno")
+            
             with transaction.atomic():
                 aluno_id = self.object.id
                 data = form.cleaned_data.copy()
@@ -533,6 +528,48 @@ class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
                 
                 # Processamento da foto
                 photo_file = self.request.FILES.get('foto')
+                photo_url = None
+                
+                # Process base64 photo from camera
+                foto_base64 = self.request.POST.get('foto_base64')
+                if foto_base64 and foto_base64.startswith('data:image'):
+                    try:
+                        logger.debug("Processing base64 photo from camera")
+                        format, imgstr = foto_base64.split(';base64,')
+                        ext = format.split('/')[-1]
+                        
+                        # Convert base64 to bytes
+                        imgdata = base64.b64decode(imgstr)
+                        buffer = BytesIO(imgdata)
+                        
+                        # Process image
+                        img = Image.open(buffer)
+                        if img.mode not in ('RGB', 'RGBA'):
+                            img = img.convert('RGB')
+                        
+                        # Resize if necessary
+                        if img.height > 800 or img.width > 800:
+                            output_size = (800, 800)
+                            img.thumbnail(output_size)
+                        
+                        # Save processed image
+                        output = BytesIO()
+                        img.save(output, format='JPEG', quality=85)
+                        output.seek(0)
+                        
+                        photo_file = InMemoryUploadedFile(
+                            output,
+                            'foto',
+                            f'camera_photo_{aluno_id}.jpg',
+                            'image/jpeg',
+                            output.getbuffer().nbytes,
+                            None
+                        )
+                        
+                    except Exception as e:
+                        logger.error(f"Error processing base64 photo: {str(e)}")
+                
+                # Process photo from file upload
                 if photo_file:
                     try:
                         # Gere um nome de arquivo relativo
@@ -548,6 +585,10 @@ class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
                     except Exception as e:
                         logger.error(f"Erro ao processar foto: {str(e)}")
                         messages.warning(self.request, 'Erro ao processar a foto.')
+                
+                # Check if photo should be removed
+                if 'foto-clear' in self.request.POST:
+                    data['foto'] = None
                         
                 # Atualize o aluno no banco de dados
                 response = db.update_aluno(aluno_id, data)

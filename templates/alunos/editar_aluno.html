@@ -109,6 +109,7 @@
     
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
+        <input type="hidden" name="foto_base64" id="id_foto_base64">
         
         <!-- Nova seção de Foto -->
         <div class="card mb-4">
@@ -246,6 +247,7 @@ const photoCanvas = document.getElementById('photo-canvas');
 const cameraControls = document.getElementById('camera-controls');
 const capturePhotoBtn = document.getElementById('capture-photo-btn');
 const cancelCameraBtn = document.getElementById('cancel-camera-btn');
+const fotoBase64Input = document.getElementById('id_foto_base64');
 
 let stream = null;
 
@@ -262,6 +264,7 @@ fileInput.addEventListener('change', (e) => {
         reader.onload = (e) => {
             photoPreview.src = e.target.result;
             previewContainer.style.display = 'block';
+            fotoBase64Input.value = e.target.result;
             
             // Esconder a câmera se estiver ativa
             stopCamera();
@@ -275,6 +278,7 @@ fileInput.addEventListener('change', (e) => {
 removePhotoBtn.addEventListener('click', () => {
     fileInput.value = '';
     photoPreview.src = '';
+    fotoBase64Input.value = '';
     previewContainer.style.display = 'none';
     
     // Adicionar um campo oculto para indicar que a foto deve ser removida
@@ -331,6 +335,9 @@ capturePhotoBtn.addEventListener('click', () => {
     // Exibir a imagem capturada no preview
     photoPreview.src = dataUrl;
     previewContainer.style.display = 'block';
+    
+    // Armazenar a imagem em base64 no input oculto
+    fotoBase64Input.value = dataUrl;
     
     // Converter a URL de dados para um arquivo Blob e adicionar ao input de arquivo
     fetch(dataUrl)
