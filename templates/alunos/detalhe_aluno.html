@@ -678,17 +678,20 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.querySelector('.modal');
+    const modal = document.querySelector('#fotoModal');
     const modalImg = document.querySelector('.modal-img');
     const closeBtn = document.querySelector('.btn-close-white');
     let isZoomed = false;
 
     // Função para fechar o modal
     function closeModal() {
-        const modalInstance = bootstrap.Modal.getInstance(modal);
-        if (modalInstance) {
-            modalInstance.hide();
+        const modalBackdrop = document.querySelector('.modal-backdrop');
+        if (modalBackdrop) {
+            modalBackdrop.remove();
         }
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
     }
 
     // Click na imagem para zoom
@@ -700,8 +703,9 @@
     });
 
     // Click no backdrop para fechar
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal || e.target.classList.contains('modal-body')) {
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal-backdrop') || 
+            e.target.classList.contains('modal')) {
             closeModal();
         }
     });
