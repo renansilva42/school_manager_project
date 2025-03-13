@@ -1,3 +1,6 @@
+
+
+/* static/css/style.css */
 /* Base styles */
 :root {
     --primary-color: #417690;
@@ -276,24 +279,31 @@
 }
 
 /* Badges */
-.badge-nivel {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: 2rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.025em;
-}
-
-.badge-efi {
-  background-color: var(--success-color);
-  color: var(--text-light);
-}
-
+.badge-nivel,
+.badge-efi,
 .badge-eff {
-  background-color: var(--info-color);
-  color: var(--text-light);
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    color: var(--text-light);
+}
+
+/* Para Ensino Fundamental I */
+.badge-efi, 
+[class*="Ensino Fundamental I"] {
+    background-color: var(--success-color);
+    color: var(--text-light);
+}
+
+/* Para Ensino Fundamental II ou Anos Finais */
+.badge-eff,
+[class*="Ensino Fundamental Anos Finais"] {
+    background-color: var(--info-color);
+    color: var(--text-light);
 }
 
 /* List/Grid View */
@@ -405,6 +415,23 @@
   color: white;
 }
 
+.btn-group .btn-primary,
+.btn-group .btn-outline-primary {
+    border-radius: var(--border-radius);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-speed);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-weight: 500;
+}
+
+.btn-group .btn-primary:hover,
+.btn-group .btn-outline-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
 .list-view {
   display: flex;
   flex-direction: column;
@@ -474,12 +501,27 @@
   min-height: calc(100vh - 3.5rem);
 }
 
+/* Correção para o modal de importação */
 .modal-content {
-  background: rgba(0, 0, 0, 0.95);
+  background: white;
   border: none;
-  border-radius: 15px;
-  position: relative;
-  z-index: 1052 !important;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+/* Exceção para modal de imagem */
+.modal-image .modal-content {
+  background: rgba(0, 0, 0, 0.95);
+}
+
+.modal-header {
+  background-color: var(--light-color);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-title {
+  color: var(--text-color);
+  font-weight: 600;
 }
 
 .modal-body {
