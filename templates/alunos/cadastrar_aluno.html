@@ -2,7 +2,7 @@
 {% load static %}
 {% block extra_css %}
 <style>
-    /* Existing styles remain the same */
+    /* Estilos para cards */
     .card-header {
         background-color: #007bff;
         color: white;
@@ -25,21 +25,61 @@
         padding: 20px;
     }
 
-    /* Add new styles for camera container */
-    .camera-container {
-        position: relative;
-        margin-bottom: 20px;
+    /* Estilos para o container de upload de foto */
+    .custom-file-container {
+        border: 2px dashed #ccc;
+        padding: 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
     }
-
-    #camera-preview {
-        width: 100%;
-        max-width: 640px;
-        margin: 0 auto;
+    
+    .custom-file-container:hover {
+        border-color: #007bff;
     }
-
+    
+    #preview-container {
+        margin-top: 1rem;
+    }
+    
     #photo-preview {
         max-width: 100%;
-        height: auto;
+        max-height: 200px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    #photo-preview:hover {
+        transform: scale(1.05);
+    }
+    
+    .btn-group {
+        gap: 0.5rem;
+    }
+    
+    /* Melhorias para dispositivos móveis */
+    @media (max-width: 768px) {
+        .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn-group {
+            flex-direction: column;
+        }
+    }
+    
+    /* Animações para feedback visual */
+    .form-control:focus {
+        animation: pulse 1s;
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(121, 174, 200, 0.5); }
+        70% { box-shadow: 0 0 0 10px rgba(121, 174, 200, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(121, 174, 200, 0); }
     }
 </style>
 {% endblock %}
@@ -47,13 +87,6 @@
 {% load crispy_forms_tags %}
 {% block title %}Cadastrar Aluno{% endblock %}
 {% block content %}
-
-<div class="camera-container">
-    <video id="camera-preview" autoplay playsinline></video>
-    <button type="button" class="btn btn-primary" onclick="iniciarCamera()">Abrir Câmera</button>
-    <button type="button" class="btn btn-success" onclick="tirarFoto()">Tirar Foto</button>
-    <img id="photo-preview" src="" alt="Preview da foto" style="display: none;">
-</div>
 
 <div class="container mt-4">
     <h1>Cadastrar Aluno</h1>
@@ -75,31 +108,36 @@
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <input type="hidden" name="foto_base64" id="id_foto_base64">
-        <!-- Seção de Foto -->
-        <div class="form-group">
-            <label for="id_foto">Foto do Aluno</label>
-            <div class="custom-file-container">
-                <input type="file" name="foto" id="id_foto" accept="image/*" class="custom-file-input" style="display: none;">
-                <div class="btn-group w-100 mb-2">
-                    <button type="button" id="upload-photo-btn" class="btn btn-outline-primary">Escolher Arquivo</button>
-                    <button type="button" id="take-photo-btn" class="btn btn-outline-success">Tirar Foto</button>
-                </div>
-                <div id="preview-container" class="text-center mb-3" style="display: none;">
-                    <img id="photo-preview" class="img-thumbnail" style="max-height: 200px;">
-                    <button type="button" id="remove-photo-btn" class="btn btn-sm btn-danger mt-2">Remover Foto</button>
-                </div>
-                <video id="camera-preview" style="display: none; width: 100%; max-height: 300px;" autoplay></video>
-                <canvas id="photo-canvas" style="display: none;"></canvas>
-                <div id="camera-controls" style="display: none;" class="text-center mt-2">
-                    <button type="button" id="capture-photo-btn" class="btn btn-primary">Capturar</button>
-                    <button type="button" id="cancel-camera-btn" class="btn btn-secondary">Cancelar</button>
+        
+        <!-- Nova seção de Foto -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Foto do Aluno</h4>
+            </div>
+            <div class="card-body">
+                <div class="custom-file-container">
+                    <input type="file" name="foto" id="id_foto" accept="image/*" class="custom-file-input" style="display: none;">
+                    <div class="btn-group w-100 mb-2">
+                        <button type="button" id="upload-photo-btn" class="btn btn-outline-primary">Escolher Arquivo</button>
+                        <button type="button" id="take-photo-btn" class="btn btn-outline-success">Tirar Foto</button>
+                    </div>
+                    <div id="preview-container" class="text-center mb-3" style="display: none;">
+                        <img id="photo-preview" class="img-thumbnail">
+                        <button type="button" id="remove-photo-btn" class="btn btn-sm btn-danger mt-2">Remover Foto</button>
+                    </div>
+                    <video id="camera-preview" style="display: none; width: 100%; max-height: 300px;" autoplay></video>
+                    <canvas id="photo-canvas" style="display: none;"></canvas>
+                    <div id="camera-controls" style="display: none;" class="text-center mt-2">
+                        <button type="button" id="capture-photo-btn" class="btn btn-primary">Capturar</button>
+                        <button type="button" id="cancel-camera-btn" class="btn btn-secondary">Cancelar</button>
+                    </div>
                 </div>
             </div>
         </div>
         
         <!-- Dados Pessoais -->
-        <div class="card card mb-4">
-            <div class="card-header bg-primary text-white">
+        <div class="card mb-4">
+            <div class="card-header dados-pessoais text-white">
                 <h4 class="mb-0">Dados Pessoais</h4>
             </div>
             <div class="card-body">
@@ -115,8 +153,8 @@
         </div>
         
         <!-- Contato -->
-        <div class="card card mb-4">
-            <div class="card-header bg-info text-white">
+        <div class="card mb-4">
+            <div class="card-header contato text-white">
                 <h4 class="mb-0">Contato</h4>
             </div>
             <div class="card-body">
@@ -136,7 +174,7 @@
         
         <!-- Responsáveis -->
         <div class="card mb-4">
-            <div class="card-header bg-success text-white">
+            <div class="card-header responsaveis text-white">
                 <h4 class="mb-0">Responsáveis</h4>
             </div>
             <div class="card-body">
@@ -153,7 +191,7 @@
         
         <!-- Informações Acadêmicas -->
         <div class="card mb-4">
-            <div class="card-header bg-warning text-dark">
+            <div class="card-header info-academicas text-white">
                 <h4 class="mb-0">Informações Acadêmicas</h4>
             </div>
             <div class="card-body">
@@ -174,7 +212,7 @@
         
         <!-- Observações -->
         <div class="card mb-4">
-            <div class="card-header bg-secondary text-white">
+            <div class="card-header observacoes text-white">
                 <h4 class="mb-0">Observações</h4>
             </div>
             <div class="card-body">
@@ -189,9 +227,7 @@
     </form>
 </div>
 
-
 <!-- Script para captura de foto -->
-<!-- Updated Script for photo capture -->
 <script>
     // Variáveis para os elementos da interface
     const fileInput = document.getElementById('id_foto');
@@ -205,6 +241,7 @@
     const cameraControls = document.getElementById('camera-controls');
     const capturePhotoBtn = document.getElementById('capture-photo-btn');
     const cancelCameraBtn = document.getElementById('cancel-camera-btn');
+    const fotoBase64Input = document.getElementById('id_foto_base64');
     
     let stream = null;
     
@@ -221,6 +258,7 @@
             reader.onload = (e) => {
                 photoPreview.src = e.target.result;
                 previewContainer.style.display = 'block';
+                fotoBase64Input.value = e.target.result;
                 
                 // Esconder a câmera se estiver ativa
                 stopCamera();
@@ -234,6 +272,7 @@
     removePhotoBtn.addEventListener('click', () => {
         fileInput.value = '';
         photoPreview.src = '';
+        fotoBase64Input.value = '';
         previewContainer.style.display = 'none';
     });
     
@@ -261,30 +300,50 @@
         }
     });
     
-    // Updated capture photo event
-    
+    // Evento para o botão de capturar foto
     capturePhotoBtn.addEventListener('click', () => {
-    const context = photoCanvas.getContext('2d');
-    photoCanvas.width = cameraPreview.videoWidth;
-    photoCanvas.height = cameraPreview.videoHeight;
-    
-    context.drawImage(cameraPreview, 0, 0, photoCanvas.width, photoCanvas.height);
-    
-    // Converter para base64
-    const base64Image = photoCanvas.toDataURL('image/jpeg');
-    document.getElementById('id_foto_base64').value = base64Image;
-    
-    // Mostrar preview
-    photoPreview.src = base64Image;
-    previewContainer.style.display = 'block';
-    
-    // Parar câmera
-    stopCamera();
-});
+        // Configurar o canvas para capturar a imagem
+        const context = photoCanvas.getContext('2d');
+        photoCanvas.width = cameraPreview.videoWidth;
+        photoCanvas.height = cameraPreview.videoHeight;
+        
+        // Desenhar o frame atual do vídeo no canvas
+        context.drawImage(cameraPreview, 0, 0, photoCanvas.width, photoCanvas.height);
+        
+        // Converter o canvas para uma URL de dados (formato base64)
+        const dataUrl = photoCanvas.toDataURL('image/jpeg');
+        
+        // Exibir a imagem capturada no preview
+        photoPreview.src = dataUrl;
+        previewContainer.style.display = 'block';
+        
+        // Armazenar a imagem em base64 no input oculto
+        fotoBase64Input.value = dataUrl;
+        
+        // Converter a URL de dados para um arquivo Blob e adicionar ao input de arquivo
+        fetch(dataUrl)
+            .then(res => res.blob())
+            .then(blob => {
+                const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+                
+                // Criar um DataTransfer para simular a seleção de arquivo
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+            });
+        
+        // Parar a câmera
+        stopCamera();
+    });
     
     // Evento para o botão de cancelar câmera
     cancelCameraBtn.addEventListener('click', () => {
         stopCamera();
+        
+        // Se já havia uma foto, mostrar o preview novamente
+        if (photoPreview.src && photoPreview.src !== window.location.href) {
+            previewContainer.style.display = 'block';
+        }
     });
     
     // Função para parar a câmera
@@ -297,8 +356,7 @@
         cameraPreview.style.display = 'none';
         cameraControls.style.display = 'none';
     }
-    </script>
-    
+</script>
 
 <!-- Script para seleção dinâmica de turmas e turnos -->
 <script>
@@ -426,45 +484,5 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar os campos com base nos valores atuais
     updateTurnoChoices(nivelSelect.value);
 });
-
-async function iniciarCamera() {
-    try {
-        const constraints = {
-            video: {
-                facingMode: "user",
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            }
-        };
-        
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        const videoElement = document.getElementById('camera-preview');
-        videoElement.srcObject = stream;
-        videoElement.play();
-    } catch (err) {
-        console.error("Erro ao acessar a câmera:", err);
-        alert("Erro ao acessar a câmera. Verifique as permissões.");
-    }
-}
-
-function tirarFoto() {
-    const video = document.getElementById('camera-preview');
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    const context = canvas.getContext('2d');
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    const foto_base64 = canvas.toDataURL('image/jpeg');
-    document.getElementById('photo-preview').src = foto_base64;
-    document.getElementById('id_foto_base64').value = foto_base64;
-    
-    // Para a câmera após tirar a foto
-    const stream = video.srcObject;
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-    }
-}
 </script>
 {% endblock %}
