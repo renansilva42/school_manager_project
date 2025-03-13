@@ -404,9 +404,6 @@
     }
     </style>
 <div class="container mt-4">
-    <div class="loading-overlay">
-        <div class="loading-spinner"></div>
-    </div>
     <nav aria-label="breadcrumb" class="animated">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
@@ -675,45 +672,40 @@
         </div>
     </div>
 </div>
-
+{% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
     const modalElement = document.getElementById('fotoModal');
     const modal = new bootstrap.Modal(modalElement, {
-        backdrop: true,  // Habilita o backdrop nativo do Bootstrap
-        keyboard: true   // Permite fechar com a tecla ESC
+        backdrop: true,
+        keyboard: true
     });
     const modalImg = document.querySelector('.modal-img');
     const closeBtn = document.querySelector('.btn-close-white');
     let isZoomed = false;
 
-    // Abrir o modal ao clicar na imagem do perfil
     document.querySelector('.profile-img-container').addEventListener('click', function(e) {
         e.preventDefault();
         modal.show();
     });
 
-    // Gerenciar o zoom na imagem
     modalImg.addEventListener('click', function(e) {
-        e.stopPropagation(); // Impede que o clique no modal feche o modal
+        e.stopPropagation();
         isZoomed = !isZoomed;
         this.style.transform = isZoomed ? 'scale(1.5)' : 'scale(1)';
         this.classList.toggle('zoomed', isZoomed);
     });
 
-    // Fechar o modal com o botão
     closeBtn.addEventListener('click', function() {
         modal.hide();
     });
 
-    // Fechar o modal com a tecla ESC
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && modal._isShown) {
             modal.hide();
         }
     });
 
-    // Limpar o estado do zoom ao fechar o modal
     modalElement.addEventListener('hidden.bs.modal', function() {
         modalImg.style.transform = 'scale(1)';
         isZoomed = false;
@@ -721,4 +713,5 @@
     });
 });
 </script>
+{% endblock %}
 {% endblock %}

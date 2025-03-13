@@ -456,18 +456,22 @@
 
 /* Adicionar/modificar no style.css */
 .modal {
-  z-index: 1050 !important; /* Aumentar para garantir que fique acima de outros elementos */
+  z-index: 1050 !important;
+  transition: opacity 0.3s ease-in-out;
 }
 
 .modal-backdrop {
-  z-index: 1040 !important; /* Manter abaixo do modal */
+  z-index: 1040 !important;
 }
 
 .modal-dialog.modal-lg {
-  z-index: 1051 !important; /* Aumentar para ficar acima do modal base */
+  z-index: 1051 !important;
   max-width: 90vw;
   margin: 1.75rem auto;
   position: relative;
+  display: flex;
+  align-items: center;
+  min-height: calc(100vh - 3.5rem);
 }
 
 .modal-content {
@@ -475,12 +479,12 @@
   border: none;
   border-radius: 15px;
   position: relative;
-  z-index: 1052 !important; /* Aumentar para ficar acima do dialog */
+  z-index: 1052 !important;
 }
 
 .modal-body {
   position: relative;
-  z-index: 1053 !important; /* Aumentar para ficar acima do content */
+  z-index: 1053 !important;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -488,10 +492,10 @@
 }
 
 .btn-close-white {
-  position: absolute;
+  position: fixed;
   top: 15px;
   right: 15px;
-  z-index: 1054 !important; /* Maior z-index para garantir que fique sempre visível */
+  z-index: 1054 !important;
   background-color: white;
   opacity: 0.8;
   padding: 0.75rem;
@@ -513,12 +517,12 @@
   max-width: 100%;
   max-height: 85vh;
   object-fit: contain;
-  cursor: pointer;
-  transition: transform 0.3s ease;
+  cursor: zoom-in;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
 }
 
 /* Adicionar novos estilos para controle de zoom */
 .modal-img.zoomed {
-  transform: scale(2);
+  transform: scale(1.5);
   cursor: zoom-out;
 }
