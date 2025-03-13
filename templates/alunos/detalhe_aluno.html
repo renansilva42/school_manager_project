@@ -237,92 +237,66 @@
         color: var(--primary-color);
     }
     
-    /* Modal */
-    .modal {
-    z-index: 1050 !important;
-}
-.modal-backdrop {
-    z-index: 1040 !important;
-}
-
-.modal-dialog {
-    z-index: 1051 !important;
-}
-    
-    .modal-dialog.modal-lg {
-        z-index: var(--modal-dialog-z-index);
-        position: relative;
-        max-width: 90vw;
-        margin: 1.75rem auto;
-        display: flex;
-        align-items: center;
-        min-height: calc(100vh - 3.5rem);
+    /* Estilos do Modal - Começando do zero para evitar conflitos */
+    #fotoModal {
+        z-index: 1050;
+        background-color: rgba(0, 0, 0, 0.5);
     }
     
-    .modal-content {
-    background: rgba(0, 0, 0, 0.95);
-    border: none;
-    border-radius: 15px;
-    position: relative;
-    z-index: 1052 !important;
-}
-
+    #fotoModal .modal-dialog {
+        max-width: 90vw;
+        margin: 30px auto;
+    }
     
-.modal-body {
-    position: relative;
-    z-index: 1053 !important;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 2rem;
-    background: none !important; /* Remove background que possa estar afetando */
-}
-
-.modal.fade.show .modal-img {
-    filter: brightness(100%) !important;
-    mix-blend-mode: normal !important;
-}
+    #fotoModal .modal-content {
+        background-color: transparent !important;
+        border: none;
+        border-radius: 0;
+    }
     
-    .modal-img {
-    max-width: 100%;
-    max-height: 85vh;
-    object-fit: contain;
-    cursor: zoom-in;
-    transition: transform 0.3s ease-in-out;
-    opacity: 1 !important;  /* Força opacidade total */
-    filter: none !important; /* Remove qualquer filtro */
-    /* Mantém o fundo do modal escuro mas garante que a imagem não seja afetada */
-    isolation: isolate; /* Isola o contexto de empilhamento */
-    z-index: 1055 !important; /* Garante que a imagem esteja acima de quaisquer elementos que possam escurecê-la */
-    background: none !important; /* Remove quaisquer fundos aplicados */
-}
+    #fotoModal .modal-body {
+        padding: 0;
+        background-color: transparent !important;
+    }
     
-    .modal-img.zoomed {
-    cursor: zoom-out;
-    transform: scale(1.5);
+    #fotoModal img {
+        display: block;
+        max-width: 100%;
+        max-height: 85vh;
+        margin: 0 auto;
+        object-fit: contain;
+        border: none;
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
     }
     
     .btn-close-white {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    z-index: 1060 !important;
-    background-color: white;
-    opacity: 0.8;
-    padding: 0.75rem;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: opacity 0.3s ease;
-    pointer-events: auto;
-}
+        position: absolute;
+        top: -20px;
+        right: -20px;
+        z-index: 2000;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: white;
+        color: black;
+        opacity: 0.9;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
     
     .btn-close-white:hover {
         opacity: 1;
+    }
+    
+    /* Remover qualquer backdrop fixo que possa estar causando problemas */
+    .modal-backdrop {
+        background-color: transparent !important;
+        pointer-events: none !important;
     }
     
     /* Animações */
@@ -455,13 +429,13 @@
             <!-- Modal para a foto ampliada -->
             <div class="modal fade" id="fotoModal" tabindex="-1" aria-labelledby="fotoModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
-                    <div class="modal-content">
+                    <div class="modal-content" style="background: rgba(0, 0, 0, 0.95); box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);">
                         <button type="button" class="btn-close-white" data-bs-dismiss="modal" aria-label="Close">×</button>
-                        <div class="modal-body">
+                        <div class="modal-body" style="padding: 0;">
                             {% if aluno.foto %}
-                                <img src="{{ aluno.foto.url }}" class="modal-img" alt="Foto ampliada do aluno" id="modalImage">
+                                <img src="{{ aluno.foto.url }}" class="d-block w-100" style="max-height: 85vh; object-fit: contain; margin: 0 auto;" alt="Foto ampliada do aluno" id="modalImage">
                             {% else %}
-                                <img src="{% static 'img/default-avatar.png' %}" class="modal-img" alt="Foto padrão ampliada" id="modalImage">
+                                <img src="{% static 'img/default-avatar.png' %}" class="d-block w-100" style="max-height: 85vh; object-fit: contain; margin: 0 auto;" alt="Foto padrão ampliada" id="modalImage">
                             {% endif %}
                         </div>
                     </div>
@@ -691,52 +665,33 @@
 </div>
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+   document.addEventListener('DOMContentLoaded', function() {
     const modalElement = document.getElementById('fotoModal');
-    const modalImg = document.querySelector('.modal-img');
-    const closeBtn = document.querySelector('.btn-close-white');
+    const modalImg = document.querySelector('#modalImage');
     let isZoomed = false;
-
-    // Garante que o backdrop não bloqueie interações
-    modalElement.addEventListener('show.bs.modal', function() {
-        setTimeout(function() {
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) {
-                backdrop.style.pointerEvents = 'none';
-            }
-        }, 10);
+    
+    // Quando o modal é aberto
+    modalElement.addEventListener('shown.bs.modal', function() {
+        // Garantir que o backdrop não bloqueie interações
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.style.backgroundColor = 'rgba(0,0,0,0.85)';
+            backdrop.style.pointerEvents = 'none';
+        }
     });
-
+    
+    // Alternar zoom ao clicar na imagem
     modalImg.addEventListener('click', function(e) {
         e.stopPropagation();
         isZoomed = !isZoomed;
         this.style.transform = isZoomed ? 'scale(1.5)' : 'scale(1)';
-        this.classList.toggle('zoomed', isZoomed);
+        this.style.transition = 'transform 0.3s ease';
     });
-
-    // Fechar o modal clicando fora da imagem
-    modalElement.addEventListener('click', function(e) {
-        if (e.target === modalElement || e.target.classList.contains('modal-body')) {
-            const modalInstance = bootstrap.Modal.getInstance(modalElement);
-            modalInstance.hide();
-        }
-    });
-
-    // Resetar o zoom quando o modal for fechado
+    
+    // Resetar zoom quando o modal é fechado
     modalElement.addEventListener('hidden.bs.modal', function() {
         modalImg.style.transform = 'scale(1)';
         isZoomed = false;
-        modalImg.classList.remove('zoomed');
-    });
-
-    // Fechar com ESC
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            const modalInstance = bootstrap.Modal.getInstance(modalElement);
-            if (modalInstance && modalInstance._isShown) {
-                modalInstance.hide();
-            }
-        }
     });
 });
 </script>
