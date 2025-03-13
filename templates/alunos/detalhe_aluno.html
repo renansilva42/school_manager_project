@@ -271,13 +271,13 @@
     
     .btn-close-white {
         position: absolute;
-        top: -20px;
-        right: -20px;
+        top: 10px;
+        right: 10px;
         z-index: 2000;
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background-color: white;
+        background-color: rgba(255, 255, 255, 0.85);
         color: black;
         opacity: 0.9;
         font-size: 24px;
@@ -287,10 +287,19 @@
         cursor: pointer;
         border: none;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        transition: all 0.2s ease;
     }
     
     .btn-close-white:hover {
         opacity: 1;
+        background-color: white;
+        transform: scale(1.05);
+    }
+
+    .btn-close-white::after {
+        content: "×";
+        line-height: 1;
+        font-weight: bold;
     }
     
     /* Remover qualquer backdrop fixo que possa estar causando problemas */
@@ -360,9 +369,11 @@
         }
     
         .btn-close-white {
-            padding: 0.5rem;
-            top: 0.5rem;
-            right: 0.5rem;
+            top: 5px;
+            right: 5px;
+            width: 36px;
+            height: 36px;
+            font-size: 20px;
         }
     
         .profile-img-container:hover .profile-img-hover {
@@ -430,7 +441,7 @@
             <div class="modal fade" id="fotoModal" tabindex="-1" aria-labelledby="fotoModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
                     <div class="modal-content" style="background: rgba(0, 0, 0, 0.95); box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);">
-                        <button type="button" class="btn-close-white" data-bs-dismiss="modal" aria-label="Close">×</button>
+                        <button type="button" class="btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
                         <div class="modal-body" style="padding: 0;">
                             {% if aluno.foto %}
                                 <img src="{{ aluno.foto.url }}" class="d-block w-100" style="max-height: 85vh; object-fit: contain; margin: 0 auto;" alt="Foto ampliada do aluno" id="modalImage">
