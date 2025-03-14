@@ -42,6 +42,13 @@ class BaseForm(forms.ModelForm):
 class AlunoForm(BaseForm):
     foto_base64 = forms.CharField(required=False, widget=forms.HiddenInput())
     
+    # Campo CPF explicitamente definido como não obrigatório
+    cpf = forms.CharField(
+        max_length=14,
+        required=False,
+        help_text="CPF no formato: 999.999.999-99. Este campo é opcional."
+    )
+    
     # Campos de telefone com help_text melhorado
     telefone = forms.CharField(
         max_length=15, 

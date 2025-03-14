@@ -122,6 +122,7 @@
                     <div class="btn-group w-100 mb-2">
                         <button type="button" id="upload-photo-btn" class="btn btn-outline-primary">Escolher Arquivo</button>
                         <button type="button" id="take-photo-btn" class="btn btn-outline-success">Tirar Foto</button>
+                        <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;">
                     </div>
                     <div id="preview-container" class="text-center mb-3" {% if not form.instance.foto and not form.data.foto_base64 %}style="display: none;"{% endif %}>
                         {% if form.data.foto_base64 %}
@@ -249,9 +250,11 @@ const photoCanvas = document.getElementById('photo-canvas');
 const cameraControls = document.getElementById('camera-controls');
 const capturePhotoBtn = document.getElementById('capture-photo-btn');
 const cancelCameraBtn = document.getElementById('cancel-camera-btn');
+const cameraInput = document.getElementById('camera-input');
 const fotoBase64Input = document.getElementById('id_foto_base64');
 
 let stream = null;
+let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 // Evento para o botão de upload de arquivo
 uploadBtn.addEventListener('click', () => {
@@ -270,6 +273,11 @@ fileInput.addEventListener('change', (e) => {
             
             // Esconder a câmera se estiver ativa
             stopCamera();
+            
+            // Se houver um checkbox para limpar a foto, desmarcá-lo
+            if (document.getElementById('id_foto-clear_id')) {
+                document.getElementById('id_foto-clear_id').checked = false;
+            }
         };
         
         reader.readAsDataURL(fileInput.files[0]);
@@ -298,28 +306,65 @@ removePhotoBtn.addEventListener('click', () => {
 });
 
 // Evento para o botão de tirar foto
-takePhotoBtn.addEventListener('click', async () => {
-    try {
-        // Esconder o preview de imagem se estiver visível
-        previewContainer.style.display = 'none';
-        
-        // Iniciar a câmera
-        stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
-                facingMode: 'user',
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            } 
-        });
-        
-        cameraPreview.srcObject = stream;
-        cameraPreview.style.display = 'block';
-        cameraControls.style.display = 'block';
-    } catch (err) {
-        console.error('Erro ao acessar a câmera:', err);
-        alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.');
+takePhotoBtn.addEventListener('click', () => {
+    if (isMobile) {
+        // Em dispositivos móveis, usar a câmera nativa
+        cameraInput.click();
+    } else {
+        // Em desktop, usar a implementação de webcam
+        startCamera();
     }
 });
+
+// Evento para quando uma foto é capturada pelo dispositivo móvel
+cameraInput.addEventListener('change', (e) => {
+    if (cameraInput.files && cameraInput.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            photoPreview.src = e.target.result;
+            previewContainer.style.display = 'block';
+            fotoBase64Input.value = e.target.result;
+            
+            // Transferir o arquivo para o input de foto
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(cameraInput.files[0]);
+            fileInput.files = dataTransfer.files;
+            
+            // Se houver um checkbox para limpar a foto, desmarcá-lo
+            if (document.getElementById('id_foto-clear_id')) {
+                document.getElementById('id_foto-clear_id').checked = false;
+            }
+        };
+        
+        reader.readAsDataURL(cameraInput.files[0]);
+    }
+});
+
+// Função para iniciar a câmera (apenas para desktop)
+function startCamera() {
+    // Verificar se o navegador suporta getUserMedia
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(mediaStream) {
+                stream = mediaStream;
+                cameraPreview.srcObject = mediaStream;
+                cameraPreview.style.display = 'block';
+                cameraControls.style.display = 'flex';
+                cameraControls.style.justifyContent = 'center';
+                cameraControls.style.gap = '10px';
+                
+                // Esconder o preview se estiver visível
+                previewContainer.style.display = 'none';
+            })
+            .catch(function(error) {
+                console.error("Erro ao acessar a câmera: ", error);
+                alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
+            });
+    } else {
+        alert("Seu navegador não suporta acesso à câmera.");
+    }
+}
 
 // Evento para o botão de capturar foto
 capturePhotoBtn.addEventListener('click', () => {
