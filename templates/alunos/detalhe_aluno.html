@@ -346,6 +346,19 @@
             position: static;
             margin-top: 1rem;
         }
+        
+        /* Fix for action buttons on mobile */
+        .action-buttons {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .action-buttons .btn {
+            margin: 0.5rem;
+            min-width: 120px;
+            padding: 0.6rem 1rem;
+            white-space: nowrap;
+        }
     
         .modal-dialog.modal-lg {
             margin: 0;
@@ -397,11 +410,15 @@
     @media (hover: none) {
         .profile-img-hover {
             background: rgba(0,0,0,0.3);
-            opacity: 1;
+            opacity: 0;
         }
     
         .profile-img-container:active {
             transform: scale(0.95);
+        }
+        
+        .profile-img-container:active .profile-img-hover {
+            opacity: 1;
         }
     }
     </style>
