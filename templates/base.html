@@ -279,7 +279,11 @@
                         {% if user.is_authenticated %}
                         <li class="nav-item dropdown user-dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <img src="{% static 'img/default-user.png' %}" alt="Avatar do usuário">
+                                {% if user.is_superuser and user.profile.photo %}
+                                    <img src="{{ user.profile.photo.url }}" alt="Avatar do usuário" style="width: 32px; height: 32px; object-fit: cover;">
+                                {% else %}
+                                    <img src="{% static 'img/default-user.png' %}" alt="Avatar do usuário">
+                                {% endif %}
                                 {{ user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">

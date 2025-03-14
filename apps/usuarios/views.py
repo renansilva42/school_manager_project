@@ -5,6 +5,8 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.conf import settings
 from supabase import create_client
+from .models import UserProfile
+import os
 
 def is_admin(user):
     return user.is_superuser or user.groups.filter(name='Administradores').exists()
@@ -18,11 +20,30 @@ def user_management(request):
 @login_required
 @user_passes_test(is_admin)
 def settings_view(request):
+    # Get or create user profile
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
     if request.method == 'POST':
-        # Add settings save logic here
-        messages.success(request, 'Configurações salvas com sucesso!')
+        # Handle profile photo upload
+        if 'profile_photo' in request.FILES:
+            # Delete old photo if it exists
+            if profile.photo:
+                if os.path.isfile(profile.photo.path):
+                    os.remove(profile.photo.path)
+            
+            # Save new photo
+            profile.photo = request.FILES['profile_photo']
+            profile.save()
+            messages.success(request, 'Foto de perfil atualizada com sucesso!')
+        
+        # Handle other settings
+        if 'school_name' in request.POST:
+            # Add other settings save logic here
+            messages.success(request, 'Configurações salvas com sucesso!')
+        
         return redirect('settings')
-    return render(request, 'usuarios/settings.html')
+    
+    return render(request, 'usuarios/settings.html', {'profile': profile})
 
 def login_view(request):
     if request.method == 'POST':

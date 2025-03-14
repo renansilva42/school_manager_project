@@ -88,13 +88,16 @@ SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 ALUNOS_PHOTOS_DIR = os.path.join(MEDIA_ROOT, 'alunos/fotos')
+USER_PHOTOS_DIR = os.path.join(MEDIA_ROOT, 'user_photos')
 
 os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(ALUNOS_PHOTOS_DIR, exist_ok=True)
+os.makedirs(USER_PHOTOS_DIR, exist_ok=True)
 
 try:
     os.chmod(MEDIA_ROOT, 0o755)
     os.chmod(ALUNOS_PHOTOS_DIR, 0o755)
+    os.chmod(USER_PHOTOS_DIR, 0o755)
 except:
     pass
 
@@ -250,6 +253,7 @@ os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(ALUNOS_PHOTOS_DIR, exist_ok=True)
 os.makedirs(BACKUP_MEDIA_ROOT, exist_ok=True)
 os.makedirs(os.path.join(BACKUP_MEDIA_ROOT, 'alunos', 'fotos'), exist_ok=True)
+os.makedirs(os.path.join(BACKUP_MEDIA_ROOT, 'user_photos'), exist_ok=True)
 
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Sao_Paulo'

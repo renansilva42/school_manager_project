@@ -19,8 +19,31 @@
     {% endfor %}
     {% endif %}
     
-    <div class="row">
-        <div class="col-md-6">
+<div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Foto de Perfil</h5>
+                    <div class="mb-3">
+                        {% if profile.photo %}
+                            <img src="{{ profile.photo.url }}" alt="Foto de perfil" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% else %}
+                            <img src="{% static 'img/default-user.png' %}" alt="Foto de perfil padrão" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% endif %}
+                    </div>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="profile_photo" class="form-label">Alterar foto</label>
+                            <input type="file" class="form-control" id="profile_photo" name="profile_photo" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Atualizar Foto</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Configurações Gerais</h5>
