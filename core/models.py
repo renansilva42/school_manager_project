@@ -7,3 +7,21 @@ class Professor(models.Model):
 
     def __str__(self):
         return self.nome
+
+class SiteSettings(models.Model):
+    school_name = models.CharField(max_length=100, blank=True, null=True)
+    contact_email = models.EmailField(blank=True, null=True)
+    smtp_server = models.CharField(max_length=100, blank=True, null=True)
+    smtp_port = models.IntegerField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = 'Configurações do Site'
+        verbose_name_plural = 'Configurações do Site'
+    
+    def __str__(self):
+        return "Configurações do Site"
+    
+    @classmethod
+    def get_settings(cls):
+        settings, created = cls.objects.get_or_create(pk=1)
+        return settings

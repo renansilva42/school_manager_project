@@ -51,11 +51,11 @@
                         {% csrf_token %}
                         <div class="mb-3">
                             <label class="form-label">Nome da Escola</label>
-                            <input type="text" class="form-control" name="school_name" value="{{ settings.school_name }}">
+                            <input type="text" class="form-control" name="school_name" value="{{ settings.school_name|default:'' }}">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Email de Contato</label>
-                            <input type="email" class="form-control" name="contact_email" value="{{ settings.contact_email }}">
+                            <input type="email" class="form-control" name="contact_email" value="{{ settings.contact_email|default:'' }}">
                         </div>
                         <button type="submit" class="btn btn-primary">Salvar</button>
                     </form>
@@ -71,13 +71,19 @@
                         {% csrf_token %}
                         <div class="mb-3">
                             <label class="form-label">Servidor SMTP</label>
-                            <input type="text" class="form-control" name="smtp_server" value="{{ settings.smtp_server }}">
+                            <input type="text" class="form-control" name="smtp_server" value="{{ settings.smtp_server|default:'' }}">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Porta SMTP</label>
-                            <input type="number" class="form-control" name="smtp_port" value="{{ settings.smtp_port }}">
+                            <input type="number" class="form-control" name="smtp_port" value="{{ settings.smtp_port|default:'' }}">
                         </div>
-                        <button type="submit" class="btn btn-primary">Salvar</button>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Salvar</button>
+                            <button type="submit" class="btn btn-outline-secondary" name="test_email" value="true">Testar Email</button>
+                        </div>
+                        <small class="form-text text-muted mt-2">
+                            O botão "Testar Email" salvará as configurações e enviará um email de teste para o endereço de contato.
+                        </small>
                     </form>
                 </div>
             </div>

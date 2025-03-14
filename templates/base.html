@@ -239,7 +239,7 @@
             <div class="container">
                 <a class="navbar-brand" href="{% url 'home' %}">
                     <i class="fas fa-school"></i>
-                    Escola Manager
+                    {% if site_settings.school_name %}{{ site_settings.school_name }}{% else %}Escola Manager{% endif %}
                 </a>
                 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -343,7 +343,10 @@
         <div class="container">
             <div class="footer-content">
                 <div>
-                    <p class="mb-0">&copy; 2025 Escola Manager - Todos os direitos reservados</p>
+                    <p class="mb-0">&copy; 2025 {% if site_settings.school_name %}{{ site_settings.school_name }}{% else %}Escola Manager{% endif %} - Todos os direitos reservados</p>
+                    {% if site_settings.contact_email %}
+                    <p class="mb-0 small text-muted">Contato: {{ site_settings.contact_email }}</p>
+                    {% endif %}
                 </div>
                 <div class="footer-links">
                     <a href="#">Sobre</a>

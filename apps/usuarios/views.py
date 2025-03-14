@@ -6,6 +6,8 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from supabase import create_client
 from .models import UserProfile
+from core.models import SiteSettings
+from core.utils import send_email_with_site_settings
 import os
 
 def is_admin(user):
@@ -23,6 +25,9 @@ def settings_view(request):
     # Get or create user profile
     profile, created = UserProfile.objects.get_or_create(user=request.user)
     
+    # Get or create site settings
+    site_settings = SiteSettings.get_settings()
+    
     if request.method == 'POST':
         # Handle profile photo upload
         if 'profile_photo' in request.FILES:
@@ -36,14 +41,50 @@ def settings_view(request):
             profile.save()
             messages.success(request, 'Foto de perfil atualizada com sucesso!')
         
-        # Handle other settings
+        # Handle general settings
         if 'school_name' in request.POST:
-            # Add other settings save logic here
-            messages.success(request, 'Configurações salvas com sucesso!')
+            site_settings.school_name = request.POST.get('school_name')
+            site_settings.contact_email = request.POST.get('contact_email')
+            site_settings.save()
+            messages.success(request, 'Configurações gerais salvas com sucesso!')
+        
+        # Handle email settings
+        if 'smtp_server' in request.POST:
+            site_settings.smtp_server = request.POST.get('smtp_server')
+            
+            # Handle smtp_port (convert to int if not empty)
+            smtp_port = request.POST.get('smtp_port')
+            if smtp_port and smtp_port.isdigit():
+                site_settings.smtp_port = int(smtp_port)
+            else:
+                site_settings.smtp_port = None
+                
+            site_settings.save()
+            messages.success(request, 'Configurações de email salvas com sucesso!')
+            
+            # Test email settings if requested
+            if 'test_email' in request.POST and request.POST.get('test_email') == 'true':
+                if site_settings.contact_email:
+                    success = send_email_with_site_settings(
+                        subject='Teste de Configuração de Email',
+                        message='Este é um email de teste para verificar as configurações de SMTP.',
+                        recipient_list=[site_settings.contact_email],
+                        html_message='<p>Este é um <strong>email de teste</strong> para verificar as configurações de SMTP.</p>'
+                    )
+                    
+                    if success:
+                        messages.success(request, f'Email de teste enviado com sucesso para {site_settings.contact_email}')
+                    else:
+                        messages.error(request, 'Falha ao enviar email de teste. Verifique as configurações de SMTP.')
+                else:
+                    messages.warning(request, 'Não foi possível enviar email de teste. Configure um email de contato primeiro.')
         
         return redirect('settings')
     
-    return render(request, 'usuarios/settings.html', {'profile': profile})
+    return render(request, 'usuarios/settings.html', {
+        'profile': profile,
+        'settings': site_settings
+    })
 
 def login_view(request):
     if request.method == 'POST':
