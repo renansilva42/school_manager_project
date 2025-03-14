@@ -241,11 +241,11 @@
                 <a href="{% url 'logout' %}" class="button animated delay-5">
                     <i class="fas fa-sign-out-alt"></i> Sair
                 </a>
-            {% else %}
-                <a href="{% url 'alunos:lista' %}" class="button animated delay-1">
+                {% else %}
+                <a href="{% url 'login' %}?next={% url 'alunos:lista' %}" class="button animated delay-1">
                     <i class="fas fa-user-graduate"></i> Gerenciar Alunos
                 </a>
-                <a href="{% url 'chatbot' %}" class="button animated delay-2">
+                <a href="{% url 'login' %}?next={% url 'chatbot' %}" class="button animated delay-2">
                     <i class="fas fa-robot"></i> Acessar Chatbot
                 </a>
                 <a href="{% url 'login' %}" class="button animated delay-3">

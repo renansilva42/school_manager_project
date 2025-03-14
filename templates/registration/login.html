@@ -1,222 +1,194 @@
 {% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Escola Manager</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        :root {
-            --primary-color: #417690;
-            --secondary-color: #79aec8;
-            --accent-color: #f5dd5d;
-            --text-color: #333;
-            --text-light: #ffffff;
-            --spacing-xs: 0.25rem;
-            --spacing-sm: 0.5rem;
-            --spacing-md: 1rem;
-            --spacing-lg: 1.5rem;
-            --spacing-xl: 2.5rem;
-            --border-radius: 8px;
-            --box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            --transition-speed: 0.3s;
+
+{% block title %}Login - Escola Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-container {
+        width: 100%;
+        max-width: 400px;
+        padding: 2rem;
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        margin: 2rem auto;
+    }
+    
+    .login-header {
+        text-align: center;
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .login-header i {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .login-header h1 {
+        color: var(--primary-color);
+        margin: var(--spacing-sm) 0;
+        font-size: 1.8rem;
+    }
+    
+    .login-form .form-group {
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .login-form label {
+        display: block;
+        margin-bottom: var(--spacing-xs);
+        font-weight: 500;
+    }
+    
+    .login-form .form-control {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius);
+        transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+    }
+    
+    .login-form .form-control:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 0.2rem rgba(121, 174, 200, 0.25);
+        outline: none;
+    }
+    
+    .login-form .input-group {
+        position: relative;
+    }
+    
+    .login-form .input-group i {
+        position: absolute;
+        top: 50%;
+        left: 1rem;
+        transform: translateY(-50%);
+        color: #999;
+    }
+    
+    .login-form .input-group .form-control {
+        padding-left: 2.5rem;
+    }
+    
+    .login-form .btn {
+        display: block;
+        width: 100%;
+        padding: 0.8rem;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: background-color var(--transition-speed), transform var(--transition-speed);
+    }
+    
+    .login-form .btn:hover {
+        background-color: #2c5170;
+        transform: translateY(-2px);
+    }
+    
+    .login-form .btn:active {
+        transform: translateY(0);
+    }
+    
+    .login-footer {
+        text-align: center;
+        margin-top: var(--spacing-lg);
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .login-footer a {
+        color: var(--primary-color);
+        text-decoration: none;
+        transition: color var(--transition-speed);
+    }
+    
+    .login-footer a:hover {
+        color: #2c5170;
+        text-decoration: underline;
+    }
+    
+    .error-message {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 0.8rem;
+        border-radius: var(--border-radius);
+        margin-bottom: var(--spacing-md);
+        border-left: 4px solid #f5c6cb;
+    }
+    
+    /* Animações */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
         }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f5f5f5;
-            color: var(--text-color);
-            line-height: 1.6;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        }
-        
-        .login-container {
-            width: 100%;
-            max-width: 400px;
-            padding: 2rem;
-            background-color: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-        }
-        
-        .login-header {
-            text-align: center;
-            margin-bottom: var(--spacing-lg);
-        }
-        
-        .login-header i {
-            font-size: 3rem;
-            color: var(--primary-color);
-            margin-bottom: var(--spacing-sm);
-        }
-        
-        .login-header h1 {
-            color: var(--primary-color);
-            margin: var(--spacing-sm) 0;
-            font-size: 1.8rem;
-        }
-        
-        .login-form .form-group {
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .login-form label {
-            display: block;
-            margin-bottom: var(--spacing-xs);
-            font-weight: 500;
-        }
-        
-        .login-form .form-control {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border: 1px solid #ddd;
-            border-radius: var(--border-radius);
-            transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
-        }
-        
-        .login-form .form-control:focus {
-            border-color: var(--secondary-color);
-            box-shadow: 0 0 0 0.2rem rgba(121, 174, 200, 0.25);
-            outline: none;
-        }
-        
-        .login-form .input-group {
-            position: relative;
-        }
-        
-        .login-form .input-group i {
-            position: absolute;
-            top: 50%;
-            left: 1rem;
-            transform: translateY(-50%);
-            color: #999;
-        }
-        
-        .login-form .input-group .form-control {
-            padding-left: 2.5rem;
-        }
-        
-        .login-form .btn {
-            display: block;
-            width: 100%;
-            padding: 0.8rem;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-            transition: background-color var(--transition-speed), transform var(--transition-speed);
-        }
-        
-        .login-form .btn:hover {
-            background-color: #2c5170;
-            transform: translateY(-2px);
-        }
-        
-        .login-form .btn:active {
+        to {
+            opacity: 1;
             transform: translateY(0);
         }
-        
-        .login-footer {
-            text-align: center;
-            margin-top: var(--spacing-lg);
-            font-size: 0.9rem;
-            color: #666;
-        }
-        
-        .login-footer a {
-            color: var(--primary-color);
-            text-decoration: none;
-            transition: color var(--transition-speed);
-        }
-        
-        .login-footer a:hover {
-            color: #2c5170;
-            text-decoration: underline;
-        }
-        
-        .error-message {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 0.8rem;
-            border-radius: var(--border-radius);
-            margin-bottom: var(--spacing-md);
-            border-left: 4px solid #f5c6cb;
-        }
-        
-        /* Animações */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .animated {
-            animation: fadeInUp 0.5s ease forwards;
-        }
-        
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.2s; }
-        .delay-3 { animation-delay: 0.3s; }
-    </style>
-</head>
-<body>
-    <div class="login-header">
-        <i class="fas fa-school"></i>
-        <h1>Escola Manager</h1>
-        <p>Faça login para acessar o sistema</p>
-    </div>
+    }
     
-    {% if form.errors %}
-    <div class="error-message animated delay-1">
-        <i class="fas fa-exclamation-circle"></i> Usuário ou senha incorretos. Por favor, tente novamente.
-    </div>
-    {% endif %}
+    .animated {
+        animation: fadeInUp 0.5s ease forwards;
+    }
     
-    <form method="post" class="login-form">
-        {% csrf_token %}
-        
-        <div class="form-group animated delay-1">
-            <label for="id_username">Usuário</label>
-            <div class="input-group">
-                <i class="fas fa-user"></i>
-                <input type="text" name="username" id="id_username" class="form-control" required autofocus>
-            </div>
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="login-container">
+        <div class="login-header">
+            <i class="fas fa-school"></i>
+            <h1>Escola Manager</h1>
+            <p>Faça login para acessar o sistema</p>
         </div>
         
-        <div class="form-group animated delay-2">
-            <label for="id_password">Senha</label>
-            <div class="input-group">
-                <i class="fas fa-lock"></i>
-                <input type="password" name="password" id="id_password" class="form-control" required>
-            </div>
+        {% if form.errors %}
+        <div class="error-message animated delay-1">
+            <i class="fas fa-exclamation-circle"></i> Usuário ou senha incorretos. Por favor, tente novamente.
         </div>
+        {% endif %}
         
-        <button type="submit" class="btn animated delay-3">
-            <i class="fas fa-sign-in-alt"></i> Entrar
-        </button>
+        <form method="post" class="login-form">
+            {% csrf_token %}
+            
+            <div class="form-group animated delay-1">
+                <label for="id_username">Usuário</label>
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" name="username" id="id_username" class="form-control" required autofocus>
+                </div>
+            </div>
+            
+            <div class="form-group animated delay-2">
+                <label for="id_password">Senha</label>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" name="password" id="id_password" class="form-control" required>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn animated delay-3">
+                <i class="fas fa-sign-in-alt"></i> Entrar
+            </button>
+            
+            <input type="hidden" name="next" value="{{ next }}">
+        </form>
         
-        <input type="hidden" name="next" value="{{ next }}">
-    </form>
-    
-    <div class="login-footer animated delay-3">
-        <p>Esqueceu sua senha? <a href="{% url 'password_reset' %}">Recuperar senha</a></p>
-        <p>© 2023 Escola Manager - Todos os direitos reservados</p>
+        <div class="login-footer animated delay-3">
+            <p>Esqueceu sua senha? <a href="{% url 'password_reset' %}">Recuperar senha</a></p>
+            <p>© 2023 Escola Manager - Todos os direitos reservados</p>
+        </div>
     </div>
 </div>
 
@@ -235,5 +207,4 @@
         }, 100);
     });
 </script>
-</body>
-</html>
+{% endblock %}

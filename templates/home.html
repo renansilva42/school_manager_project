@@ -243,6 +243,7 @@
                     <p class="hero-subtitle">Sistema completo para gestão escolar, simplificando o gerenciamento de alunos, professores e atividades acadêmicas.</p>
                     
                     <div class="hero-buttons">
+                        {% if user.is_authenticated %}
                         <a href="{% url 'lista_alunos' %}" class="btn btn-light">
                             <i class="fas fa-user-graduate"></i> Ver Alunos
                         </a>
@@ -250,6 +251,11 @@
                         {% if user.groups.all.0.name == 'Administradores' %}
                         <a href="{% url 'cadastrar_aluno' %}" class="btn btn-warning">
                             <i class="fas fa-plus"></i> Cadastrar Aluno
+                        </a>
+                        {% endif %}
+                        {% else %}
+                        <a href="{% url 'login' %}?next={% url 'lista_alunos' %}" class="btn btn-light">
+                            <i class="fas fa-user-graduate"></i> Ver Alunos
                         </a>
                         {% endif %}
                     </div>
@@ -383,7 +389,7 @@
             <i class="fas fa-arrow-right"></i> Acessar Sistema
         </a>
         {% else %}
-        <a href="{% url 'login' %}" class="btn btn-primary cta-button">
+        <a href="{% url 'login' %}?next={% url 'lista_alunos' %}" class="btn btn-primary cta-button">
             <i class="fas fa-sign-in-alt"></i> Fazer Login
         </a>
         {% endif %}
