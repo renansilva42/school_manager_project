@@ -293,6 +293,13 @@
                                         <i class="fas fa-cog"></i> Administração
                                     </a>
                                 </li>
+                                {% if user.is_superuser %}
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'settings' %}">
+                                        <i class="fas fa-user-cog"></i> Configurações
+                                    </a>
+                                </li>
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 {% endif %}
                                 <li>
