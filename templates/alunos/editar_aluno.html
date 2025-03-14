@@ -68,10 +68,14 @@
         .btn {
             width: 100%;
             margin-bottom: 0.5rem;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .btn-group {
             flex-direction: column;
+            width: 100%;
         }
     }
     
@@ -119,9 +123,9 @@
             <div class="card-body">
                 <div class="custom-file-container">
                     <input type="file" name="foto" id="id_foto" accept="image/*" class="custom-file-input" style="display: none;">
-                    <div class="btn-group w-100 mb-2">
-                        <button type="button" id="upload-photo-btn" class="btn btn-outline-primary">Escolher Arquivo</button>
-                        <button type="button" id="take-photo-btn" class="btn btn-outline-success">Tirar Foto</button>
+                    <div class="btn-group w-100 mb-2" style="max-width: 100%; overflow: hidden;">
+                        <button type="button" id="upload-photo-btn" class="btn btn-outline-primary" style="max-width: 49%;">Escolher Arquivo</button>
+                        <button type="button" id="take-photo-btn" class="btn btn-outline-success" style="max-width: 49%;">Tirar Foto</button>
                         <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;">
                     </div>
                     <div id="preview-container" class="text-center mb-3" {% if not form.instance.foto and not form.data.foto_base64 %}style="display: none;"{% endif %}>
@@ -152,7 +156,13 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">{{ form.nome|as_crispy_field }}</div>
-                    <div class="col-md-6">{{ form.data_nascimento|as_crispy_field }}</div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_data_nascimento">Data de Nascimento</label>
+                            <input type="text" name="data_nascimento" id="id_data_nascimento" class="form-control datepicker" placeholder="DD/MM/AAAA" value="{{ form.data_nascimento.value|default:'' }}">
+                            <small class="form-text text-muted">Digite a data no formato DD/MM/AAAA</small>
+                        </div>
+                    </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">{{ form.cpf|as_crispy_field }}</div>
@@ -176,7 +186,41 @@
                 </div>
                 <div class="row">
                     <div class="col-md-8">{{ form.cidade|as_crispy_field }}</div>
-                    <div class="col-md-4">{{ form.uf|as_crispy_field }}</div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="id_uf">UF</label>
+                            <select name="uf" id="id_uf" class="form-control">
+                                <option value="">Selecione um estado</option>
+                                <option value="AC" {% if form.uf.value == 'AC' %}selected{% endif %}>Acre</option>
+                                <option value="AL" {% if form.uf.value == 'AL' %}selected{% endif %}>Alagoas</option>
+                                <option value="AP" {% if form.uf.value == 'AP' %}selected{% endif %}>Amapá</option>
+                                <option value="AM" {% if form.uf.value == 'AM' %}selected{% endif %}>Amazonas</option>
+                                <option value="BA" {% if form.uf.value == 'BA' %}selected{% endif %}>Bahia</option>
+                                <option value="CE" {% if form.uf.value == 'CE' %}selected{% endif %}>Ceará</option>
+                                <option value="DF" {% if form.uf.value == 'DF' %}selected{% endif %}>Distrito Federal</option>
+                                <option value="ES" {% if form.uf.value == 'ES' %}selected{% endif %}>Espírito Santo</option>
+                                <option value="GO" {% if form.uf.value == 'GO' %}selected{% endif %}>Goiás</option>
+                                <option value="MA" {% if form.uf.value == 'MA' %}selected{% endif %}>Maranhão</option>
+                                <option value="MT" {% if form.uf.value == 'MT' %}selected{% endif %}>Mato Grosso</option>
+                                <option value="MS" {% if form.uf.value == 'MS' %}selected{% endif %}>Mato Grosso do Sul</option>
+                                <option value="MG" {% if form.uf.value == 'MG' %}selected{% endif %}>Minas Gerais</option>
+                                <option value="PA" {% if form.uf.value == 'PA' %}selected{% endif %}>Pará</option>
+                                <option value="PB" {% if form.uf.value == 'PB' %}selected{% endif %}>Paraíba</option>
+                                <option value="PR" {% if form.uf.value == 'PR' %}selected{% endif %}>Paraná</option>
+                                <option value="PE" {% if form.uf.value == 'PE' %}selected{% endif %}>Pernambuco</option>
+                                <option value="PI" {% if form.uf.value == 'PI' %}selected{% endif %}>Piauí</option>
+                                <option value="RJ" {% if form.uf.value == 'RJ' %}selected{% endif %}>Rio de Janeiro</option>
+                                <option value="RN" {% if form.uf.value == 'RN' %}selected{% endif %}>Rio Grande do Norte</option>
+                                <option value="RS" {% if form.uf.value == 'RS' %}selected{% endif %}>Rio Grande do Sul</option>
+                                <option value="RO" {% if form.uf.value == 'RO' %}selected{% endif %}>Rondônia</option>
+                                <option value="RR" {% if form.uf.value == 'RR' %}selected{% endif %}>Roraima</option>
+                                <option value="SC" {% if form.uf.value == 'SC' %}selected{% endif %}>Santa Catarina</option>
+                                <option value="SP" {% if form.uf.value == 'SP' %}selected{% endif %}>São Paulo</option>
+                                <option value="SE" {% if form.uf.value == 'SE' %}selected{% endif %}>Sergipe</option>
+                                <option value="TO" {% if form.uf.value == 'TO' %}selected{% endif %}>Tocantins</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -206,7 +250,13 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">{{ form.matricula|as_crispy_field }}</div>
-                    <div class="col-md-6">{{ form.data_matricula|as_crispy_field }}</div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_data_matricula">Data de Matrícula</label>
+                            <input type="text" name="data_matricula" id="id_data_matricula" class="form-control datepicker" placeholder="DD/MM/AAAA" value="{{ form.data_matricula.value|default:'' }}">
+                            <small class="form-text text-muted">Digite a data no formato DD/MM/AAAA</small>
+                        </div>
+                    </div>
                 </div>
                 <div class="row">
                     <div class="col-md-4">{{ form.nivel|as_crispy_field }}</div>
@@ -322,19 +372,48 @@ cameraInput.addEventListener('change', (e) => {
         const reader = new FileReader();
         
         reader.onload = (e) => {
-            photoPreview.src = e.target.result;
-            previewContainer.style.display = 'block';
-            fotoBase64Input.value = e.target.result;
+            // Criar uma imagem temporária para corrigir a orientação
+            const img = new Image();
+            img.onload = function() {
+                // Criar um canvas para manipular a imagem
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Definir as dimensões do canvas
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                // Desenhar a imagem no canvas com a orientação correta
+                ctx.drawImage(img, 0, 0);
+                
+                // Converter o canvas para uma URL de dados (formato base64)
+                const dataUrl = canvas.toDataURL('image/jpeg');
+                
+                // Exibir a imagem corrigida no preview
+                photoPreview.src = dataUrl;
+                previewContainer.style.display = 'block';
+                fotoBase64Input.value = dataUrl;
+                
+                // Converter a URL de dados para um arquivo Blob e adicionar ao input de arquivo
+                fetch(dataUrl)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+                        
+                        // Criar um DataTransfer para simular a seleção de arquivo
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        fileInput.files = dataTransfer.files;
+                        
+                        // Se houver um checkbox para limpar a foto, desmarcá-lo
+                        if (document.getElementById('id_foto-clear_id')) {
+                            document.getElementById('id_foto-clear_id').checked = false;
+                        }
+                    });
+            };
             
-            // Transferir o arquivo para o input de foto
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(cameraInput.files[0]);
-            fileInput.files = dataTransfer.files;
-            
-            // Se houver um checkbox para limpar a foto, desmarcá-lo
-            if (document.getElementById('id_foto-clear_id')) {
-                document.getElementById('id_foto-clear_id').checked = false;
-            }
+            // Carregar a imagem a partir do resultado do FileReader
+            img.src = e.target.result;
         };
         
         reader.readAsDataURL(cameraInput.files[0]);
@@ -543,6 +622,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const nivelSelect = document.getElementById('id_nivel');
     const turnoSelect = document.getElementById('id_turno');
     
+    // Desabilitar o campo turno inicialmente
+    turnoSelect.disabled = true;
+    
     // Configurar os event listeners
     nivelSelect.addEventListener('change', function() {
         updateTurnoChoices(this.value);
@@ -584,7 +666,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<!-- Script para formatação automática de telefones -->
+<!-- Script para formatação automática de telefones e datas -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Função para aplicar máscara de telefone
@@ -617,10 +699,47 @@ document.addEventListener('DOMContentLoaded', function() {
         input.setAttribute('placeholder', '(XX) XXXXX-XXXX');
     }
     
+    // Função para aplicar máscara de data
+    function aplicarMascaraData(input) {
+        input.addEventListener('input', function(e) {
+            let valor = e.target.value.replace(/\D/g, ''); // Remove tudo que não é dígito
+            
+            if (valor.length > 0) {
+                // Formata como DD/MM/AAAA
+                if (valor.length <= 2) {
+                    // Apenas dia
+                    valor = valor;
+                } else if (valor.length <= 4) {
+                    // Dia e mês
+                    valor = valor.replace(/^(\d{2})(\d)/g, '$1/$2');
+                } else {
+                    // Dia, mês e ano
+                    valor = valor.replace(/^(\d{2})(\d{2})(\d)/g, '$1/$2/$3');
+                }
+                
+                // Limita ao tamanho máximo
+                if (valor.length > 10) {
+                    valor = valor.substring(0, 10);
+                }
+            }
+            
+            e.target.value = valor;
+        });
+        
+        // Define o placeholder para mostrar o formato esperado
+        input.setAttribute('placeholder', 'DD/MM/AAAA');
+    }
+    
     // Aplica a máscara a todos os campos de telefone
     const camposTelefone = document.querySelectorAll('input[name="telefone"], input[name="telefone_responsavel1"], input[name="telefone_responsavel2"]');
     camposTelefone.forEach(function(campo) {
         aplicarMascaraTelefone(campo);
+    });
+    
+    // Aplica a máscara a todos os campos de data
+    const camposData = document.querySelectorAll('input[name="data_nascimento"], input[name="data_matricula"]');
+    camposData.forEach(function(campo) {
+        aplicarMascaraData(campo);
     });
 });
 </script>
