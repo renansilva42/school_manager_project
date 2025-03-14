@@ -32,6 +32,7 @@ class BaseForm(forms.ModelForm):
             css_classes = ['form-control']
             if isinstance(field, forms.DateField):
                 field.widget.attrs.update({'type': 'date'})
+                field.input_formats = ['%d/%m/%Y']  # Force DD/MM/YYYY format
             if isinstance(field, forms.FileField):
                 css_classes.append('form-control-file')
             field.widget.attrs.update({

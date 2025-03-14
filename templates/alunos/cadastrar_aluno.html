@@ -671,6 +671,27 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Define o placeholder para mostrar o formato esperado
         input.setAttribute('placeholder', 'DD/MM/AAAA');
+        
+        // Adiciona um evento para garantir o formato correto antes do envio do formulário
+        input.form.addEventListener('submit', function() {
+            // Certifica-se de que a data está no formato DD/MM/YYYY
+            if (input.value) {
+                // Verifica se a data está no formato correto
+                const dateParts = input.value.split('/');
+                if (dateParts.length === 3) {
+                    // Já está no formato correto, não faz nada
+                } else {
+                    // Tenta converter para o formato correto
+                    const dateObj = new Date(input.value);
+                    if (!isNaN(dateObj.getTime())) {
+                        const day = String(dateObj.getDate()).padStart(2, '0');
+                        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                        const year = dateObj.getFullYear();
+                        input.value = `${day}/${month}/${year}`;
+                    }
+                }
+            }
+        });
     }
     
     // Aplica a máscara a todos os campos de telefone
