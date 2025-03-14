@@ -42,6 +42,24 @@ class BaseForm(forms.ModelForm):
 class AlunoForm(BaseForm):
     foto_base64 = forms.CharField(required=False, widget=forms.HiddenInput())
     
+    # Campos de telefone com help_text melhorado
+    telefone = forms.CharField(
+        max_length=15, 
+        required=False,
+        help_text="Digite apenas os números. O formato será aplicado automaticamente: (XX) XXXXX-XXXX"
+    )
+    
+    telefone_responsavel1 = forms.CharField(
+        max_length=15,
+        help_text="Digite apenas os números. O formato será aplicado automaticamente: (XX) XXXXX-XXXX"
+    )
+    
+    telefone_responsavel2 = forms.CharField(
+        max_length=15,
+        required=False,
+        help_text="Digite apenas os números. O formato será aplicado automaticamente: (XX) XXXXX-XXXX"
+    )
+    
     def clean_matricula(self):
         matricula = self.cleaned_data.get('matricula')
         return str(matricula)

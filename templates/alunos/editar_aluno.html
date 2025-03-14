@@ -538,4 +538,45 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<!-- Script para formatação automática de telefones -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Função para aplicar máscara de telefone
+    function aplicarMascaraTelefone(input) {
+        input.addEventListener('input', function(e) {
+            let valor = e.target.value.replace(/\D/g, ''); // Remove tudo que não é dígito
+            
+            if (valor.length > 0) {
+                // Formata como (XX) XXXXX-XXXX ou (XX) XXXX-XXXX dependendo do tamanho
+                if (valor.length <= 10) {
+                    // Formato para telefones fixos: (XX) XXXX-XXXX
+                    valor = valor.replace(/^(\d{2})(\d)/g, '($1) $2');
+                    valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
+                } else {
+                    // Formato para celulares: (XX) XXXXX-XXXX
+                    valor = valor.replace(/^(\d{2})(\d)/g, '($1) $2');
+                    valor = valor.replace(/(\d{5})(\d)/, '$1-$2');
+                }
+                
+                // Limita ao tamanho máximo
+                if (valor.length > 15) {
+                    valor = valor.substring(0, 15);
+                }
+            }
+            
+            e.target.value = valor;
+        });
+        
+        // Define o placeholder para mostrar o formato esperado
+        input.setAttribute('placeholder', '(XX) XXXXX-XXXX');
+    }
+    
+    // Aplica a máscara a todos os campos de telefone
+    const camposTelefone = document.querySelectorAll('input[name="telefone"], input[name="telefone_responsavel1"], input[name="telefone_responsavel2"]');
+    camposTelefone.forEach(function(campo) {
+        aplicarMascaraTelefone(campo);
+    });
+});
+</script>
 {% endblock %}
