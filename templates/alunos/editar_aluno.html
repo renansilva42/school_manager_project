@@ -123,8 +123,10 @@
                         <button type="button" id="upload-photo-btn" class="btn btn-outline-primary">Escolher Arquivo</button>
                         <button type="button" id="take-photo-btn" class="btn btn-outline-success">Tirar Foto</button>
                     </div>
-                    <div id="preview-container" class="text-center mb-3" {% if not form.instance.foto %}style="display: none;"{% endif %}>
-                        {% if form.instance.foto %}
+                    <div id="preview-container" class="text-center mb-3" {% if not form.instance.foto and not form.data.foto_base64 %}style="display: none;"{% endif %}>
+                        {% if form.data.foto_base64 %}
+                            <img id="photo-preview" src="{{ form.data.foto_base64 }}" class="img-thumbnail">
+                        {% elif form.instance.foto %}
                             <img id="photo-preview" src="{{ form.instance.foto.url }}" class="img-thumbnail">
                         {% else %}
                             <img id="photo-preview" class="img-thumbnail">

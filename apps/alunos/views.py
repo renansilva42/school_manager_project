@@ -372,6 +372,20 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
         storage = messages.get_messages(request)
         storage.used = True
         return super().get(request, *args, **kwargs)
+        
+    def form_invalid(self, form):
+        """
+        If the form is invalid, preserve the photo data so it doesn't disappear
+        when the form is resubmitted.
+        """
+        # Get the photo data from the request
+        foto_base64 = self.request.POST.get('foto_base64')
+        if foto_base64 and foto_base64.startswith('data:image'):
+            # Add the base64 data back to the form so it's available in the template
+            form.data = form.data.copy()
+            form.data['foto_base64'] = foto_base64
+            
+        return super().form_invalid(form)
     
     def form_valid(self, form):
         try:
@@ -515,6 +529,20 @@ class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
         except Aluno.DoesNotExist:
             messages.error(self.request, 'Aluno não encontrado')
             return redirect('alunos:lista')
+            
+    def form_invalid(self, form):
+        """
+        If the form is invalid, preserve the photo data so it doesn't disappear
+        when the form is resubmitted.
+        """
+        # Get the photo data from the request
+        foto_base64 = self.request.POST.get('foto_base64')
+        if foto_base64 and foto_base64.startswith('data:image'):
+            # Add the base64 data back to the form so it's available in the template
+            form.data = form.data.copy()
+            form.data['foto_base64'] = foto_base64
+            
+        return super().form_invalid(form)
     
     def form_valid(self, form):
         try:

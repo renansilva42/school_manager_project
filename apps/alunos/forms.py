@@ -327,14 +327,17 @@ class AlunoForm(BaseForm):
         """Validate unique fields considering existing records"""
         for field in ['matricula', 'email', 'cpf']:
             value = cleaned_data.get(field)
-            if value:
-                query = {field: value}
-                if self.instance.pk:
-                    if Aluno.objects.filter(**query).exclude(pk=self.instance.pk).exists():
-                        raise ValidationError({field: _(f"Este {field} já está em uso.")})
-                else:
-                    if Aluno.objects.filter(**query).exists():
-                        raise ValidationError({field: _(f"Este {field} já está em uso.")})
+            # Skip validation for empty values
+            if not value:
+                continue
+                
+            query = {field: value}
+            if self.instance.pk:
+                if Aluno.objects.filter(**query).exclude(pk=self.instance.pk).exists():
+                    raise ValidationError({field: _(f"Este {field} já está em uso.")})
+            else:
+                if Aluno.objects.filter(**query).exists():
+                    raise ValidationError({field: _(f"Este {field} já está em uso.")})
 
     def save(self, commit=True):
         """Enhanced save method with user tracking"""

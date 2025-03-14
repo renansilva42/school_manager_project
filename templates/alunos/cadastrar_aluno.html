@@ -121,8 +121,12 @@
                         <button type="button" id="upload-photo-btn" class="btn btn-outline-primary">Escolher Arquivo</button>
                         <button type="button" id="take-photo-btn" class="btn btn-outline-success">Tirar Foto</button>
                     </div>
-                    <div id="preview-container" class="text-center mb-3" style="display: none;">
-                        <img id="photo-preview" class="img-thumbnail">
+                    <div id="preview-container" class="text-center mb-3" {% if not form.data.foto_base64 %}style="display: none;"{% endif %}>
+                        {% if form.data.foto_base64 %}
+                            <img id="photo-preview" src="{{ form.data.foto_base64 }}" class="img-thumbnail">
+                        {% else %}
+                            <img id="photo-preview" class="img-thumbnail">
+                        {% endif %}
                         <button type="button" id="remove-photo-btn" class="btn btn-sm btn-danger mt-2">Remover Foto</button>
                     </div>
                     <video id="camera-preview" style="display: none; width: 100%; max-height: 300px;" autoplay></video>
