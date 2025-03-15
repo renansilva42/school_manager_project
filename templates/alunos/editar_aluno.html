@@ -159,7 +159,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="id_data_nascimento">Data de Nascimento</label>
-                            <input type="text" name="data_nascimento" id="id_data_nascimento" class="form-control datepicker" placeholder="DD/MM/AAAA" value="{{ form.data_nascimento.value|default:'' }}">
+                            <input type="text" name="data_nascimento" id="id_data_nascimento" class="form-control datepicker" placeholder="DD/MM/AAAA" value="{{ form.data_nascimento.value|date:'d/m/Y'|default:'' }}">
                             <small class="form-text text-muted">Digite a data no formato DD/MM/AAAA</small>
                         </div>
                     </div>
@@ -253,7 +253,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="id_data_matricula">Data de Matrícula</label>
-                            <input type="text" name="data_matricula" id="id_data_matricula" class="form-control datepicker" placeholder="DD/MM/AAAA" value="{{ form.data_matricula.value|default:'' }}">
+                            <input type="text" name="data_matricula" id="id_data_matricula" class="form-control datepicker" placeholder="DD/MM/AAAA" value="{{ form.data_matricula.value|date:'d/m/Y'|default:'' }}">
                             <small class="form-text text-muted">Digite a data no formato DD/MM/AAAA</small>
                         </div>
                     </div>
