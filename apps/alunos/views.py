@@ -385,6 +385,12 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
             form.data = form.data.copy()
             form.data['foto_base64'] = foto_base64
             
+            # Log that we're preserving the photo
+            logger.info("Preservando foto após erro de validação do formulário")
+            
+        # Log form errors for debugging
+        logger.error(f"Erros de validação do formulário: {form.errors}")
+            
         return super().form_invalid(form)
     
     def form_valid(self, form):
@@ -541,6 +547,12 @@ class AlunoUpdateView(AdminRequiredMixin, BaseAlunoView, UpdateView):
             # Add the base64 data back to the form so it's available in the template
             form.data = form.data.copy()
             form.data['foto_base64'] = foto_base64
+            
+            # Log that we're preserving the photo
+            logger.info("Preservando foto após erro de validação do formulário")
+            
+        # Log form errors for debugging
+        logger.error(f"Erros de validação do formulário: {form.errors}")
             
         return super().form_invalid(form)
     
