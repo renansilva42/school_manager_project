@@ -126,9 +126,11 @@
                         <button type="button" id="take-photo-btn" class="btn btn-outline-success" style="max-width: 49%;">Tirar Foto</button>
                         <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;">
                     </div>
-                    <div id="preview-container" class="text-center mb-3" {% if not form.data.foto_base64 %}style="display: none;"{% endif %}>
+                    <div id="preview-container" class="text-center mb-3" {% if not form.data.foto_base64 and not form.instance.foto %}style="display: none;"{% endif %}>
                         {% if form.data.foto_base64 %}
                             <img id="photo-preview" src="{{ form.data.foto_base64 }}" class="img-thumbnail">
+                        {% elif form.instance.foto %}
+                            <img id="photo-preview" src="{{ form.instance.foto.url }}" class="img-thumbnail">
                         {% else %}
                             <img id="photo-preview" class="img-thumbnail">
                         {% endif %}
@@ -161,7 +163,10 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-6">{{ form.cpf|as_crispy_field }}</div>
+                    <div class="col-md-6">
+                        {{ form.cpf|as_crispy_field }}
+                        <small class="form-text text-muted">Este campo é opcional e pode ser deixado em branco.</small>
+                    </div>
                     <div class="col-md-6">{{ form.rg|as_crispy_field }}</div>
                 </div>
             </div>
@@ -379,7 +384,11 @@
     fileInput.addEventListener('change', async (e) => {
         if (fileInput.files && fileInput.files[0]) {
             const reader = new FileReader();
-            reader.onload = async (e) => await updateImagePreview(e.target.result);
+            reader.onload = async (e) => {
+                await updateImagePreview(e.target.result);
+                // Garantir que o preview seja exibido
+                previewContainer.style.display = 'block';
+            };
             reader.readAsDataURL(fileInput.files[0]);
         }
     });
@@ -405,7 +414,11 @@
     cameraInput.addEventListener('change', async (e) => {
         if (cameraInput.files && cameraInput.files[0]) {
             const reader = new FileReader();
-            reader.onload = async (e) => await updateImagePreview(e.target.result);
+            reader.onload = async (e) => {
+                await updateImagePreview(e.target.result);
+                // Garantir que o preview seja exibido
+                previewContainer.style.display = 'block';
+            };
             reader.readAsDataURL(cameraInput.files[0]);
         }
     });
@@ -458,6 +471,8 @@
             
             const capturedImage = photoCanvas.toDataURL('image/jpeg', 1.0);
             await updateImagePreview(capturedImage);
+            // Garantir que o preview seja exibido
+            previewContainer.style.display = 'block';
             stopCamera();
         } catch (error) {
             console.error('Erro ao capturar foto:', error);

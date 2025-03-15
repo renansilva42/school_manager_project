@@ -44,7 +44,7 @@ class AlunoForm(BaseForm):
     cpf = forms.CharField(
         max_length=14,
         required=False,
-        help_text="CPF no formato: 999.999.999-99. Este campo é opcional."
+        help_text="CPF no formato: 999.999.999-99. Este campo é opcional e pode ser deixado em branco."
     )
     
     # Campos de telefone com help_text aprimorado
