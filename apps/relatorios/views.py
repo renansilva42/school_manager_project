@@ -46,21 +46,50 @@ def gerar_pdf(data, titulo, colunas):
 @login_required
 @user_passes_test(is_teacher_or_admin)
 def relatorios(request):
-    # Get total number of students
+    # Get total students
     total_alunos = Aluno.objects.filter(ativo=True).count()
     
-    # Get total number of classes (unique combinations of ano and turma)
-    total_turmas = Aluno.objects.filter(ativo=True).values('ano', 'turma').distinct().count()
+    # Get total unique classes
+    total_turmas = Aluno.objects.filter(ativo=True).values('turma').distinct().count()
     
-    # Get number of students by shift
-    alunos_manha = Aluno.objects.filter(ativo=True, turno=TurnoChoices.MANHA).count()
-    alunos_tarde = Aluno.objects.filter(ativo=True, turno=TurnoChoices.TARDE).count()
+    # Get students by shift
+    alunos_manha = Aluno.objects.filter(ativo=True, turno='M').count()
+    alunos_tarde = Aluno.objects.filter(ativo=True, turno='T').count()
+    
+    # Get students by education level (EFI - Anos Iniciais, EFF - Anos Finais)
+    alunos_efi = Aluno.objects.filter(
+        ativo=True,
+        serie__in=['3', '4', '5']
+    ).count()
+    
+    alunos_eff = Aluno.objects.filter(
+        ativo=True,
+        serie__in=['6', '7', '8', '9']
+    ).count()
+    
+    # Get students by grade
+    alunos_3ano = Aluno.objects.filter(ativo=True, serie='3').count()
+    alunos_4ano = Aluno.objects.filter(ativo=True, serie='4').count()
+    alunos_5ano = Aluno.objects.filter(ativo=True, serie='5').count()
+    alunos_6ano = Aluno.objects.filter(ativo=True, serie='6').count()
+    alunos_7ano = Aluno.objects.filter(ativo=True, serie='7').count()
+    alunos_8ano = Aluno.objects.filter(ativo=True, serie='8').count()
+    alunos_9ano = Aluno.objects.filter(ativo=True, serie='9').count()
 
     context = {
         'total_alunos': total_alunos,
         'total_turmas': total_turmas,
         'alunos_manha': alunos_manha,
         'alunos_tarde': alunos_tarde,
+        'alunos_efi': alunos_efi,
+        'alunos_eff': alunos_eff,
+        'alunos_3ano': alunos_3ano,
+        'alunos_4ano': alunos_4ano,
+        'alunos_5ano': alunos_5ano,
+        'alunos_6ano': alunos_6ano,
+        'alunos_7ano': alunos_7ano,
+        'alunos_8ano': alunos_8ano,
+        'alunos_9ano': alunos_9ano,
     }
     
     return render(request, 'relatorios/relatorios.html', context)
