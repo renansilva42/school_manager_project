@@ -56,7 +56,8 @@
     }
     
     .btn-group {
-        gap: 0.5rem;
+        display: flex;
+        gap: 0.5rem; /* Espaçamento padrão em telas maiores */
     }
     
     /* Melhorias para dispositivos móveis */
@@ -70,8 +71,18 @@
         }
         
         .btn-group {
-            flex-direction: column;
-            width: 100%;
+            flex-direction: column; /* Empilha os botões verticalmente */
+            width: 100%; /* Ocupa toda a largura disponível */
+        }
+
+        .btn-group .btn {
+            width: 100%; /* Cada botão ocupa toda a largura */
+            margin-bottom: 10px; /* Espaçamento maior entre os botões */
+            font-size: 1.2rem; /* Tamanho de fonte maior para melhor legibilidade */
+            padding: 10px 20px; /* Padding ajustado para facilitar o toque */
+            max-width: none; /* Remove qualquer restrição de largura máxima */
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     }
     
@@ -121,9 +132,9 @@
             <div class="card-body">
                 <div class="custom-file-container">
                     <input type="file" name="foto" id="id_foto" accept="image/*" class="custom-file-input" style="display: none;">
-                    <div class="btn-group w-100 mb-2" style="max-width: 100%; overflow: hidden;">
-                        <button type="button" id="upload-photo-btn" class="btn btn-outline-primary" style="max-width: 49%;">Escolher Arquivo</button>
-                        <button type="button" id="take-photo-btn" class="btn btn-outline-success" style="max-width: 49%;">Tirar Foto</button>
+                    <div class="btn-group w-100 mb-2">
+                        <button type="button" id="upload-photo-btn" class="btn btn-outline-primary">Escolher Arquivo</button>
+                        <button type="button" id="take-photo-btn" class="btn btn-outline-success">Tirar Foto</button>
                         <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;">
                     </div>
                     <div id="preview-container" class="text-center mb-3" {% if not form.data.foto_base64 and not form.instance.foto %}style="display: none;"{% endif %}>
