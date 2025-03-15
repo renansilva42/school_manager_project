@@ -104,7 +104,7 @@
         <div class="alert alert-{% if message.tags %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
             {{ message }}
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
+                <span aria-hidden="true">×</span>
             </button>
         </div>
         {% endfor %}
@@ -288,224 +288,214 @@
 
 <!-- Script para captura de foto -->
 <script>
-// Variáveis para os elementos da interface
-const fileInput = document.getElementById('id_foto');
-const uploadBtn = document.getElementById('upload-photo-btn');
-const takePhotoBtn = document.getElementById('take-photo-btn');
-const previewContainer = document.getElementById('preview-container');
-const photoPreview = document.getElementById('photo-preview');
-const removePhotoBtn = document.getElementById('remove-photo-btn');
-const cameraPreview = document.getElementById('camera-preview');
-const photoCanvas = document.getElementById('photo-canvas');
-const cameraControls = document.getElementById('camera-controls');
-const capturePhotoBtn = document.getElementById('capture-photo-btn');
-const cancelCameraBtn = document.getElementById('cancel-camera-btn');
-const cameraInput = document.getElementById('camera-input');
-const fotoBase64Input = document.getElementById('id_foto_base64');
-
-let stream = null;
-let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-// Evento para o botão de upload de arquivo
-uploadBtn.addEventListener('click', () => {
-    fileInput.click();
-});
-
-// Evento para quando um arquivo é selecionado
-fileInput.addEventListener('change', (e) => {
-    if (fileInput.files && fileInput.files[0]) {
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            photoPreview.src = e.target.result;
-            previewContainer.style.display = 'block';
-            fotoBase64Input.value = e.target.result;
-            
-            // Esconder a câmera se estiver ativa
-            stopCamera();
-            
-            // Se houver um checkbox para limpar a foto, desmarcá-lo
-            if (document.getElementById('id_foto-clear_id')) {
-                document.getElementById('id_foto-clear_id').checked = false;
-            }
-        };
-        
-        reader.readAsDataURL(fileInput.files[0]);
-    }
-});
-
-// Evento para o botão de remover foto
-removePhotoBtn.addEventListener('click', () => {
-    fileInput.value = '';
-    photoPreview.src = '';
-    fotoBase64Input.value = '';
-    previewContainer.style.display = 'none';
+    // Variáveis para os elementos da interface
+    const fileInput = document.getElementById('id_foto');
+    const uploadBtn = document.getElementById('upload-photo-btn');
+    const takePhotoBtn = document.getElementById('take-photo-btn');
+    const previewContainer = document.getElementById('preview-container');
+    const photoPreview = document.getElementById('photo-preview');
+    const removePhotoBtn = document.getElementById('remove-photo-btn');
+    const cameraPreview = document.getElementById('camera-preview');
+    const photoCanvas = document.getElementById('photo-canvas');
+    const cameraControls = document.getElementById('camera-controls');
+    const capturePhotoBtn = document.getElementById('capture-photo-btn');
+    const cancelCameraBtn = document.getElementById('cancel-camera-btn');
+    const cameraInput = document.getElementById('camera-input');
+    const fotoBase64Input = document.getElementById('id_foto_base64');
     
-    // Adicionar um campo oculto para indicar que a foto deve ser removida
-    if (!document.getElementById('id_foto-clear_id')) {
-        const clearInput = document.createElement('input');
-        clearInput.type = 'checkbox';
-        clearInput.name = 'foto-clear';
-        clearInput.id = 'id_foto-clear_id';
-        clearInput.checked = true;
-        clearInput.style.display = 'none';
-        fileInput.parentNode.appendChild(clearInput);
-    } else {
-        document.getElementById('id_foto-clear_id').checked = true;
-    }
-});
+    let stream = null;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-// Evento para o botão de tirar foto
-takePhotoBtn.addEventListener('click', () => {
-    if (isMobile) {
-        // Em dispositivos móveis, usar a câmera nativa
-        cameraInput.click();
-    } else {
-        // Em desktop, usar a implementação de webcam
-        startCamera();
-    }
-});
-
-// Evento para quando uma foto é capturada pelo dispositivo móvel
-cameraInput.addEventListener('change', (e) => {
-    if (cameraInput.files && cameraInput.files[0]) {
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            // Criar uma imagem temporária para corrigir a orientação
+    // Função para processar e otimizar a imagem
+    async function processImage(imageData) {
+        return new Promise((resolve, reject) => {
             const img = new Image();
-            img.onload = function() {
-                // Criar um canvas para manipular a imagem
+            img.onload = () => {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                
-                // Definir as dimensões do canvas
-                canvas.width = img.width;
-                canvas.height = img.height;
-                
-                // Desenhar a imagem no canvas com a orientação correta
-                ctx.drawImage(img, 0, 0);
-                
-                // Converter o canvas para uma URL de dados (formato base64)
-                const dataUrl = canvas.toDataURL('image/jpeg');
-                
-                // Exibir a imagem corrigida no preview
-                photoPreview.src = dataUrl;
-                previewContainer.style.display = 'block';
-                fotoBase64Input.value = dataUrl;
-                
-                // Converter a URL de dados para um arquivo Blob e adicionar ao input de arquivo
-                fetch(dataUrl)
-                    .then(res => res.blob())
-                    .then(blob => {
-                        const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
-                        
-                        // Criar um DataTransfer para simular a seleção de arquivo
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(file);
-                        fileInput.files = dataTransfer.files;
-                        
-                        // Se houver um checkbox para limpar a foto, desmarcá-lo
-                        if (document.getElementById('id_foto-clear_id')) {
-                            document.getElementById('id_foto-clear_id').checked = false;
-                        }
-                    });
-            };
-            
-            // Carregar a imagem a partir do resultado do FileReader
-            img.src = e.target.result;
-        };
-        
-        reader.readAsDataURL(cameraInput.files[0]);
-    }
-});
 
-// Função para iniciar a câmera (apenas para desktop)
-function startCamera() {
-    // Verificar se o navegador suporta getUserMedia
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function(mediaStream) {
+                // Definir dimensões máximas para evitar imagens muito grandes
+                const maxWidth = 800;
+                const maxHeight = 800;
+                let width = img.width;
+                let height = img.height;
+
+                // Redimensionar mantendo a proporção
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = (width * maxHeight) / height;
+                        height = maxHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Converter para JPEG com qualidade otimizada
+                const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                resolve(optimizedDataUrl);
+            };
+            img.onerror = () => reject(new Error('Erro ao processar imagem'));
+            img.src = imageData;
+        });
+    }
+
+    // Função para atualizar o preview e os inputs
+    async function updateImagePreview(imageData) {
+        try {
+            const optimizedImage = await processImage(imageData);
+            
+            // Atualizar o preview
+            photoPreview.src = optimizedImage;
+            previewContainer.style.display = 'block';
+            fotoBase64Input.value = optimizedImage;
+
+            // Converter para arquivo e associar ao input
+            const response = await fetch(optimizedImage);
+            const blob = await response.blob();
+            const file = new File([blob], "photo.jpg", {
+                type: "image/jpeg",
+                lastModified: new Date().getTime()
+            });
+
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+
+            // Log para depuração
+            console.log('Arquivo associado ao input:', fileInput.files[0]);
+
+            // Se houver um checkbox para limpar a foto, desmarcá-lo
+            const clearCheckbox = document.getElementById('id_foto-clear_id');
+            if (clearCheckbox) {
+                clearCheckbox.checked = false;
+            }
+        } catch (error) {
+            console.error('Erro ao processar imagem:', error);
+            alert('Erro ao processar imagem. Tente novamente.');
+        }
+    }
+
+    // Evento para upload de arquivo
+    uploadBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (e) => {
+        if (fileInput.files && fileInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = async (e) => await updateImagePreview(e.target.result);
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+    });
+
+    // Evento para remover foto
+    removePhotoBtn.addEventListener('click', () => {
+        fileInput.value = '';
+        photoPreview.src = '';
+        fotoBase64Input.value = '';
+        previewContainer.style.display = 'none';
+
+        // Marcar o checkbox para limpar a foto, se existir
+        const clearCheckbox = document.getElementById('id_foto-clear_id');
+        if (clearCheckbox) {
+            clearCheckbox.checked = true;
+        } else {
+            // Criar um campo oculto para indicar que a foto deve ser removida
+            const clearInput = document.createElement('input');
+            clearInput.type = 'checkbox';
+            clearInput.name = 'foto-clear';
+            clearInput.id = 'id_foto-clear_id';
+            clearInput.checked = true;
+            clearInput.style.display = 'none';
+            fileInput.parentNode.appendChild(clearInput);
+        }
+    });
+
+    // Evento para tirar foto
+    takePhotoBtn.addEventListener('click', () => {
+        if (isMobile) {
+            cameraInput.click();
+        } else {
+            startCamera();
+        }
+    });
+
+    // Captura de foto em dispositivos móveis
+    cameraInput.addEventListener('change', async (e) => {
+        if (cameraInput.files && cameraInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = async (e) => await updateImagePreview(e.target.result);
+            reader.readAsDataURL(cameraInput.files[0]);
+        }
+    });
+
+    // Função para iniciar a câmera
+    function startCamera() {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    facingMode: "environment" // Prefere câmera traseira, mas usa frontal se necessário
+                }
+            })
+            .then((mediaStream) => {
                 stream = mediaStream;
                 cameraPreview.srcObject = mediaStream;
                 cameraPreview.style.display = 'block';
                 cameraControls.style.display = 'flex';
                 cameraControls.style.justifyContent = 'center';
                 cameraControls.style.gap = '10px';
-                
-                // Esconder o preview se estiver visível
                 previewContainer.style.display = 'none';
             })
-            .catch(function(error) {
-                console.error("Erro ao acessar a câmera: ", error);
-                alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
+            .catch((error) => {
+                console.error("Erro ao acessar a câmera:", error);
+                alert("Não foi possível acessar a câmera. Verifique as permissões no navegador.");
             });
-    } else {
-        alert("Seu navegador não suporta acesso à câmera.");
+        } else {
+            alert("Seu navegador não suporta acesso à câmera.");
+        }
     }
-}
 
-// Evento para o botão de capturar foto
-capturePhotoBtn.addEventListener('click', () => {
-    // Configurar o canvas para capturar a imagem
-    const context = photoCanvas.getContext('2d');
-    photoCanvas.width = cameraPreview.videoWidth;
-    photoCanvas.height = cameraPreview.videoHeight;
-    
-    // Desenhar o frame atual do vídeo no canvas
-    context.drawImage(cameraPreview, 0, 0, photoCanvas.width, photoCanvas.height);
-    
-    // Converter o canvas para uma URL de dados (formato base64)
-    const dataUrl = photoCanvas.toDataURL('image/jpeg');
-    
-    // Exibir a imagem capturada no preview
-    photoPreview.src = dataUrl;
-    previewContainer.style.display = 'block';
-    
-    // Armazenar a imagem em base64 no input oculto
-    fotoBase64Input.value = dataUrl;
-    
-    // Converter a URL de dados para um arquivo Blob e adicionar ao input de arquivo
-    fetch(dataUrl)
-        .then(res => res.blob())
-        .then(blob => {
-            const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+    // Função para parar a câmera
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+        cameraPreview.style.display = 'none';
+        cameraControls.style.display = 'none';
+    }
+
+    // Evento para capturar foto
+    capturePhotoBtn.addEventListener('click', async () => {
+        try {
+            const context = photoCanvas.getContext('2d');
+            photoCanvas.width = cameraPreview.videoWidth;
+            photoCanvas.height = cameraPreview.videoHeight;
+            context.drawImage(cameraPreview, 0, 0, photoCanvas.width, photoCanvas.height);
             
-            // Criar um DataTransfer para simular a seleção de arquivo
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            fileInput.files = dataTransfer.files;
-            
-            // Se houver um checkbox para limpar a foto, desmarcá-lo
-            if (document.getElementById('id_foto-clear_id')) {
-                document.getElementById('id_foto-clear_id').checked = false;
-            }
-        });
-    
-    // Parar a câmera
-    stopCamera();
-});
+            const capturedImage = photoCanvas.toDataURL('image/jpeg', 1.0);
+            await updateImagePreview(capturedImage);
+            stopCamera();
+        } catch (error) {
+            console.error('Erro ao capturar foto:', error);
+            alert('Erro ao capturar foto. Tente novamente.');
+        }
+    });
 
-// Evento para o botão de cancelar câmera
-cancelCameraBtn.addEventListener('click', () => {
-    stopCamera();
-    
-    // Se já havia uma foto, mostrar o preview novamente
-    if (photoPreview.src && photoPreview.src !== window.location.href) {
-        previewContainer.style.display = 'block';
-    }
-});
-
-// Função para parar a câmera
-function stopCamera() {
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-        stream = null;
-    }
-    
-    cameraPreview.style.display = 'none';
-    cameraControls.style.display = 'none';
-}
+    // Evento para cancelar a câmera
+    cancelCameraBtn.addEventListener('click', () => {
+        stopCamera();
+        if (photoPreview.src && photoPreview.src !== window.location.href) {
+            previewContainer.style.display = 'block';
+        }
+    });
 </script>
 
 <!-- Script para seleção dinâmica de turmas e turnos -->
@@ -513,84 +503,60 @@ function stopCamera() {
 // Função para atualizar as opções de turno com base no nível selecionado
 function updateTurnoChoices(nivel) {
     const turnoSelect = document.getElementById('id_turno');
-    // Limpar opções atuais
     turnoSelect.innerHTML = '';
     
     if (nivel === 'EFI') {
-        // Para Ensino Fundamental Anos Iniciais, apenas turno da manhã é disponível
         const optElement = document.createElement('option');
         optElement.value = 'M';
         optElement.textContent = 'Manhã';
         turnoSelect.appendChild(optElement);
-        
-        // Selecionar automaticamente
         turnoSelect.value = 'M';
-        
-        // Desabilitar o select para evitar alterações
         turnoSelect.disabled = true;
     } else {
-        // Para Ensino Fundamental Anos Finais, ambos os turnos são disponíveis
         turnoSelect.disabled = false;
-        
-        // Adicionar opção padrão
         const defaultOpt = document.createElement('option');
         defaultOpt.value = '';
         defaultOpt.textContent = 'Selecione um Turno';
         turnoSelect.appendChild(defaultOpt);
-        
-        // Adicionar opções de turno
         const options = [
             {value: 'M', text: 'Manhã'},
             {value: 'T', text: 'Tarde'}
         ];
-        
         options.forEach(option => {
             const optElement = document.createElement('option');
             optElement.value = option.value;
             optElement.textContent = option.text;
             turnoSelect.appendChild(optElement);
         });
-        
-        // Selecionar a opção padrão
         turnoSelect.value = '';
     }
-    
-    // Atualizar as opções de ano após atualizar o turno
     updateAnoChoices(turnoSelect.value, nivel);
 }
 
 // Função para atualizar as opções de ano com base no turno e nível selecionados
 function updateAnoChoices(turno, nivel) {
     const anoSelect = document.getElementById('id_ano');
-    // Limpar opções atuais
     anoSelect.innerHTML = '';
     
-    // Adicionar opção padrão se não for EFI
     if (nivel !== 'EFI' && turno === '') {
         const defaultOpt = document.createElement('option');
         defaultOpt.value = '';
         defaultOpt.textContent = 'Selecione um Ano';
         anoSelect.appendChild(defaultOpt);
-        
-        // Desabilitar o select até que um turno seja selecionado
         anoSelect.disabled = true;
         return;
     }
     
-    // Habilitar o select
     anoSelect.disabled = false;
-    
     let options = [];
     
     if (nivel === 'EFI') {
-        // Ensino Fundamental Anos Iniciais - apenas turno da manhã
         options = [
             {value: '3', text: '3º Ano'},
             {value: '4', text: '4º Ano'},
             {value: '5', text: '5º Ano'},
         ];
     } else if (nivel === 'EFF') {
-        // Ensino Fundamental Anos Finais
         if (turno === 'M') {
             options = [
                 {value: '6', text: '6º Ano'},
@@ -608,7 +574,6 @@ function updateAnoChoices(turno, nivel) {
         }
     }
     
-    // Adicionar novas opções
     options.forEach(option => {
         const optElement = document.createElement('option');
         optElement.value = option.value;
@@ -617,15 +582,11 @@ function updateAnoChoices(turno, nivel) {
     });
 }
 
-// Inicializar as opções quando a página carrega
 document.addEventListener('DOMContentLoaded', function() {
     const nivelSelect = document.getElementById('id_nivel');
     const turnoSelect = document.getElementById('id_turno');
-    
-    // Desabilitar o campo turno inicialmente
     turnoSelect.disabled = true;
     
-    // Configurar os event listeners
     nivelSelect.addEventListener('change', function() {
         updateTurnoChoices(this.value);
     });
@@ -634,25 +595,16 @@ document.addEventListener('DOMContentLoaded', function() {
         updateAnoChoices(this.value, nivelSelect.value);
     });
     
-    // Caso especial para edição: preservar os valores originais
     const originalNivel = nivelSelect.value;
     const originalTurno = turnoSelect.value;
     const originalAno = document.getElementById('id_ano').value;
     
-    // Se estamos editando um aluno existente, garantir que os valores originais sejam mantidos
     if (originalNivel) {
-        // Primeiro atualizar o turno com base no nível
         updateTurnoChoices(originalNivel);
-        
-        // Depois, se for EFF, garantir que o turno correto esteja selecionado
         if (originalNivel === 'EFF' && originalTurno) {
             turnoSelect.value = originalTurno;
         }
-        
-        // Finalmente, atualizar as opções de ano e selecionar o ano original
         updateAnoChoices(turnoSelect.value, originalNivel);
-        
-        // Encontrar e selecionar a opção de ano original
         const anoSelect = document.getElementById('id_ano');
         if (originalAno) {
             for (let i = 0; i < anoSelect.options.length; i++) {
@@ -669,76 +621,49 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Script para formatação automática de telefones e datas -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Função para aplicar máscara de telefone
     function aplicarMascaraTelefone(input) {
         input.addEventListener('input', function(e) {
-            let valor = e.target.value.replace(/\D/g, ''); // Remove tudo que não é dígito
-            
+            let valor = e.target.value.replace(/\D/g, '');
             if (valor.length > 0) {
-                // Formata como (XX) XXXXX-XXXX ou (XX) XXXX-XXXX dependendo do tamanho
                 if (valor.length <= 10) {
-                    // Formato para telefones fixos: (XX) XXXX-XXXX
                     valor = valor.replace(/^(\d{2})(\d)/g, '($1) $2');
                     valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
                 } else {
-                    // Formato para celulares: (XX) XXXXX-XXXX
                     valor = valor.replace(/^(\d{2})(\d)/g, '($1) $2');
                     valor = valor.replace(/(\d{5})(\d)/, '$1-$2');
                 }
-                
-                // Limita ao tamanho máximo
                 if (valor.length > 15) {
                     valor = valor.substring(0, 15);
                 }
             }
-            
             e.target.value = valor;
         });
-        
-        // Define o placeholder para mostrar o formato esperado
         input.setAttribute('placeholder', '(XX) XXXXX-XXXX');
     }
     
-    // Função para aplicar máscara de data
     function aplicarMascaraData(input) {
         input.addEventListener('input', function(e) {
-            let valor = e.target.value.replace(/\D/g, ''); // Remove tudo que não é dígito
-            
+            let valor = e.target.value.replace(/\D/g, '');
             if (valor.length > 0) {
-                // Formata como DD/MM/AAAA
                 if (valor.length <= 2) {
-                    // Apenas dia
                     valor = valor;
                 } else if (valor.length <= 4) {
-                    // Dia e mês
                     valor = valor.replace(/^(\d{2})(\d)/g, '$1/$2');
                 } else {
-                    // Dia, mês e ano
                     valor = valor.replace(/^(\d{2})(\d{2})(\d)/g, '$1/$2/$3');
                 }
-                
-                // Limita ao tamanho máximo
                 if (valor.length > 10) {
                     valor = valor.substring(0, 10);
                 }
             }
-            
             e.target.value = valor;
         });
-        
-        // Define o placeholder para mostrar o formato esperado
         input.setAttribute('placeholder', 'DD/MM/AAAA');
-        
-        // Adiciona um evento para garantir o formato correto antes do envio do formulário
         input.form.addEventListener('submit', function() {
-            // Certifica-se de que a data está no formato DD/MM/YYYY
             if (input.value) {
-                // Verifica se a data está no formato correto
                 const dateParts = input.value.split('/');
                 if (dateParts.length === 3) {
-                    // Já está no formato correto, não faz nada
                 } else {
-                    // Tenta converter para o formato correto
                     const dateObj = new Date(input.value);
                     if (!isNaN(dateObj.getTime())) {
                         const day = String(dateObj.getDate()).padStart(2, '0');
@@ -751,13 +676,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Aplica a máscara a todos os campos de telefone
     const camposTelefone = document.querySelectorAll('input[name="telefone"], input[name="telefone_responsavel1"], input[name="telefone_responsavel2"]');
     camposTelefone.forEach(function(campo) {
         aplicarMascaraTelefone(campo);
     });
     
-    // Aplica a máscara a todos os campos de data
     const camposData = document.querySelectorAll('input[name="data_nascimento"], input[name="data_matricula"]');
     camposData.forEach(function(campo) {
         aplicarMascaraData(campo);
