@@ -1,6 +1,7 @@
 import io
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required, user_passes_test
+from apps.alunos.models import Aluno, TurnoChoices
 from django.http import FileResponse
 from django.db.models import Avg, Count
 from reportlab.pdfgen import canvas
@@ -45,7 +46,24 @@ def gerar_pdf(data, titulo, colunas):
 @login_required
 @user_passes_test(is_teacher_or_admin)
 def relatorios(request):
-    return render(request, 'relatorios/relatorios.html')
+    # Get total number of students
+    total_alunos = Aluno.objects.filter(ativo=True).count()
+    
+    # Get total number of classes (unique combinations of ano and turma)
+    total_turmas = Aluno.objects.filter(ativo=True).values('ano', 'turma').distinct().count()
+    
+    # Get number of students by shift
+    alunos_manha = Aluno.objects.filter(ativo=True, turno=TurnoChoices.MANHA).count()
+    alunos_tarde = Aluno.objects.filter(ativo=True, turno=TurnoChoices.TARDE).count()
+
+    context = {
+        'total_alunos': total_alunos,
+        'total_turmas': total_turmas,
+        'alunos_manha': alunos_manha,
+        'alunos_tarde': alunos_tarde,
+    }
+    
+    return render(request, 'relatorios/relatorios.html', context)
 
 @login_required
 @user_passes_test(is_teacher_or_admin)
