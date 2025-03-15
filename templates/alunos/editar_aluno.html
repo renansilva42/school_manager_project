@@ -39,6 +39,16 @@
         transition: all 0.3s ease;
     }
     
+    .btn-outline-primary,
+    .btn-outline-success {
+    transition: all 0.3s ease;
+    }
+
+    .btn-outline-primary:hover,
+    .btn-outline-success:hover {
+    transform: translateY(-2px);
+    }
+
     .custom-file-container:hover {
         border-color: #007bff;
     }
@@ -60,9 +70,18 @@
     }
     
     .btn-group {
-        gap: 0.5rem;
-    }
-    
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.btn-group .btn {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
     /* Melhorias para dispositivos móveis */
     @media (max-width: 768px) {
         .btn {
@@ -74,9 +93,42 @@
         }
         
         .btn-group {
-            flex-direction: column;
-            width: 100%;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
         }
+
+        .btn-group .btn {
+        width: 100%;
+        margin: 0;
+        padding: 10px;
+        font-size: 14px;
+        max-width: 100%;
+        text-align: center;
+        }
+
+        #upload-photo-btn,
+        #take-photo-btn {
+        max-width: 100% !important;
+        margin-bottom: 8px;
+        }
+
+        .custom-file-container {
+        padding: 1rem;
+        }
+    
+        /* Ajuste do container dos botões */
+        .btn-group.w-100 {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        }
+
+        /* Espaçamento entre os botões */
+        .btn-group .btn:not(:last-child) {
+        margin-bottom: 8px;
+        }
+
     }
     
     /* Animações para feedback visual */
