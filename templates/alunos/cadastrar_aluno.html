@@ -509,11 +509,28 @@ function updateTurnoChoices(nivel) {
         // Selecionar automaticamente
         turnoSelect.value = 'M';
         
-        // Desabilitar o select para evitar alterações
-        turnoSelect.disabled = true;
+        // Usar readonly em vez de disabled para garantir que o valor seja enviado
+        turnoSelect.setAttribute('readonly', 'readonly');
+        turnoSelect.style.backgroundColor = '#e9ecef';
+        turnoSelect.style.cursor = 'not-allowed';
+        
+        // Adicionar um texto explicativo
+        const helpText = document.createElement('small');
+        helpText.className = 'form-text text-muted';
+        helpText.textContent = 'Ensino Fundamental Anos Iniciais só está disponível no turno da manhã';
+        if (!turnoSelect.nextElementSibling || !turnoSelect.nextElementSibling.classList.contains('form-text')) {
+            turnoSelect.parentNode.insertBefore(helpText, turnoSelect.nextSibling);
+        }
     } else {
         // Para Ensino Fundamental Anos Finais, ambos os turnos são disponíveis
-        turnoSelect.disabled = false;
+        turnoSelect.removeAttribute('readonly');
+        turnoSelect.style.backgroundColor = '';
+        turnoSelect.style.cursor = '';
+        
+        // Remover o texto explicativo se existir
+        if (turnoSelect.nextElementSibling && turnoSelect.nextElementSibling.classList.contains('form-text')) {
+            turnoSelect.nextElementSibling.remove();
+        }
         
         // Adicionar opção padrão
         const defaultOpt = document.createElement('option');
@@ -605,9 +622,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const nivelSelect = document.getElementById('id_nivel');
     const turnoSelect = document.getElementById('id_turno');
     
-    // Desabilitar o campo turno inicialmente
-    turnoSelect.disabled = true;
-    
     // Configurar os event listeners
     nivelSelect.addEventListener('change', function() {
         updateTurnoChoices(this.value);
@@ -620,6 +634,51 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar os campos com base nos valores atuais
     if (nivelSelect.value) {
         updateTurnoChoices(nivelSelect.value);
+    }
+    
+    // Se houver valores pré-selecionados, garantir que as opções corretas estejam disponíveis
+    const originalNivel = nivelSelect.value;
+    const originalTurno = turnoSelect.value;
+    const originalAno = document.getElementById('id_ano').value;
+    
+    if (originalNivel) {
+        updateTurnoChoices(originalNivel);
+        if (originalTurno) {
+            turnoSelect.value = originalTurno;
+        }
+        updateAnoChoices(turnoSelect.value, originalNivel);
+        const anoSelect = document.getElementById('id_ano');
+        if (originalAno) {
+            // Garantir que as opções de ano estejam carregadas antes de tentar selecionar
+            setTimeout(() => {
+                for (let i = 0; i < anoSelect.options.length; i++) {
+                    if (anoSelect.options[i].value === originalAno) {
+                        anoSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+                // Se não encontrou a opção, adicione-a
+                if (anoSelect.value !== originalAno) {
+                    const optElement = document.createElement('option');
+                    optElement.value = originalAno;
+                    
+                    // Determinar o texto apropriado
+                    let text = originalAno;
+                    if (originalAno === '3') text = '3º Ano';
+                    else if (originalAno === '4') text = '4º Ano';
+                    else if (originalAno === '5') text = '5º Ano';
+                    else if (originalAno === '6') text = '6º Ano';
+                    else if (originalAno === '7') text = '7º Ano';
+                    else if (originalAno === '8') text = '8º Ano';
+                    else if (originalAno === '901') text = '9º Ano - Turma 901';
+                    else if (originalAno === '902') text = '9º Ano - Turma 902';
+                    
+                    optElement.textContent = text;
+                    anoSelect.appendChild(optElement);
+                    anoSelect.value = originalAno;
+                }
+            }, 100);
+        }
     }
 });
 </script>

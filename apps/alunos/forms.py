@@ -129,13 +129,21 @@ class AlunoForm(BaseForm):
         # Processa arquivo de foto se existir
         elif foto_file:
             try:
-                # Validar tipo do arquivo
-                if not foto_file.content_type.startswith('image/'):
-                    raise ValidationError('O arquivo deve ser uma imagem')
-                
-                # Validar tamanho
-                if foto_file.size > 5 * 1024 * 1024:  # 5MB
-                    raise ValidationError('A foto não pode ter mais que 5MB')
+                # Verificar se é um arquivo recém-enviado ou um arquivo existente
+                if hasattr(foto_file, 'content_type'):
+                    # É um arquivo recém-enviado (UploadedFile)
+                    # Validar tipo do arquivo
+                    if not foto_file.content_type.startswith('image/'):
+                        raise ValidationError('O arquivo deve ser uma imagem')
+                    
+                    # Validar tamanho
+                    if foto_file.size > 5 * 1024 * 1024:  # 5MB
+                        raise ValidationError('A foto não pode ter mais que 5MB')
+                else:
+                    # É um arquivo existente (ImageFieldFile)
+                    # Verificar se o arquivo existe
+                    if not foto_file:
+                        return cleaned_data
                 
                 # Processar imagem
                 img = Image.open(foto_file)
@@ -155,7 +163,10 @@ class AlunoForm(BaseForm):
                 output.seek(0)
                 
                 # Gera um nome único para o arquivo mantendo o nome original
-                original_name = foto_file.name.split('.')[0]
+                if hasattr(foto_file, 'name'):
+                    original_name = foto_file.name.split('.')[0]
+                else:
+                    original_name = "photo"
                 unique_filename = f"alunos/fotos/{original_name}_{uuid.uuid4().hex[:8]}.jpg"
 
                 cleaned_data['foto'] = InMemoryUploadedFile(
@@ -267,24 +278,31 @@ class AlunoForm(BaseForm):
         turno = cleaned_data.get('turno')
         ano = cleaned_data.get('ano')
         
-        if not all([nivel, turno, ano]):
+        if not nivel:
             return
             
         errors = {}
         
+        # Garantir que turno e ano estejam presentes
+        if not turno:
+            errors['turno'] = _("Este campo é obrigatório.")
+        
+        if not ano:
+            errors['ano'] = _("Este campo é obrigatório.")
+            
         if nivel == 'EFI':
-            # Para EFI, apenas define o turno como Manhã sem gerar erro
+            # Para EFI, força o turno como Manhã
             cleaned_data['turno'] = 'M'
             
             # Valida o ano para EFI
-            if ano not in ['3', '4', '5']:
+            if ano and ano not in ['3', '4', '5']:
                 errors['ano'] = _("Este ano não está disponível para Ensino Fundamental Anos Iniciais.")
                 
         elif nivel == 'EFF':
             # Para EFF, valida as combinações de turno e ano
-            if turno == 'M' and ano in ['901', '902']:
+            if turno == 'M' and ano and ano in ['901', '902']:
                 errors['ano'] = _("As turmas do 9º ano só estão disponíveis no turno da tarde.")
-            elif ano in ['3', '4', '5']:
+            elif ano and ano in ['3', '4', '5']:
                 errors['ano'] = _("Este ano não está disponível para Ensino Fundamental Anos Finais.")
                 
         if errors:
