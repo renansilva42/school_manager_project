@@ -59,22 +59,22 @@ def relatorios(request):
     # Get students by education level (EFI - Anos Iniciais, EFF - Anos Finais)
     alunos_efi = Aluno.objects.filter(
         ativo=True,
-        serie__in=['3', '4', '5']
+        ano__in=['3', '4', '5']  # Changed from serie to ano
     ).count()
     
     alunos_eff = Aluno.objects.filter(
         ativo=True,
-        serie__in=['6', '7', '8', '9']
+        ano__in=['6', '7', '8', '9']  # Changed from serie to ano
     ).count()
     
     # Get students by grade
-    alunos_3ano = Aluno.objects.filter(ativo=True, serie='3').count()
-    alunos_4ano = Aluno.objects.filter(ativo=True, serie='4').count()
-    alunos_5ano = Aluno.objects.filter(ativo=True, serie='5').count()
-    alunos_6ano = Aluno.objects.filter(ativo=True, serie='6').count()
-    alunos_7ano = Aluno.objects.filter(ativo=True, serie='7').count()
-    alunos_8ano = Aluno.objects.filter(ativo=True, serie='8').count()
-    alunos_9ano = Aluno.objects.filter(ativo=True, serie='9').count()
+    alunos_3ano = Aluno.objects.filter(ativo=True, ano='3').count()
+    alunos_4ano = Aluno.objects.filter(ativo=True, ano='4').count()
+    alunos_5ano = Aluno.objects.filter(ativo=True, ano='5').count()
+    alunos_6ano = Aluno.objects.filter(ativo=True, ano='6').count()
+    alunos_7ano = Aluno.objects.filter(ativo=True, ano='7').count()
+    alunos_8ano = Aluno.objects.filter(ativo=True, ano='8').count()
+    alunos_9ano = Aluno.objects.filter(ativo=True, ano='9').count()
 
     context = {
         'total_alunos': total_alunos,
