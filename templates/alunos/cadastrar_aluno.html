@@ -283,6 +283,7 @@
 </div>
 
 <!-- Script para captura de foto -->
+<!-- Script para captura de foto -->
 <script>
     // Variáveis para os elementos da interface
     const fileInput = document.getElementById('id_foto');
@@ -301,30 +302,93 @@
     
     let stream = null;
     let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
+
+    // Função para processar e otimizar imagem
+    async function processImage(imageData) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Definir dimensões máximas
+                const maxWidth = 800;
+                const maxHeight = 800;
+
+                // Calcular novas dimensões mantendo proporção
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = (maxWidth * height) / width;
+                    width = maxWidth;
+                }
+
+                if (height > maxHeight) {
+                    width = (maxHeight * width) / height;
+                    height = maxHeight;
+                }
+
+                // Configurar canvas
+                canvas.width = width;
+                canvas.height = height;
+
+                // Desenhar imagem redimensionada
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Converter para JPEG com qualidade otimizada
+                const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                resolve(optimizedDataUrl);
+            };
+
+            img.onerror = () => reject(new Error('Erro ao processar imagem'));
+            img.src = imageData;
+        });
+    }
+
+    // Função para atualizar preview e inputs
+    async function updateImagePreview(imageData) {
+        try {
+            const optimizedImage = await processImage(imageData);
+            
+            // Atualizar preview
+            photoPreview.src = optimizedImage;
+            previewContainer.style.display = 'block';
+            fotoBase64Input.value = optimizedImage;
+
+            // Converter para arquivo
+            const response = await fetch(optimizedImage);
+            const blob = await response.blob();
+            const file = new File([blob], "photo.jpg", {
+                type: "image/jpeg",
+                lastModified: new Date().getTime()
+            });
+
+            // Atualizar input file
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+        } catch (error) {
+            console.error('Erro ao processar imagem:', error);
+            alert('Erro ao processar imagem. Por favor, tente novamente.');
+        }
+    }
+
     // Evento para o botão de upload de arquivo
-    uploadBtn.addEventListener('click', () => {
-        fileInput.click();
-    });
-    
+    uploadBtn.addEventListener('click', () => fileInput.click());
+
     // Evento para quando um arquivo é selecionado
-    fileInput.addEventListener('change', (e) => {
+    fileInput.addEventListener('change', async (e) => {
         if (fileInput.files && fileInput.files[0]) {
             const reader = new FileReader();
-            
-            reader.onload = (e) => {
-                photoPreview.src = e.target.result;
-                previewContainer.style.display = 'block';
-                fotoBase64Input.value = e.target.result;
-                
-                // Esconder a câmera se estiver ativa
+            reader.onload = async (e) => {
+                await updateImagePreview(e.target.result);
                 stopCamera();
             };
-            
             reader.readAsDataURL(fileInput.files[0]);
         }
     });
-    
+
     // Evento para o botão de remover foto
     removePhotoBtn.addEventListener('click', () => {
         fileInput.value = '';
@@ -332,149 +396,99 @@
         fotoBase64Input.value = '';
         previewContainer.style.display = 'none';
     });
-    
+
     // Evento para o botão de tirar foto
     takePhotoBtn.addEventListener('click', () => {
         if (isMobile) {
-            // Em dispositivos móveis, usar a câmera nativa
             cameraInput.click();
         } else {
-            // Em desktop, usar a implementação de webcam
             startCamera();
         }
     });
-    
-// Evento para quando uma foto é capturada pelo dispositivo móvel
-cameraInput.addEventListener('change', (e) => {
-    if (cameraInput.files && cameraInput.files[0]) {
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            // Criar uma imagem temporária para corrigir a orientação
-            const img = new Image();
-            img.onload = function() {
-                // Criar um canvas para manipular a imagem
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Definir as dimensões do canvas
-                canvas.width = img.width;
-                canvas.height = img.height;
-                
-                // Desenhar a imagem no canvas com a orientação correta
-                ctx.drawImage(img, 0, 0);
-                
-                // Converter o canvas para uma URL de dados (formato base64)
-                const dataUrl = canvas.toDataURL('image/jpeg');
-                
-                // Exibir a imagem corrigida no preview
-                photoPreview.src = dataUrl;
-                previewContainer.style.display = 'block';
-                fotoBase64Input.value = dataUrl;
-                
-                // Converter a URL de dados para um arquivo Blob e adicionar ao input de arquivo
-                fetch(dataUrl)
-                    .then(res => res.blob())
-                    .then(blob => {
-                        const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
-                        
-                        // Criar um DataTransfer para simular a seleção de arquivo
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(file);
-                        fileInput.files = dataTransfer.files;
-                    });
+
+    // Evento para quando uma foto é capturada pelo dispositivo móvel
+    cameraInput.addEventListener('change', async (e) => {
+        if (cameraInput.files && cameraInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                await updateImagePreview(e.target.result);
             };
-            
-            // Carregar a imagem a partir do resultado do FileReader
-            img.src = e.target.result;
-        };
-        
-        reader.readAsDataURL(cameraInput.files[0]);
-    }
-});
-    
-    // Função para iniciar a câmera (apenas para desktop)
+            reader.readAsDataURL(cameraInput.files[0]);
+        }
+    });
+
+    // Função para iniciar a câmera (desktop)
     function startCamera() {
-        // Verificar se o navegador suporta getUserMedia
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(function(mediaStream) {
-                    stream = mediaStream;
-                    cameraPreview.srcObject = mediaStream;
-                    cameraPreview.style.display = 'block';
-                    cameraControls.style.display = 'flex';
-                    cameraControls.style.justifyContent = 'center';
-                    cameraControls.style.gap = '10px';
-                    
-                    // Esconder o preview se estiver visível
-                    previewContainer.style.display = 'none';
-                })
-                .catch(function(error) {
-                    console.error("Erro ao acessar a câmera: ", error);
-                    alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
-                });
+            navigator.mediaDevices.getUserMedia({ 
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            })
+            .then(function(mediaStream) {
+                stream = mediaStream;
+                cameraPreview.srcObject = mediaStream;
+                cameraPreview.style.display = 'block';
+                cameraControls.style.display = 'flex';
+                cameraControls.style.justifyContent = 'center';
+                cameraControls.style.gap = '10px';
+                previewContainer.style.display = 'none';
+            })
+            .catch(function(error) {
+                console.error("Erro ao acessar a câmera:", error);
+                alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
+            });
         } else {
             alert("Seu navegador não suporta acesso à câmera.");
         }
     }
-    
+
     // Função para parar a câmera
     function stopCamera() {
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
             stream = null;
         }
-        
         cameraPreview.style.display = 'none';
         cameraControls.style.display = 'none';
     }
-    
+
     // Evento para o botão de capturar foto
-    capturePhotoBtn.addEventListener('click', () => {
-        // Configurar o canvas para capturar a imagem
-        const context = photoCanvas.getContext('2d');
-        photoCanvas.width = cameraPreview.videoWidth;
-        photoCanvas.height = cameraPreview.videoHeight;
-        
-        // Desenhar o frame atual do vídeo no canvas
-        context.drawImage(cameraPreview, 0, 0, photoCanvas.width, photoCanvas.height);
-        
-        // Converter o canvas para uma URL de dados (formato base64)
-        const dataUrl = photoCanvas.toDataURL('image/jpeg');
-        
-        // Exibir a imagem capturada no preview
-        photoPreview.src = dataUrl;
-        previewContainer.style.display = 'block';
-        
-        // Armazenar a imagem em base64 no input oculto
-        fotoBase64Input.value = dataUrl;
-        
-        // Converter a URL de dados para um arquivo Blob e adicionar ao input de arquivo
-        fetch(dataUrl)
-            .then(res => res.blob())
-            .then(blob => {
-                const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
-                
-                // Criar um DataTransfer para simular a seleção de arquivo
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-                fileInput.files = dataTransfer.files;
-            });
-        
-        // Parar a câmera
-        stopCamera();
+    capturePhotoBtn.addEventListener('click', async () => {
+        try {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            // Configurar dimensões do canvas
+            canvas.width = cameraPreview.videoWidth;
+            canvas.height = cameraPreview.videoHeight;
+            
+            // Capturar frame do vídeo
+            context.drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
+            
+            // Processar e atualizar imagem
+            const capturedImage = canvas.toDataURL('image/jpeg', 1.0);
+            await updateImagePreview(capturedImage);
+            
+            // Parar câmera
+            stopCamera();
+        } catch (error) {
+            console.error('Erro ao capturar foto:', error);
+            alert('Erro ao capturar foto. Por favor, tente novamente.');
+        }
     });
-    
+
     // Evento para o botão de cancelar câmera
     cancelCameraBtn.addEventListener('click', () => {
         stopCamera();
-        
-        // Se já havia uma foto, mostrar o preview novamente
         if (photoPreview.src && photoPreview.src !== window.location.href) {
             previewContainer.style.display = 'block';
         }
     });
 </script>
+
+<!-- Manter os outros scripts (turmas/turnos e máscaras) inalterados -->
 
 <!-- Script para seleção dinâmica de turmas e turnos -->
 <script>
