@@ -538,48 +538,43 @@ function updateAnoChoices(turno, nivel) {
     const anoSelect = document.getElementById('id_ano');
     anoSelect.innerHTML = '';
     
-    if (nivel !== 'EFI' && turno === '') {
-        const defaultOpt = document.createElement('option');
-        defaultOpt.value = '';
-        defaultOpt.textContent = 'Selecione um Ano';
-        anoSelect.appendChild(defaultOpt);
-        anoSelect.disabled = true;
-        return;
-    }
-    
-    anoSelect.disabled = false;
-    let options = [];
-    
     if (nivel === 'EFI') {
-        options = [
+        // Anos disponíveis para EFI
+        const options = [
             {value: '3', text: '3º Ano'},
             {value: '4', text: '4º Ano'},
-            {value: '5', text: '5º Ano'},
+            {value: '5', text: '5º Ano'}
         ];
+        
+        options.forEach(option => {
+            const optElement = document.createElement('option');
+            optElement.value = option.value;
+            optElement.textContent = option.text;
+            anoSelect.appendChild(optElement);
+        });
+        
     } else if (nivel === 'EFF') {
-        if (turno === 'M') {
-            options = [
-                {value: '6', text: '6º Ano'},
-                {value: '7', text: '7º Ano'},
-                {value: '8', text: '8º Ano'},
-            ];
-        } else if (turno === 'T') {
-            options = [
-                {value: '6', text: '6º Ano'},
-                {value: '7', text: '7º Ano'},
-                {value: '8', text: '8º Ano'},
+        // Anos disponíveis para EFF baseado no turno
+        let options = [
+            {value: '6', text: '6º Ano'},
+            {value: '7', text: '7º Ano'},
+            {value: '8', text: '8º Ano'}
+        ];
+        
+        if (turno === 'T') {
+            options = options.concat([
                 {value: '901', text: '9º Ano - Turma 901'},
-                {value: '902', text: '9º Ano - Turma 902'},
-            ];
+                {value: '902', text: '9º Ano - Turma 902'}
+            ]);
         }
+        
+        options.forEach(option => {
+            const optElement = document.createElement('option');
+            optElement.value = option.value;
+            optElement.textContent = option.text;
+            anoSelect.appendChild(optElement);
+        });
     }
-    
-    options.forEach(option => {
-        const optElement = document.createElement('option');
-        optElement.value = option.value;
-        optElement.textContent = option.text;
-        anoSelect.appendChild(optElement);
-    });
 }
 
 document.addEventListener('DOMContentLoaded', function() {

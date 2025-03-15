@@ -15,11 +15,8 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
-
-
 class BaseForm(forms.ModelForm):
-    """Base form class with common functionality"""
+    """Classe base para formulários com funcionalidades comuns"""
     
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -27,12 +24,12 @@ class BaseForm(forms.ModelForm):
         self.setup_form_widgets()
         
     def setup_form_widgets(self):
-        """Setup common widget attributes"""
+        """Configura atributos comuns dos widgets"""
         for field_name, field in self.fields.items():
             css_classes = ['form-control']
             if isinstance(field, forms.DateField):
                 field.widget.attrs.update({'type': 'date'})
-                field.input_formats = ['%d/%m/%Y']  # Force DD/MM/YYYY format
+                field.input_formats = ['%d/%m/%Y']  # Força o formato DD/MM/YYYY
             if isinstance(field, forms.FileField):
                 css_classes.append('form-control-file')
             field.widget.attrs.update({
@@ -50,7 +47,7 @@ class AlunoForm(BaseForm):
         help_text="CPF no formato: 999.999.999-99. Este campo é opcional."
     )
     
-    # Campos de telefone com help_text melhorado
+    # Campos de telefone com help_text aprimorado
     telefone = forms.CharField(
         max_length=15, 
         required=False,
@@ -77,7 +74,7 @@ class AlunoForm(BaseForm):
         foto_base64 = cleaned_data.get('foto_base64')
         foto_file = cleaned_data.get('foto')
         
-        # Garantir que o diretório de destino existe
+        # Garantir que o diretório de destino exista
         upload_path = os.path.join(settings.MEDIA_ROOT, 'alunos/fotos')
         os.makedirs(upload_path, exist_ok=True)
         
@@ -117,7 +114,7 @@ class AlunoForm(BaseForm):
                 cleaned_data['foto'] = InMemoryUploadedFile(
                     output,
                     'ImageField',
-                    unique_filename,  # Nome do arquivo com o caminho relativo
+                    unique_filename,
                     'image/jpeg',
                     len(output.getvalue()),
                     None
@@ -164,7 +161,7 @@ class AlunoForm(BaseForm):
                 cleaned_data['foto'] = InMemoryUploadedFile(
                     output,
                     'ImageField',
-                    unique_filename,  # Nome do arquivo com o caminho relativo
+                    unique_filename,
                     'image/jpeg',
                     len(output.getvalue()),
                     None
@@ -195,7 +192,7 @@ class AlunoForm(BaseForm):
         widgets = {
             'foto': forms.FileInput(attrs={
                 'accept': 'image/*',
-                'data-max-size': '5242880'  # 5MB in bytes
+                'data-max-size': '5242880'  # 5MB em bytes
             }),
             'foto_base64': forms.HiddenInput(),
             'observacoes': forms.Textarea(attrs={
@@ -214,19 +211,20 @@ class AlunoForm(BaseForm):
             self.fields['matricula'].widget.attrs['maxlength'] = 20
 
     def setup_nivel_dependent_fields(self):
-        """Setup fields that depend on nivel selection"""
+        """Configura campos que dependem da seleção do nível"""
         instance = self.instance
         if instance and instance.pk:
-            # Instead of calling non-existent set_ano_choices, use get_filtered_ano_choices directly
             self.fields['ano'].choices = self.get_filtered_ano_choices(instance.nivel, instance.turno)
+            
+            # Se for EFI, configura o turno como Manhã
             if instance.nivel == 'EFI':
-                self.fields['turno'].widget.attrs['disabled'] = True
                 self.fields['turno'].initial = 'M'
+                self.fields['turno'].widget.attrs['readonly'] = True  # Usa readonly em vez de disabled
         else:
             self.fields['ano'].choices = self.get_filtered_ano_choices()
 
     def setup_field_dependencies(self):
-        """Setup field dependencies and dynamic behavior"""
+        """Configura dependências e comportamento dinâmico dos campos"""
         self.fields['nivel'].widget.attrs.update({
             'data-depends': 'turno,ano',
             'onchange': 'handleNivelChange(this)'
@@ -237,7 +235,7 @@ class AlunoForm(BaseForm):
         })
 
     def get_filtered_ano_choices(self, nivel=None, turno=None):
-        """Get filtered year choices based on nivel and turno"""
+        """Obtém escolhas de ano filtradas com base em nível e turno"""
         choices = []
         
         if nivel == 'EFI' or not nivel:
@@ -263,68 +261,8 @@ class AlunoForm(BaseForm):
                 
         return choices
 
-    def clean_foto(self):
-        foto = self.cleaned_data.get('foto')
-        
-        if not foto:
-            return foto
-            
-        try:
-            # Validate file type
-            if not foto.content_type.startswith('image/'):
-                raise ValidationError(_("O arquivo enviado não é uma imagem."))
-            
-            # Validate file size
-            max_size = 5 * 1024 * 1024  # 5MB
-            if foto.size > max_size:
-                raise ValidationError(_("A imagem excede o tamanho máximo de 5MB."))
-            
-            # Process image
-            img = Image.open(foto)
-            
-            # Convert to RGB if needed
-            if img.mode not in ('RGB', 'RGBA'):
-                img = img.convert('RGB')
-                
-            # Resize if too large
-            if img.height > 800 or img.width > 800:
-                output_size = (800, 800)
-                img.thumbnail(output_size)
-                
-            # Save optimized image
-            output = BytesIO()
-            img.save(output, format='JPEG', quality=85, optimize=True)
-            output.seek(0)
-            
-            # Create new InMemoryUploadedFile
-            return InMemoryUploadedFile(
-                output,
-                'ImageField',
-                f"{uuid.uuid4().hex}.jpg",
-                'image/jpeg',
-                output.tell(),
-                None
-            )
-            
-        except Exception as e:
-            logger.error(f"Erro ao processar imagem: {str(e)}")
-            raise ValidationError(_("Erro ao processar a imagem."))
-
-    def clean(self):
-        """Enhanced validation logic"""
-        cleaned_data = super().clean()
-        self.validate_nivel_combinations(cleaned_data)
-        self.validate_unique_fields(cleaned_data)
-        
-        # Validação adicional para campos numéricos
-        matricula = cleaned_data.get('matricula')
-        if matricula and len(str(matricula)) > 20:
-            raise ValidationError({'matricula': _("Número de matrícula muito grande")})
-            
-        return cleaned_data
-
     def validate_nivel_combinations(self, cleaned_data):
-        """Validate nivel, turno and ano combinations"""
+        """Valida combinações de nível, turno e ano"""
         nivel = cleaned_data.get('nivel')
         turno = cleaned_data.get('turno')
         ano = cleaned_data.get('ano')
@@ -335,25 +273,28 @@ class AlunoForm(BaseForm):
         errors = {}
         
         if nivel == 'EFI':
-            if turno != 'M':
-                cleaned_data['turno'] = 'M'
+            # Para EFI, apenas define o turno como Manhã sem gerar erro
+            cleaned_data['turno'] = 'M'
+            
+            # Valida o ano para EFI
             if ano not in ['3', '4', '5']:
                 errors['ano'] = _("Este ano não está disponível para Ensino Fundamental Anos Iniciais.")
                 
-        if nivel == 'EFF':
+        elif nivel == 'EFF':
+            # Para EFF, valida as combinações de turno e ano
             if turno == 'M' and ano in ['901', '902']:
                 errors['ano'] = _("As turmas do 9º ano só estão disponíveis no turno da tarde.")
-            if ano in ['3', '4', '5']:
+            elif ano in ['3', '4', '5']:
                 errors['ano'] = _("Este ano não está disponível para Ensino Fundamental Anos Finais.")
                 
         if errors:
             raise ValidationError(errors)
 
     def validate_unique_fields(self, cleaned_data):
-        """Validate unique fields considering existing records"""
+        """Valida campos únicos considerando registros existentes"""
         for field in ['matricula', 'email', 'cpf']:
             value = cleaned_data.get(field)
-            # Skip validation for empty values
+            # Pula validação para valores vazios
             if not value:
                 continue
                 
@@ -366,7 +307,7 @@ class AlunoForm(BaseForm):
                     raise ValidationError({field: _(f"Este {field} já está em uso.")})
 
     def save(self, commit=True):
-        """Enhanced save method with user tracking"""
+        """Método de salvamento aprimorado com rastreamento de usuário"""
         instance = super().save(commit=False)
         
         if self.user:
@@ -380,7 +321,7 @@ class AlunoForm(BaseForm):
         return instance
 
 class NotaForm(BaseForm): 
-    """Enhanced form for grade registration"""  
+    """Formulário aprimorado para registro de notas"""  
     class Meta:
         model = Nota
         fields = ['disciplina', 'valor', 'bimestre', 'observacao']
@@ -395,7 +336,7 @@ class NotaForm(BaseForm):
     )
 
 class AlunoFilterForm(forms.Form):
-    """Enhanced filter form for student listing"""
+    """Formulário aprimorado para filtro de alunos"""
     
     NIVEL_CHOICES = [('', _('Todos'))] + list(Aluno.NivelChoices.choices)
     TURNO_CHOICES = [('', _('Todos'))] + list(Aluno.TurnoChoices.choices)
@@ -420,7 +361,7 @@ class AlunoFilterForm(forms.Form):
         self.setup_filter_widgets()
         
     def setup_filter_widgets(self):
-        """Setup filter form widgets"""
+        """Configura widgets do formulário de filtro"""
         for field in self.fields.values():
             field.widget.attrs.update({
                 'class': 'form-control form-control-sm',
