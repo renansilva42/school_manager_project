@@ -162,12 +162,8 @@ class AlunoForm(BaseForm):
                 img.save(output, format='JPEG', quality=85, optimize=True)
                 output.seek(0)
                 
-                # Gera um nome único para o arquivo mantendo o nome original
-                if hasattr(foto_file, 'name'):
-                    original_name = foto_file.name.split('.')[0]
-                else:
-                    original_name = "photo"
-                unique_filename = f"alunos/fotos/{original_name}_{uuid.uuid4().hex[:8]}.jpg"
+                # Gera um nome único para o arquivo
+                unique_filename = f"alunos/fotos/{uuid.uuid4().hex}.jpg"
 
                 cleaned_data['foto'] = InMemoryUploadedFile(
                     output,
@@ -297,6 +293,16 @@ class AlunoForm(BaseForm):
             # Valida o ano para EFI
             if ano and ano not in ['3', '4', '5']:
                 errors['ano'] = _("Este ano não está disponível para Ensino Fundamental Anos Iniciais.")
+            
+            # Garantir que o ano seja um dos valores válidos para EFI
+            if not ano or ano not in ['3', '4', '5']:
+                # Se o ano não for válido, definir um valor padrão
+                if self.instance and hasattr(self.instance, 'ano') and self.instance.ano in ['3', '4', '5']:
+                    # Se o aluno já tem um ano válido, manter
+                    cleaned_data['ano'] = self.instance.ano
+                else:
+                    # Caso contrário, definir o primeiro ano válido
+                    cleaned_data['ano'] = '3'
                 
         elif nivel == 'EFF':
             # Para EFF, valida as combinações de turno e ano

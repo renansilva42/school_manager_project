@@ -557,6 +557,22 @@ function updateTurnoChoices(nivel) {
     
     // Atualizar as opções de ano após atualizar o turno
     updateAnoChoices(turnoSelect.value, nivel);
+    
+    // Se for EFI, garantir que um ano válido seja selecionado
+    if (nivel === 'EFI') {
+        setTimeout(() => {
+            const anoSelect = document.getElementById('id_ano');
+            if (!anoSelect.value || anoSelect.value === '') {
+                // Selecionar o primeiro ano válido para EFI
+                for (let i = 0; i < anoSelect.options.length; i++) {
+                    if (anoSelect.options[i].value === '3') {
+                        anoSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }, 100);
+    }
 }
 
 // Função para atualizar as opções de ano com base no turno e nível selecionados
@@ -565,17 +581,11 @@ function updateAnoChoices(turno, nivel) {
     // Limpar opções atuais
     anoSelect.innerHTML = '';
     
-    // Adicionar opção padrão se não for EFI
-    if (nivel !== 'EFI' && turno === '') {
-        const defaultOpt = document.createElement('option');
-        defaultOpt.value = '';
-        defaultOpt.textContent = 'Selecione um Ano';
-        anoSelect.appendChild(defaultOpt);
-        
-        // Desabilitar o select até que um turno seja selecionado
-        anoSelect.disabled = true;
-        return;
-    }
+    // Adicionar opção padrão
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = 'Selecione um Ano';
+    anoSelect.appendChild(defaultOpt);
     
     // Habilitar o select
     anoSelect.disabled = false;
