@@ -57,6 +57,32 @@
     margin-bottom: var(--spacing-lg);
     transition: transform var(--transition-speed), box-shadow var(--transition-speed);
   }
+
+  /* Adicione isso ao seu arquivo CSS */
+.card {
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.card-body {
+  padding: 1rem;
+}
+
+.card-title {
+  margin-bottom: 0.75rem;
+}
+
+.card-text {
+  margin-bottom: 1rem;
+}
+
+.card-footer {
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
   
   .card:hover {
     transform: translateY(-3px);
