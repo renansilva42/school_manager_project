@@ -12,10 +12,8 @@
                         <img src="{{ aluno.foto.url }}" alt="Foto do aluno" class="rounded-circle me-3" 
                             style="width: 60px; height: 60px; object-fit: cover; object-position: center;">
                     {% else %}
-                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" 
-                            style="width: 60px; height: 60px;">
-                            <i class="fas fa-user-graduate text-white"></i>
-                        </div>
+                        <img src="{{ aluno.get_foto_url }}" alt="Foto padrão" class="rounded-circle me-3" 
+                            style="width: 60px; height: 60px; object-fit: cover; object-position: center;">
                     {% endif %}
                     <div>
                         <h5 class="card-title mb-0">{{ aluno.nome }}</h5>
