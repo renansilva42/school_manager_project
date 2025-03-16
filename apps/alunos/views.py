@@ -186,7 +186,7 @@ class AlunoListView(BaseAlunoView, ListView):
                 queryset = queryset.filter(
                     Q(nome__icontains=search) |
                     Q(matricula__icontains=search) |
-                    Q(cpf__icontains=search)
+                    Q(cpf__icontains=search) & ~Q(cpf__isnull=True) & ~Q(cpf='')  # Only search non-empty CPFs
                 )
                 
             logger.debug(f"Queryset final count: {queryset.count()}")
@@ -214,7 +214,7 @@ class AlunoListView(BaseAlunoView, ListView):
             queryset = queryset.filter(
                 Q(nome__icontains=search_query) |
                 Q(matricula__icontains=search_query) |
-                Q(cpf__icontains=search_query)
+                Q(cpf__icontains=search_query) & ~Q(cpf__isnull=True) & ~Q(cpf='')  # Only search non-empty CPFs
             )
         
         return queryset
