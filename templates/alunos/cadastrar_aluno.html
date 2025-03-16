@@ -143,7 +143,7 @@
                         {% elif form.instance.foto %}
                             <img id="photo-preview" src="{{ form.instance.foto.url }}" class="img-thumbnail">
                         {% else %}
-                            <img id="photo-preview" class="img-thumbnail">
+                            <img id="photo-preview" src="{{ form.instance.get_foto_url }}" class="img-thumbnail">
                         {% endif %}
                         <button type="button" id="remove-photo-btn" class="btn btn-sm btn-danger mt-2">Remover Foto</button>
                     </div>

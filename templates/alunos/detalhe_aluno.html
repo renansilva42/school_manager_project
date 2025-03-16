@@ -438,7 +438,7 @@
                     {% if aluno.foto %}
                         <img src="{{ aluno.foto.url }}" class="profile-img" alt="Foto do aluno">
                     {% else %}
-                        <img src="{% static 'img/default-avatar.png' %}" class="profile-img" alt="Foto padrão">
+                        <img src="{{ aluno.get_foto_url }}" class="profile-img" alt="Foto padrão">
                     {% endif %}
                     <div class="profile-img-hover">
                         <i class="fas fa-search-plus"></i>
@@ -463,7 +463,7 @@
                             {% if aluno.foto %}
                                 <img src="{{ aluno.foto.url }}" class="d-block w-100" style="max-height: 85vh; object-fit: contain; margin: 0 auto;" alt="Foto ampliada do aluno" id="modalImage">
                             {% else %}
-                                <img src="{% static 'img/default-avatar.png' %}" class="d-block w-100" style="max-height: 85vh; object-fit: contain; margin: 0 auto;" alt="Foto padrão ampliada" id="modalImage">
+                                <img src="{{ aluno.get_foto_url }}" class="d-block w-100" style="max-height: 85vh; object-fit: contain; margin: 0 auto;" alt="Foto padrão ampliada" id="modalImage">
                             {% endif %}
                         </div>
                     </div>

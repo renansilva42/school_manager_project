@@ -180,13 +180,13 @@
                         <button type="button" id="take-photo-btn" class="btn btn-outline-success" style="max-width: 49%;">Tirar Foto</button>
                         <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;">
                     </div>
-                    <div id="preview-container" class="text-center mb-3" {% if not form.instance.foto and not form.data.foto_base64 %}style="display: none;"{% endif %}>
+                    <div id="preview-container" class="text-center mb-3" {% if not form.data.foto_base64 and not form.instance.foto %}style="display: none;"{% endif %}>
                         {% if form.data.foto_base64 %}
                             <img id="photo-preview" src="{{ form.data.foto_base64 }}" class="img-thumbnail">
                         {% elif form.instance.foto %}
                             <img id="photo-preview" src="{{ form.instance.foto.url }}" class="img-thumbnail">
                         {% else %}
-                            <img id="photo-preview" class="img-thumbnail">
+                            <img id="photo-preview" src="{{ form.instance.get_foto_url }}" class="img-thumbnail">
                         {% endif %}
                         <button type="button" id="remove-photo-btn" class="btn btn-sm btn-danger mt-2">Remover Foto</button>
                     </div>

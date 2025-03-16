@@ -101,6 +101,7 @@ def aluno_foto_path(instance, filename):
     new_name = f"{uuid.uuid4().hex}.{ext}"
     return f'alunos/fotos/{new_name}'  # Removido 'media/' do início 
 class Aluno(models.Model):
+    DEFAULT_PHOTO_URL = "https://ui-avatars.com/api/?name={}&background=random"
     id = models.CharField(
         primary_key=True,
         max_length=36,
@@ -126,6 +127,12 @@ class Aluno(models.Model):
         blank=True,
         verbose_name="Dados Adicionais"
     )
+    
+    def get_foto_url(self):
+        if self.foto:
+            return self.foto.url
+        # Retorna uma URL com as iniciais do nome do aluno
+        return self.DEFAULT_PHOTO_URL.format(self.nome.replace(" ", "+"))
 
     def backup_image(self, image_path):
         """Cria um backup da imagem no S3"""
