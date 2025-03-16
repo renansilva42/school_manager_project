@@ -286,8 +286,8 @@ class Aluno(models.Model):
         unique=True,
         verbose_name="CPF",
         help_text="CPF no formato: 999.999.999-99",
-        null=True,
-        blank=True
+        null=True,  # Permite valores nulos no banco de dados
+        blank=True  # Permite valores em branco no formulário
     )
     
     # Informações de Contato

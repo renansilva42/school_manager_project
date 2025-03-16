@@ -324,21 +324,22 @@ class AlunoForm(BaseForm):
         if errors:
             raise ValidationError(errors)
 
-    def validate_unique_fields(self, cleaned_data):
-        """Valida campos únicos considerando registros existentes"""
-        for field in ['matricula', 'email', 'cpf']:
-            value = cleaned_data.get(field)
-            # Pula validação para valores vazios ou None
-            if not value or value.strip() == '':  # Modificado aqui
-                continue
-                
-            query = {field: value}
-            if self.instance.pk:
-                if Aluno.objects.filter(**query).exclude(pk=self.instance.pk).exists():
-                    raise ValidationError({field: _(f"Este {field} já está em uso.")})
-            else:
-                if Aluno.objects.filter(**query).exists():
-                    raise ValidationError({field: _(f"Este {field} já está em uso.")})
+   
+        def validate_unique_fields(self, cleaned_data):
+            """Valida campos únicos considerando registros existentes"""
+            for field in ['matricula', 'email', 'cpf']:
+                value = cleaned_data.get(field)
+                # Pula validação para valores vazios ou None
+                if not value or value.strip() == '':
+                    continue
+                    
+                query = {field: value}
+                if self.instance.pk:
+                    if Aluno.objects.filter(**query).exclude(pk=self.instance.pk).exists():
+                        raise ValidationError({field: _(f"Este {field} já está em uso.")})
+                else:
+                    if Aluno.objects.filter(**query).exists():
+                        raise ValidationError({field: _(f"Este {field} já está em uso.")})
     def save(self, commit=True):
         """Método de salvamento aprimorado com rastreamento de usuário"""
         instance = super().save(commit=False)
