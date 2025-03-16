@@ -75,6 +75,19 @@ class AlunoForm(BaseForm):
         help_text="Digite apenas os números. O formato será aplicado automaticamente: (XX) XXXXX-XXXX"
     )
     
+    def create_aluno(data):
+        cpf = data.get('cpf')
+        if not cpf:
+            raise ValueError("CPF não pode estar vazio.")
+        aluno = Aluno.objects.create(**data)
+        return aluno
+    
+    def clean_cpf(self):
+        cpf = self.cleaned_data.get('cpf')
+        if not cpf:
+            return None
+        return cpf
+    
     def clean_matricula(self):
         matricula = self.cleaned_data.get('matricula')
         return str(matricula)

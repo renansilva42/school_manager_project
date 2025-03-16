@@ -128,6 +128,9 @@ class Aluno(models.Model):
         verbose_name="Dados Adicionais"
     )
     
+    nome = models.CharField(max_length=100)
+    cpf = models.CharField(max_length=11, blank=True, null=True, unique=True)
+    
     def get_foto_url(self):
         if self.foto:
             return self.foto.url
@@ -283,12 +286,13 @@ class Aluno(models.Model):
     )
     
     cpf = models.CharField(
-        max_length=14,
+        max_length=11,
         validators=[cpf_regex],
         verbose_name="CPF",
         help_text="CPF no formato: 999.999.999-99. Este campo é opcional.",
         null=True,  # Permite valores nulos no banco de dados
-        blank=True  # Permite valores em branco no formulário
+        blank=True,
+        unique=True# Permite valores em branco no formulário
     )
     
     # Informações de Contato
