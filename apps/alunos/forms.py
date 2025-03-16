@@ -41,6 +41,16 @@ class AlunoForm(BaseForm):
     foto_base64 = forms.CharField(required=False, widget=forms.HiddenInput())
     
     # Campo CPF explicitamente definido como não obrigatório
+    data_nascimento = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+    
+    data_matricula = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+    
     cpf = forms.CharField(
         max_length=14,
         required=False,
