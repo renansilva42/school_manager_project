@@ -263,8 +263,6 @@ class NotaDeleteView(AdminRequiredMixin, DeleteView):
 
 
 class AlunoImportExcelView(LoginRequiredMixin, AdminRequiredMixin, View):
-    """View for importing students from Excel file"""
-    
     def post(self, request):
         try:
             excel_file = request.FILES.get('file')
@@ -278,8 +276,9 @@ class AlunoImportExcelView(LoginRequiredMixin, AdminRequiredMixin, View):
             # Read Excel file
             df = pd.read_excel(excel_file)
             
+            # Atualizar colunas obrigatórias (remover data_nascimento)
             required_columns = [
-                'nome', 'data_nascimento', 'cpf', 'matricula', 
+                'nome', 'matricula', 
                 'nivel', 'turno', 'ano'
             ]
             
@@ -296,12 +295,13 @@ class AlunoImportExcelView(LoginRequiredMixin, AdminRequiredMixin, View):
                 try:
                     aluno_data = {
                         'nome': row['nome'],
-                        'data_nascimento': pd.to_datetime(row['data_nascimento']).date(),
-                        'cpf': str(row['cpf']),
                         'matricula': str(row['matricula']),
                         'nivel': row['nivel'],
                         'turno': row['turno'],
                         'ano': str(row['ano']),
+                        # Tornar data_nascimento opcional
+                        'data_nascimento': pd.to_datetime(row['data_nascimento']).date() if pd.notna(row.get('data_nascimento')) else None,
+                        'cpf': str(row['cpf']) if pd.notna(row.get('cpf')) else None,
                         'email': row.get('email', ''),
                         'telefone': row.get('telefone', ''),
                         'endereco': row.get('endereco', ''),
@@ -324,7 +324,6 @@ class AlunoImportExcelView(LoginRequiredMixin, AdminRequiredMixin, View):
                 except Exception as e:
                     errors.append(f'Linha {index + 2}: {str(e)}')
 
-            # Prepare response message
             if success_count > 0:
                 messages.success(request, f'{success_count} alunos importados com sucesso!')
             
