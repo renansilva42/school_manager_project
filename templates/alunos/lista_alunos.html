@@ -113,9 +113,22 @@
         </div>
 
         <!-- Results Grid -->
-        <div id="alunos-container" class="row g-4">
-            <!-- Content loaded via AJAX -->
+<div id="alunos-container" class="row g-4">
+    <!-- Exemplo de um card de aluno -->
+    <!-- Adicionar a classe card e melhorar o espaçamento -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <img src="{% static 'path/to/student/photo.jpg' %}" class="card-img-top" alt="Foto do aluno">
+            <div class="card-body">
+                <h5 class="card-title">Nome do Aluno</h5>
+                <p class="card-text">Outras informações do aluno.</p>
+            </div>
+            <div class="card-footer">
+                <a href="#" class="btn btn-primary">Ver detalhes</a>
+            </div>
         </div>
+    </div>
+</div>
 
         <!-- Pagination -->
         <nav aria-label="Navegação de páginas" class="mt-4">
