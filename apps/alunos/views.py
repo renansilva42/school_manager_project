@@ -162,7 +162,7 @@ class AlunoListView(BaseAlunoView, ListView):
     """View for listing students with filtering and search capabilities"""
     template_name = 'alunos/lista_alunos.html'
     context_object_name = 'alunos'
-    paginate_by = 12
+    paginate_by = 9
     
     def get_queryset(self):
         logger.debug("Starting get_queryset")
