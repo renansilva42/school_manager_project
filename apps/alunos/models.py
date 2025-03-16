@@ -413,12 +413,14 @@ class Aluno(models.Model):
         if errors:
             raise ValidationError(errors)
 
-    # def validate_idade(self, errors):
-    #     """Validate student age"""
-    #     if self.data_nascimento:
-    #         idade = self.get_idade()
-    #         if idade < 5 or idade > 18:
-    #             errors['data_nascimento'] = _('Idade deve estar entre 5 e 18 anos')
+    def validate_idade(self, errors):
+        """Validate student age"""
+        if not self.data_nascimento:
+            return  # Retorna sem validar se não houver data de nascimento
+            
+        idade = self.get_idade()
+        if idade < 5 or idade > 18:
+            errors['data_nascimento'] = _('Idade deve estar entre 5 e 18 anos')
 
     def validate_nivel_turno(self, errors):
         """Validate level and shift combinations"""
