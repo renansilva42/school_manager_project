@@ -328,8 +328,8 @@ class AlunoForm(BaseForm):
         """Valida campos únicos considerando registros existentes"""
         for field in ['matricula', 'email', 'cpf']:
             value = cleaned_data.get(field)
-            # Pula validação para valores vazios
-            if not value:
+            # Pula validação para valores vazios ou None
+            if not value or value.strip() == '':  # Modificado aqui
                 continue
                 
             query = {field: value}
@@ -339,7 +339,6 @@ class AlunoForm(BaseForm):
             else:
                 if Aluno.objects.filter(**query).exists():
                     raise ValidationError({field: _(f"Este {field} já está em uso.")})
-
     def save(self, commit=True):
         """Método de salvamento aprimorado com rastreamento de usuário"""
         instance = super().save(commit=False)
