@@ -277,7 +277,9 @@ class Aluno(models.Model):
     
     data_nascimento = models.DateField(
         verbose_name="Data de Nascimento",
-        help_text="Data de nascimento do aluno"
+        help_text="Data de nascimento do aluno",
+        null=True,
+        blank=True
     )
     
     cpf = models.CharField(

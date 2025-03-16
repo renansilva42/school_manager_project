@@ -63,7 +63,6 @@ class DatabaseService:
             # Extrair foto_base64 dos dados se existir
             foto_base64 = data.pop('foto_base64', None)
             
-            
             # Criar o aluno primeiro sem a foto
             aluno = Aluno.objects.create(**data)
             
@@ -96,11 +95,6 @@ class DatabaseService:
             raise
 
     def update_aluno(self, id, data):
-        # Verificar se data_nascimento está presente
-        if not data.get('data_nascimento'):
-            logger.error("Erro ao atualizar aluno: data_nascimento é obrigatório")
-            raise ValueError("A data de nascimento é obrigatória")
-            
         aluno = Aluno.objects.get(id=id)
         for key, value in data.items():
             setattr(aluno, key, value)

@@ -405,7 +405,6 @@ class AlunoCreateView(AdminRequiredMixin, BaseAlunoView, CreateView):
                 data = form.cleaned_data.copy()
                 data['id'] = aluno_id
                 
-                
                 # Initialize Supabase service
                 db = DatabaseService()
                 
