@@ -129,7 +129,7 @@ class Aluno(models.Model):
     )
     
     nome = models.CharField(max_length=100)
-    cpf = models.CharField(max_length=11, blank=True, null=True, unique=True)
+    cpf = models.CharField(max_length=14, blank=True, null=True, unique=True)
     
     def get_foto_url(self):
         if self.foto:
@@ -286,7 +286,7 @@ class Aluno(models.Model):
     )
     
     cpf = models.CharField(
-        max_length=11,
+        max_length=14,
         validators=[cpf_regex],
         verbose_name="CPF",
         help_text="CPF no formato: 999.999.999-99. Este campo é opcional.",
