@@ -276,7 +276,7 @@ class AlunoImportExcelView(LoginRequiredMixin, AdminRequiredMixin, View):
             # Read Excel file
             df = pd.read_excel(excel_file)
             
-            # Atualizar colunas obrigatórias (remover data_nascimento)
+            # Atualizar colunas obrigatórias (remover data_nascimento e cpf)
             required_columns = [
                 'nome', 'matricula', 
                 'nivel', 'turno', 'ano'
@@ -301,7 +301,10 @@ class AlunoImportExcelView(LoginRequiredMixin, AdminRequiredMixin, View):
                         'ano': str(row['ano']),
                         # Tornar data_nascimento opcional
                         'data_nascimento': pd.to_datetime(row['data_nascimento']).date() if pd.notna(row.get('data_nascimento')) else None,
+                        # Tornar CPF opcional
                         'cpf': str(row['cpf']) if pd.notna(row.get('cpf')) else None,
+                        # Tornar data_matricula opcional
+                        'data_matricula': pd.to_datetime(row['data_matricula']).date() if pd.notna(row.get('data_matricula')) else None,
                         'email': row.get('email', ''),
                         'telefone': row.get('telefone', ''),
                         'endereco': row.get('endereco', ''),

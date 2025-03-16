@@ -331,7 +331,9 @@ class Aluno(models.Model):
         verbose_name="Turma"
     )
     data_matricula = models.DateField(
-        verbose_name="Data de Matrícula"
+        verbose_name="Data de Matrícula",
+        null=True,
+        blank=True
     )
     
     # Informações dos Responsáveis
