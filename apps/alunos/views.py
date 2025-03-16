@@ -190,7 +190,7 @@ class AlunoListView(BaseAlunoView, ListView):
                 )
                 
             logger.debug(f"Queryset final count: {queryset.count()}")
-            return queryset
+            return queryset.order_by('nome')  # Ordenar por nome antes de retornar
         except Exception as e:
             logger.error(f"Error in get_queryset: {str(e)}")
             return Aluno.objects.none()
@@ -228,13 +228,16 @@ class AlunoListView(BaseAlunoView, ListView):
         if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             html = render_to_string(
                 'alunos/partials/lista_alunos_partial.html',
-                context,
+                {
+                    'alunos': context['page_obj'],  # Adiciona o page_obj ao contexto
+                    'paginator': context['paginator'],  # Adiciona o paginator
+                    'page_obj': context['page_obj'],  # Adiciona o page_obj
+                },
                 request=self.request
             )
-            # Adicione o total de alunos na resposta JSON
             return JsonResponse({
                 'html': html,
-                'total_alunos': context['paginator'].count  # Adiciona o total de alunos
+                'total_alunos': context['paginator'].count
             })
         return super().render_to_response(context, **response_kwargs)
 
