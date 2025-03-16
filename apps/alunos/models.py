@@ -283,9 +283,8 @@ class Aluno(models.Model):
     cpf = models.CharField(
         max_length=14,
         validators=[cpf_regex],
-        unique=True,
         verbose_name="CPF",
-        help_text="CPF no formato: 999.999.999-99",
+        help_text="CPF no formato: 999.999.999-99. Este campo é opcional.",
         null=True,  # Permite valores nulos no banco de dados
         blank=True  # Permite valores em branco no formulário
     )
@@ -387,7 +386,7 @@ class Aluno(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['cpf'],
-                condition=models.Q(ativo=True),
+                condition=models.Q(ativo=True) & ~models.Q(cpf='') & ~models.Q(cpf__isnull=True),
                 name='unique_active_cpf'
             ),
             models.UniqueConstraint(
@@ -427,7 +426,8 @@ class Aluno(models.Model):
     def validate_unique_fields(self, errors):
         """Validate unique fields"""
         if not self.pk:
-            if Aluno.objects.filter(cpf=self.cpf, ativo=True).exists():
+            # Verificar CPF apenas se não estiver vazio
+            if self.cpf and self.cpf.strip() and Aluno.objects.filter(cpf=self.cpf, ativo=True).exists():
                 errors['cpf'] = _('CPF já cadastrado')
             if Aluno.objects.filter(matricula=self.matricula, ativo=True).exists():
                 errors['matricula'] = _('Matrícula já cadastrada')
