@@ -80,7 +80,22 @@ class AlunoForm(BaseForm):
         return str(matricula)
     
     def clean(self):
+        """Validação personalizada para o formulário"""
         cleaned_data = super().clean()
+        
+        # Processar foto
+        self.process_photo(cleaned_data)
+        
+        # Validar combinações de nível, turno e ano
+        self.validate_nivel_combinations(cleaned_data)
+        
+        # Validar campos únicos
+        self.validate_unique_fields(cleaned_data)
+        
+        return cleaned_data
+        
+    def process_photo(self, cleaned_data):
+        """Processa a foto do aluno (base64 ou arquivo)"""
         foto_base64 = cleaned_data.get('foto_base64')
         foto_file = cleaned_data.get('foto')
         
@@ -189,12 +204,6 @@ class AlunoForm(BaseForm):
             except Exception as e:
                 logger.error(f"Erro ao processar arquivo de imagem: {str(e)}")
                 raise ValidationError(f"Erro ao processar imagem: {str(e)}")
-        
-        # Validação adicional para campos obrigatórios
-        self.validate_nivel_combinations(cleaned_data)
-        self.validate_unique_fields(cleaned_data)
-        
-        return cleaned_data
 
     class Meta:
         model = Aluno
@@ -324,22 +333,21 @@ class AlunoForm(BaseForm):
         if errors:
             raise ValidationError(errors)
 
-   
-        def validate_unique_fields(self, cleaned_data):
-            """Valida campos únicos considerando registros existentes"""
-            for field in ['matricula', 'email', 'cpf']:
-                value = cleaned_data.get(field)
-                # Pula validação para valores vazios ou None
-                if not value or value.strip() == '':
-                    continue
-                    
-                query = {field: value}
-                if self.instance.pk:
-                    if Aluno.objects.filter(**query).exclude(pk=self.instance.pk).exists():
-                        raise ValidationError({field: _(f"Este {field} já está em uso.")})
-                else:
-                    if Aluno.objects.filter(**query).exists():
-                        raise ValidationError({field: _(f"Este {field} já está em uso.")})
+    def validate_unique_fields(self, cleaned_data):
+        """Valida campos únicos considerando registros existentes"""
+        for field in ['matricula', 'email', 'cpf']:
+            value = cleaned_data.get(field)
+            # Pula validação para valores vazios ou None
+            if not value or value.strip() == '':
+                continue
+                
+            query = {field: value}
+            if self.instance.pk:
+                if Aluno.objects.filter(**query).exclude(pk=self.instance.pk).exists():
+                    raise ValidationError({field: _(f"Este {field} já está em uso.")})
+            else:
+                if Aluno.objects.filter(**query).exists():
+                    raise ValidationError({field: _(f"Este {field} já está em uso.")})
     def save(self, commit=True):
         """Método de salvamento aprimorado com rastreamento de usuário"""
         instance = super().save(commit=False)
