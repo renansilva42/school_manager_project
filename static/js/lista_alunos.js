@@ -66,50 +66,61 @@ class AlunosManager {
     }
 
     initializeEventListeners() {
-        // Fix for the filter collapse button
+        // Filter collapse button
         const filterButton = document.querySelector('[data-bs-toggle="collapse"]');
         if (filterButton) {
-            // Initial state setup
             const icon = filterButton.querySelector('.fa-chevron-down');
             if (icon) {
-                // Check if the collapse is initially expanded
                 const isCollapsed = filterButton.classList.contains('collapsed');
                 icon.style.transform = isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)';
                 icon.style.transition = 'transform 0.3s ease';
-            }
-            
-            // Add event listener for click
-            filterButton.addEventListener('click', () => {
-                const icon = filterButton.querySelector('.fa-chevron-down');
-                if (icon) {
-                    // Toggle rotation based on the current state
+                
+                filterButton.addEventListener('click', () => {
                     const isCollapsed = filterButton.classList.contains('collapsed');
                     icon.style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
-                }
-            });
+                });
+            }
         }
-        // View toggle listeners
+    
+        // View toggles
         this.elements.viewGrid.addEventListener('click', () => this.toggleView('grid'));
         this.elements.viewList.addEventListener('click', () => this.toggleView('list'));
-
-        // Form listeners
+    
+        // Form handlers
         this.elements.filterForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleFormSubmit();
         });
-
         this.elements.nivel.addEventListener('change', () => {
             this.updateTurnoChoices(this.elements.nivel.value);
         });
-
         this.elements.turno.addEventListener('change', () => {
             this.handleTurnoChange();
         });
-
         this.elements.ano.addEventListener('change', () => {
             this.handleAnoChange();
         });
+    
+        // Pagination
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('.pagination .page-link')) {
+                e.preventDefault();
+                const page = e.target.getAttribute('data-page') || 
+                            new URL(e.target.href).searchParams.get('page');
+                if (page) {
+                    const currentParams = {
+                        nivel: this.elements.nivel.value,
+                        turno: this.elements.turno.value,
+                        ano: this.elements.ano.value,
+                        search: this.elements.search.value.trim(),
+                        page: page
+                    };
+                    this.fetchAlunos(currentParams);
+                }
+            }
+        });
     }
+    
 
     toggleView(view) {
         const {alunosContainer, viewGrid, viewList} = this.elements;
