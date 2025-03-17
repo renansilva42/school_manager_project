@@ -122,45 +122,30 @@
         <!-- Pagination -->
         <nav aria-label="Navegação de páginas" class="mt-4">
             <ul class="pagination justify-content-center">
-                {% if alunos.has_previous %}
+                {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="javascript:void(0)" data-page="1">
-                            <span aria-hidden="true">&laquo;&laquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="javascript:void(0)" data-page="{{ alunos.previous_page_number }}">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
                 {% endif %}
         
-                {% for num in alunos.paginator.page_range %}
-                    {% if alunos.number == num %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                    {% elif num > alunos.number|add:'-3' and num < alunos.number|add:'3' %}
-                        <li class="page-item">
-                            <a class="page-link" href="javascript:void(0)" data-page="{{ num }}">{{ num }}</a>
-                        </li>
-                    {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
                 {% endfor %}
         
-                {% if alunos.has_next %}
+                {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="javascript:void(0)" data-page="{{ alunos.next_page_number }}">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">
                             <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="javascript:void(0)" data-page="{{ alunos.paginator.num_pages }}">
-                            <span aria-hidden="true">&raquo;&raquo;</span>
                         </a>
                     </li>
                 {% endif %}
             </ul>
         </nav>
+        
         
 
 <!-- Import Modal -->

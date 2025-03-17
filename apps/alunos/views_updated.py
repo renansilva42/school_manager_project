@@ -772,3 +772,9 @@ class AlunoMediaAPIView(LoginRequiredMixin, View):  # Também atualize esta clas
         except Exception as e:
             logger.error(f"Error calculating averages: {str(e)}")
             return JsonResponse({'error': 'Erro ao calcular médias'}, status=400)
+
+class ListaAlunosView(LoginRequiredMixin, ListView):
+    model = Aluno
+    template_name = 'alunos/lista_alunos.html'
+    context_object_name = 'alunos'
+    paginate_by = 9
