@@ -377,20 +377,23 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid var(--primary-color);
   padding: 0.5rem 1rem;
   transition: all var(--transition-speed);
+  background-color: white;
 }
 
 .pagination .page-item.active .page-link {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-  color: white;
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: white !important;
+  pointer-events: none;
 }
 
-.pagination .page-item .page-link:hover {
+.pagination .page-item:not(.active) .page-link:hover {
   background-color: var(--primary-color);
   color: white;
   transform: translateY(-2px);
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
+
 
 .pagination .page-item.disabled .page-link {
   color: #6c757d;
