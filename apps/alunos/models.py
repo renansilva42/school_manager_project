@@ -392,17 +392,18 @@ class Aluno(models.Model):
             models.Index(fields=['nivel', 'turno']),
         ]
         constraints = [
-            models.UniqueConstraint(
-                fields=['cpf'],
-                condition=models.Q(ativo=True) & ~models.Q(cpf='') & ~models.Q(cpf__isnull=True),
-                name='unique_active_cpf'
-            ),
-            models.UniqueConstraint(
-                fields=['matricula'],
-                condition=models.Q(ativo=True),
-                name='unique_active_matricula'
-            ),
-        ]
+    models.UniqueConstraint(
+        fields=['cpf'],
+        condition=models.Q(ativo=True) & models.Q(cpf__isnull=False) & ~models.Q(cpf=''),
+        name='unique_active_cpf'
+    ),
+    models.UniqueConstraint(
+        fields=['matricula'],
+        condition=models.Q(ativo=True),
+        name='unique_active_matricula'
+    ),
+]
+
 
     def __str__(self):
         return f"{self.nome} - Matrícula: {self.matricula}"

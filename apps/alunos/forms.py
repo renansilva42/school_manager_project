@@ -346,25 +346,27 @@ class AlunoForm(BaseForm):
         if errors:
             raise ValidationError(errors)
 
-    def validate_unique_fields(self, cleaned_data):
-        """Valida campos únicos considerando registros existentes"""
-        for field in ['matricula', 'email', 'cpf']:
-            value = cleaned_data.get(field)
-            
-            # Pula validação para valores vazios, None ou apenas espaços
-            if value is None or (isinstance(value, str) and value.strip() == ''):
-                # Para o CPF, garantir que ele possa ser vazio
-                if field == 'cpf':
-                    cleaned_data[field] = ''
-                continue
-                
-            query = {field: value}
+def validate_unique_fields(self, cleaned_data):
+    """Valida campos únicos considerando registros existentes"""
+    for field in ['matricula', 'email', 'cpf']:
+        value = cleaned_data.get(field)
+        
+        # Skip validation for empty values
+        if value is None or (isinstance(value, str) and value.strip() == ''):
+            if field == 'cpf':
+                cleaned_data[field] = None  # Use None instead of empty string
+            continue
+        
+        # Only check uniqueness for non-CPF fields or non-empty CPF
+        if field != 'cpf' or value.strip():
+            query = {field: value, 'ativo': True}
             if self.instance.pk:
                 if Aluno.objects.filter(**query).exclude(pk=self.instance.pk).exists():
                     raise ValidationError({field: _(f"{field.capitalize()} já cadastrado")})
             else:
                 if Aluno.objects.filter(**query).exists():
                     raise ValidationError({field: _(f"{field.capitalize()} já cadastrado")})
+
     def save(self, commit=True):
         """Método de salvamento aprimorado com rastreamento de usuário"""
         instance = super().save(commit=False)
