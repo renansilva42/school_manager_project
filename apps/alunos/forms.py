@@ -103,7 +103,7 @@ class AlunoForm(BaseForm):
         self.validate_nivel_combinations(cleaned_data)
         
         # Validar campos únicos
-        self.validate_unique_fields(cleaned_data)
+        self.instance.validate_unique()
         
         return cleaned_data
         
