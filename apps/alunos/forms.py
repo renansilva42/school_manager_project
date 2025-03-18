@@ -189,7 +189,7 @@ class AlunoForm(BaseForm):
                 # Converter para RGB se necessário
                 if img.mode not in ('RGB', 'RGBA'):
                     img = img.convert('RGB')
-                
+                #
                 # Redimensionar se necessário
                 if img.height > 800 or img.width > 800:
                     output_size = (800, 800)
