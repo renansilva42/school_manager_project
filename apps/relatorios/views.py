@@ -146,9 +146,9 @@ def relatorio_turmas(request):
     # Get all students grouped by class
     turmas_data = Aluno.objects.values('turma').annotate(
         total_alunos=Count('id'),
-        matutino=Count('id', filter=Q(turno=TurnoChoices.MANHA)),  # Change MATUTINO to MANHA
-        vespertino=Count('id', filter=Q(turno=TurnoChoices.TARDE)),  # Change VESPERTINO to TARDE
-        noturno=Count('id', filter=Q(turno=TurnoChoices.NOTURNO))
+        matutino=Count('id', filter=Q(turno=TurnoChoices.MANHA)),
+        vespertino=Count('id', filter=Q(turno=TurnoChoices.TARDE))
+        # Remove the noturno count since it's not a valid option
     ).order_by('turma')
 
     context = {
