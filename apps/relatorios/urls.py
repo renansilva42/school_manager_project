@@ -9,4 +9,6 @@ urlpatterns = [
     path('alunos-por-serie/pdf/', views.exportar_alunos_por_serie_pdf, name='exportar_alunos_por_serie_pdf'),
     path('notas-baixas/', views.relatorio_notas_baixas, name='relatorio_notas_baixas'),
     path('notas-baixas/pdf/', views.exportar_notas_baixas_pdf, name='exportar_notas_baixas_pdf'),
+    path('turmas/', views.relatorio_turmas, name='relatorio_turmas'),
+    path('turmas/pdf/', views.exportar_turmas_pdf, name='exportar_turmas_pdf'),
 ]

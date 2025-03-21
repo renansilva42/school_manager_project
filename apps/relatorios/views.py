@@ -10,6 +10,7 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from apps.alunos.models import Aluno, Nota
+from django.db.models import Count, Q
 
 def is_teacher_or_admin(user):
     return user.groups.filter(name__in=['Professores', 'Administradores']).exists()
@@ -138,3 +139,28 @@ def exportar_notas_baixas_pdf(request):
     colunas = ['Aluno', 'Série', 'Disciplina', 'Nota', 'Data']
     pdf_buffer = gerar_pdf(data, 'Relatório de Notas Baixas', colunas)
     return FileResponse(pdf_buffer, as_attachment=True, filename='notas_baixas.pdf')
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def relatorio_turmas(request):
+    # Get all students grouped by class
+    turmas_data = Aluno.objects.values('turma').annotate(
+        total_alunos=Count('id'),
+        matutino=Count('id', filter=Q(turno=TurnoChoices.MATUTINO)),
+        vespertino=Count('id', filter=Q(turno=TurnoChoices.VESPERTINO)),
+        noturno=Count('id', filter=Q(turno=TurnoChoices.NOTURNO))
+    ).order_by('turma')
+
+    context = {
+        'turmas_data': turmas_data,
+    }
+    return render(request, 'relatorios/turmas.html', context)
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def exportar_turmas_pdf(request):
+    # Create PDF buffer
+    buffer = io.BytesIO()
+    # ... PDF generation logic ...
+    buffer.seek(0)
+    return FileResponse(buffer, as_attachment=True, filename='relatorio_turmas.pdf')

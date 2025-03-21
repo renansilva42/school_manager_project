@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Relatório de Turmas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Relatório de Distribuição de Alunos por Turma</h2>
+    
+    <div class="mb-3">
+        <a href="{% url 'exportar_turmas_pdf' %}" class="btn btn-primary">
+            Exportar PDF
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Turma</th>
+                    <th>Total de Alunos</th>
+                    <th>Matutino</th>
+                    <th>Vespertino</th>
+                    <th>Noturno</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for turma in turmas_data %}
+                <tr>
+                    <td>{{ turma.turma }}</td>
+                    <td>{{ turma.total_alunos }}</td>
+                    <td>{{ turma.matutino }}</td>
+                    <td>{{ turma.vespertino }}</td>
+                    <td>{{ turma.noturno }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
