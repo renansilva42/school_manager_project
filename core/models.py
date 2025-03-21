@@ -14,6 +14,23 @@ class SiteSettings(models.Model):
     smtp_server = models.CharField(max_length=100, blank=True, null=True)
     smtp_port = models.IntegerField(blank=True, null=True)
     
+    
+class AtribuicaoDisciplina(models.Model):
+    professor = models.ForeignKey('Professor', on_delete=models.CASCADE)
+    disciplina = models.CharField(max_length=50)
+    turma = models.CharField(max_length=50)
+    ano_letivo = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    # ... (resto do código)
+
+class DisponibilidadeHorario(models.Model):
+    DIAS_SEMANA = [
+        ('SEG', 'Segunda-feira'),
+        ('TER', 'Terça-feira'),
+        ('QUA', 'Quarta-feira'),
+        ('QUI', 'Quinta-feira'),
+        ('SEX', 'Sexta-feira'),
+    ]
     class Meta:
         verbose_name = 'Configurações do Site'
         verbose_name_plural = 'Configurações do Site'
