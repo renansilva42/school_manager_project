@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Cadastro de Professor</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="nome">Nome Completo</label>
+                    <input type="text" class="form-control" id="nome" name="nome" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="telefone">Telefone</label>
+                    <input type="tel" class="form-control" id="telefone" name="telefone">
+                </div>
+                <div class="form-group">
+                    <label for="formacao">Formação Acadêmica</label>
+                    <input type="text" class="form-control" id="formacao" name="formacao">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="foto">Foto</label>
+                    <input type="file" class="form-control-file" id="foto" name="foto">
+                </div>
+                <div class="form-group">
+                    <label for="especialidade">Especialidade</label>
+                    <input type="text" class="form-control" id="especialidade" name="especialidade">
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Cadastrar Professor</button>
+    </form>
+</div>
+{% endblock %}

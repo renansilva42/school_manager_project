@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Atribuição de Disciplinas</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="professor">Professor</label>
+                    <select class="form-control" id="professor" name="professor" required>
+                        <option value="">Selecione um professor</option>
+                        {% for professor in professores %}
+                            <option value="{{ professor.id }}">{{ professor.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="disciplina">Disciplina</label>
+                    <select class="form-control" id="disciplina" name="disciplina" required>
+                        <option value="">Selecione uma disciplina</option>
+                        {% for disciplina in disciplinas %}
+                            <option value="{{ disciplina.id }}">{{ disciplina.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="turma">Turma</label>
+                    <select class="form-control" id="turma" name="turma" required>
+                        <option value="">Selecione uma turma</option>
+                        {% for turma in turmas %}
+                            <option value="{{ turma.id }}">{{ turma.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Atribuir Disciplina</button>
+    </form>
+
+    <div class="mt-4">
+        <h3>Disciplinas Atribuídas</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Professor</th>
+                    <th>Disciplina</th>
+                    <th>Turma</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for atribuicao in atribuicoes %}
+                <tr>
+                    <td>{{ atribuicao.professor.nome }}</td>
+                    <td>{{ atribuicao.disciplina.nome }}</td>
+                    <td>{{ atribuicao.turma.nome }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger">Remover</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

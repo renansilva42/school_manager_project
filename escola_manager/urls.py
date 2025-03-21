@@ -6,6 +6,7 @@ from core.views import home
 from django.contrib.auth import views as auth_views
 from . import views
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),
@@ -14,6 +15,7 @@ urlpatterns = [
     path('usuarios/', include('apps.usuarios.urls')),
     path('relatorios/', include('apps.relatorios.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('professores/', include('apps.professores.urls', namespace='professores')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 urlpatterns += [

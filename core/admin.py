@@ -1,6 +1,11 @@
 from django.contrib import admin
 from .models import Professor, SiteSettings
+from django.contrib import admin
+from .models import Professor, AtribuicaoDisciplina, DisponibilidadeHorario 
 
+admin.site.register(Professor)
+admin.site.register(AtribuicaoDisciplina)
+admin.site.register(DisponibilidadeHorario)
 
 @admin.register(Professor)
 class ProfessorAdmin(admin.ModelAdmin):

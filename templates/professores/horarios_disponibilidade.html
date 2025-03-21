@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Horários e Disponibilidade</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="professor">Selecione o Professor</label>
+                <select class="form-control" id="professor" name="professor">
+                    <option value="">Escolha um professor</option>
+                    {% for professor in professores %}
+                        <option value="{{ professor.id }}">{{ professor.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Horário</th>
+                        <th>Segunda</th>
+                        <th>Terça</th>
+                        <th>Quarta</th>
+                        <th>Quinta</th>
+                        <th>Sexta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for horario in horarios %}
+                    <tr>
+                        <td>{{ horario }}</td>
+                        {% for dia in dias_semana %}
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       name="disponibilidade_{{ horario }}_{{ dia }}"
+                                       id="check_{{ horario }}_{{ dia }}">
+                            </div>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Salvar Disponibilidade</button>
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+    // Adicione aqui o JavaScript necessário para manipulação dinâmica da tabela
+    document.getElementById('professor').addEventListener('change', function() {
+        // Função para carregar a disponibilidade do professor selecionado
+        const professorId = this.value;
+        if (professorId) {
+            // Fazer requisição AJAX para carregar os dados do professor
+            // e atualizar os checkboxes
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}
