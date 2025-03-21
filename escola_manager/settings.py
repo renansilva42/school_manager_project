@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'rest_framework',
     'storages',
+     'apps.professores', 
 ]
 
 SUPABASE_URL = os.getenv('SUPABASE_URL')

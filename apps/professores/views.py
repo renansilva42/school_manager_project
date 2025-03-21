@@ -16,28 +16,19 @@ class ProfessorCreateView(LoginRequiredMixin, CreateView):
     model = Professor
     form_class = ProfessorForm
     template_name = 'professores/cadastro_professor.html'
-    success_url = reverse_lazy('professor_list')
-
-    def form_valid(self, form):
-        messages.success(self.request, 'Professor cadastrado com sucesso!')
-        return super().form_valid(form)
+    success_url = reverse_lazy('professores:professor_list')  # Adicione o namespace 'professores:'
 
 class AtribuicaoDisciplinaCreateView(LoginRequiredMixin, CreateView):
     model = AtribuicaoDisciplina
     form_class = AtribuicaoDisciplinaForm
     template_name = 'professores/atribuir_disciplina.html'
-    success_url = reverse_lazy('atribuicao_list')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['atribuicoes'] = AtribuicaoDisciplina.objects.all()
-        return context
+    success_url = reverse_lazy('professores:professor_list')  # Ajuste para uma URL existente
 
 class DisponibilidadeHorarioCreateView(LoginRequiredMixin, CreateView):
     model = DisponibilidadeHorario
     form_class = DisponibilidadeHorarioForm
     template_name = 'professores/horarios_disponibilidade.html'
-    success_url = reverse_lazy('disponibilidade_list')
+    success_url = reverse_lazy('professores:professor_list')  # Ajuste para uma URL existente
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

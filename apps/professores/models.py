@@ -1,27 +1,57 @@
-from django.contrib import admin
-from .models import SiteSettings
-from apps.professores.models import Professor, AtribuicaoDisciplina, DisponibilidadeHorario
+# /apps/professores/models.py
+from django.db import models
 
-@admin.register(Professor)
-class ProfessorAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'email', 'telefone', 'formacao', 'especialidade', 'ativo')
-    search_fields = ('nome', 'email')
-    list_filter = ('ativo', 'formacao')
+class Professor(models.Model):
+    nome = models.CharField(max_length=100)
+    email = models.EmailField()
+    telefone = models.CharField(max_length=15)
+    formacao = models.CharField(max_length=100)
+    especialidade = models.CharField(max_length=100)
+    foto = models.ImageField(upload_to='professores/fotos/', null=True, blank=True)
+    ativo = models.BooleanField(default=True)
 
-@admin.register(AtribuicaoDisciplina)
-class AtribuicaoDisciplinaAdmin(admin.ModelAdmin):
-    list_display = ('professor', 'disciplina', 'turma', 'ano_letivo')
-    search_fields = ('professor__nome', 'disciplina', 'turma')
-    list_filter = ('ano_letivo',)
+    def __str__(self):
+        return self.nome
 
-@admin.register(DisponibilidadeHorario)
-class DisponibilidadeHorarioAdmin(admin.ModelAdmin):
-    list_display = ('professor', 'dia_semana', 'hora_inicio', 'hora_fim')
-    list_filter = ('dia_semana',)
+class AtribuicaoDisciplina(models.Model):
+    professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
+    disciplina = models.CharField(max_length=50)
+    turma = models.CharField(max_length=50)
+    ano_letivo = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
-@admin.register(SiteSettings)
-class SiteSettingsAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'school_name', 'contact_email')
+    def __str__(self):
+        return f"{self.professor} - {self.disciplina} ({self.turma})"
+
+class DisponibilidadeHorario(models.Model):
+    DIAS_SEMANA = [
+        ('SEG', 'Segunda-feira'),
+        ('TER', 'Terça-feira'),
+        ('QUA', 'Quarta-feira'),
+        ('QUI', 'Quinta-feira'),
+        ('SEX', 'Sexta-feira'),
+    ]
     
-    def has_add_permission(self, request):
-        return SiteSettings.objects.count() == 0
+    professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
+    dia_semana = models.CharField(max_length=3, choices=DIAS_SEMANA)
+    hora_inicio = models.TimeField()
+    hora_fim = models.TimeField()
+
+    def __str__(self):
+        return f"{self.professor} - {self.get_dia_semana_display()}"
+
+class SiteSettings(models.Model):
+    school_name = models.CharField(max_length=100, blank=True, null=True)
+    contact_email = models.EmailField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = 'Configurações do Site'
+        verbose_name_plural = 'Configurações do Site'
+    
+    def __str__(self):
+        return "Configurações do Site"
+    
+    @classmethod
+    def get_settings(cls):
+        settings, created = cls.objects.get_or_create(pk=1)
+        return settings
