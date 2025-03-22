@@ -1,6 +1,6 @@
 # /apps/professores/admin.py
 from django.contrib import admin
-from .models import Professor, AtribuicaoDisciplina, DisponibilidadeHorario, SiteSettings
+# from .models import Professor, AtribuicaoDisciplina, DisponibilidadeHorario, SiteSettings
 
 @admin.register(Professor)
 class ProfessorAdmin(admin.ModelAdmin):
