@@ -27,13 +27,6 @@ class SiteSettings(models.Model):
         return settings
     
     
-class AtribuicaoDisciplina(models.Model):
-    professor = models.ForeignKey('Professor', on_delete=models.CASCADE)
-    disciplina = models.CharField(max_length=50)
-    turma = models.CharField(max_length=50)
-    ano_letivo = models.IntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    # ... (resto do código)
 
 class DisponibilidadeHorario(models.Model):
     DIAS_SEMANA = [
