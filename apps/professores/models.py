@@ -39,3 +39,11 @@ class DisponibilidadeHorario(models.Model):
 
     def __str__(self):
         return f"{self.professor} - {self.get_dia_semana_display()}"
+    
+class SiteSettings(models.Model):
+    # Add your site settings fields here
+    
+    @classmethod
+    def get_settings(cls):
+        # Implement your settings retrieval logic
+        return cls.objects.first()  # or however you want to retrieve settings
