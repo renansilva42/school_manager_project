@@ -1,4 +1,5 @@
-from .models import SiteSettings
+# /core/context_processors.py
+from apps.professores.models import SiteSettings  # Update this import
 
 def site_settings(request):
     """
