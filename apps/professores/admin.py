@@ -11,8 +11,9 @@ class ProfessorAdmin(admin.ModelAdmin):
 @admin.register(AtribuicaoDisciplina)
 class AtribuicaoDisciplinaAdmin(admin.ModelAdmin):
     list_display = ('professor', 'disciplina', 'turma', 'ano_letivo')
-    search_fields = ('professor__nome', 'disciplina', 'turma')
+    search_fields = ('professor__nome', 'disciplina__nome', 'turma')
     list_filter = ('ano_letivo',)
+    autocomplete_fields = ['professor', 'disciplina']
 
 @admin.register(DisponibilidadeHorario)
 class DisponibilidadeHorarioAdmin(admin.ModelAdmin):

@@ -66,7 +66,6 @@ class SiteSettings(models.Model):
         return cls.objects.first()  # or however you want to retrieve settings
     
 
-# Adicionar novo modelo
 class Disciplina(models.Model):
     nome = models.CharField(max_length=100)
     carga_horaria = models.IntegerField()
@@ -76,20 +75,16 @@ class Disciplina(models.Model):
     def __str__(self):
         return self.nome
 
-# Modificar AtribuicaoDisciplina existente
 class AtribuicaoDisciplina(models.Model):
     professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
-    disciplina = models.ForeignKey(Disciplina, on_delete=models.CASCADE)  # Alterado
+    disciplina = models.ForeignKey(Disciplina, on_delete=models.CASCADE)
     turma = models.CharField(max_length=50)
     ano_letivo = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.professor} - {self.disciplina} ({self.turma})"
-
     class Meta:
         indexes = [
-            models.Index(fields=['professor', 'disciplina', 'turma', 'ano_letivo']),
+            models.Index(fields=['professor', 'disciplina', 'turma', 'ano_letivo'], name='professor_disciplina_idx'),
         ]
         unique_together = ['professor', 'disciplina', 'turma', 'ano_letivo']
 
@@ -103,20 +98,9 @@ class AtribuicaoDisciplina(models.Model):
         ).exclude(id=self.id).exists():
             raise ValidationError('Já existe uma atribuição similar para este professor.')
 
-def clean(self):
-        # Validar se já existe atribuição similar
-        if AtribuicaoDisciplina.objects.filter(
-            professor=self.professor,
-            disciplina=self.disciplina,
-            turma=self.turma,
-            ano_letivo=self.ano_letivo
-        ).exclude(id=self.id).exists():
-            raise ValidationError('Já existe uma atribuição similar para este professor.')
-
-def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
 
-def __str__(self):
-        return f"{self.professor} - {self.disciplina} ({self.turma})"
-# Métodos adicionais para AtribuicaoDisciplina
+    def __str__(self):
+        return f"{self.professor} - {self.disciplina} - {self.turma} ({self.ano_letivo})"
