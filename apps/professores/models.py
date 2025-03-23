@@ -24,7 +24,9 @@ class Professor(models.Model):
     email = models.EmailField(unique=True)
     data_nascimento = models.DateField(null=True, blank=True)
     telefone = models.CharField(max_length=20, null=True, blank=True)
-
+    formacao = models.CharField(max_length=255, null=True, blank=True)
+    especialidade = models.CharField(max_length=255, null=True, blank=True) 
+    foto = models.ImageField(upload_to='professores/', null=True, blank=True)
     def __str__(self):
         return self.nome
     
