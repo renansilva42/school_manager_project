@@ -66,6 +66,53 @@ class AtribuicaoDisciplina(models.Model):
         return f"{self.professor} - {self.disciplina} - {self.turma} ({self.ano_letivo})"
 
 
+class DisponibilidadeHorario(models.Model):
+    DIAS_SEMANA = [
+        (0, 'Segunda-feira'),
+        (1, 'Terça-feira'),
+        (2, 'Quarta-feira'),
+        (3, 'Quinta-feira'),
+        (4, 'Sexta-feira'),
+        (5, 'Sábado'),
+        (6, 'Domingo'),
+    ]
+    
+    professor = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name='disponibilidades')
+    dia_semana = models.IntegerField(choices=DIAS_SEMANA)
+    hora_inicio = models.TimeField()
+    hora_fim = models.TimeField()
+    
+    class Meta:
+        verbose_name = 'Disponibilidade de Horário'
+        verbose_name_plural = 'Disponibilidades de Horário'
+        ordering = ['dia_semana', 'hora_inicio']
+    
+    def __str__(self):
+        return f"{self.professor.nome} - {self.get_dia_semana_display()} ({self.hora_inicio} - {self.hora_fim})"
+    
+    def clean(self):
+        # Verificar se hora_inicio é anterior a hora_fim
+        if self.hora_inicio and self.hora_fim and self.hora_inicio >= self.hora_fim:
+            raise ValidationError('A hora de início deve ser anterior à hora de fim.')
+        
+        # Verificar sobreposição de horários
+        sobreposicao = DisponibilidadeHorario.objects.filter(
+            professor=self.professor,
+            dia_semana=self.dia_semana,
+        ).exclude(id=self.id)
+
+        for horario in sobreposicao:
+            if (self.hora_inicio <= horario.hora_fim and 
+                self.hora_fim >= horario.hora_inicio):
+                raise ValidationError(
+                    'Existe sobreposição de horário com outro registro.'
+                )
+    
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+
 class SiteSettings(models.Model):
     # Add your site settings fields here
     
