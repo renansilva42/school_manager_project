@@ -28,24 +28,3 @@ class SiteSettings(models.Model):
         settings, created = cls.objects.get_or_create(pk=1)
         return settings
 
-# class DisponibilidadeHorario(models.Model):
-#     DIAS_SEMANA = [
-#         ('SEG', 'Segunda-feira'),
-#         ('TER', 'Terça-feira'),
-#         ('QUA', 'Quarta-feira'),
-#         ('QUI', 'Quinta-feira'),
-#         ('SEX', 'Sexta-feira'),
-#     ]
-
-    # class Meta:
-    #     verbose_name = 'Configurações do Site'
-    #     verbose_name_plural = 'Configurações do Site'
-
-    # def __str__(self):
-    #     return "Configurações do Site"
-
-    # @classmethod
-    # def get_settings(cls):
-    #     settings, created = cls.objects.get_or_create(pk=1)
-    #     return settings
-
