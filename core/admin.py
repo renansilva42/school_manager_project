@@ -13,4 +13,4 @@ class SiteSettingsAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return SiteSettings.objects.count() == 0
 
-admin.site.register(DisponibilidadeHorario)
+# admin.site.register(DisponibilidadeHorario)
