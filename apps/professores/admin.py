@@ -4,9 +4,9 @@ from .models import Professor, AtribuicaoDisciplina, DisponibilidadeHorario, Dis
 
 @admin.register(Professor)
 class ProfessorAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'email', 'telefone', 'formacao', 'especialidade', 'ativo')
-    search_fields = ('nome', 'email')
-    list_filter = ('ativo', 'formacao')
+    list_display = ('nome', 'email', 'telefone', 'formacao', 'especialidade')
+    search_fields = ('nome', 'email', 'formacao', 'especialidade')
+    list_filter = ('formacao', 'especialidade')
 
 @admin.register(AtribuicaoDisciplina)
 class AtribuicaoDisciplinaAdmin(admin.ModelAdmin):
@@ -18,7 +18,8 @@ class AtribuicaoDisciplinaAdmin(admin.ModelAdmin):
 @admin.register(DisponibilidadeHorario)
 class DisponibilidadeHorarioAdmin(admin.ModelAdmin):
     list_display = ('professor', 'dia_semana', 'hora_inicio', 'hora_fim')
-    list_filter = ('dia_semana',)
+    list_filter = ('dia_semana', 'professor')
+    search_fields = ('professor__nome',)
 
 # @admin.register(SiteSettings)
 # class SiteSettingsAdmin(admin.ModelAdmin):
