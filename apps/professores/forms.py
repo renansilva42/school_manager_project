@@ -18,8 +18,9 @@ class AtribuicaoDisciplinaForm(forms.ModelForm):
 class DisponibilidadeHorarioForm(forms.ModelForm):
     class Meta:
         model = DisponibilidadeHorario
-        fields = ['professor', 'dia_semana', 'hora_inicio', 'hora_fim']
-        
+        fields = '__all__'
+        # If you want to exclude certain fields, you can use:
+        # exclude = ['field_to_exclude']
 
 
 class DisciplinaForm(forms.ModelForm):

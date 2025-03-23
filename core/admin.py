@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Professor, SiteSettings, DisponibilidadeHorario
+from .models import Professor, SiteSettings
 
 @admin.register(Professor)
 class ProfessorAdmin(admin.ModelAdmin):
@@ -12,3 +12,4 @@ class SiteSettingsAdmin(admin.ModelAdmin):
     
     def has_add_permission(self, request):
         return SiteSettings.objects.count() == 0
+

@@ -39,6 +39,24 @@ class DisponibilidadeHorario(models.Model):
     def __str__(self):
         return f"{self.professor} - {self.get_dia_semana_display()} {self.hora_inicio} - {self.hora_fim}"
     
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        sobreposicao = DisponibilidadeHorario.objects.filter(
+            professor=self.professor,
+            dia_semana=self.dia_semana,
+        ).exclude(id=self.id)
+
+        for horario in sobreposicao:
+            if (self.hora_inicio <= horario.hora_fim and 
+                self.hora_fim >= horario.hora_inicio):
+                raise ValidationError(
+                    'Existe sobreposição de horário com outro registro.'
+                )
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+    
 class SiteSettings(models.Model):
     # Add your site settings fields here
     
@@ -101,24 +119,4 @@ def save(self, *args, **kwargs):
 
 def __str__(self):
         return f"{self.professor} - {self.disciplina} ({self.turma})"
-# Modificar DisponibilidadeHorario
-class DisponibilidadeHorario(models.Model):
-    # ... (manter código existente) ...
-
-    def clean(self):
-        from django.core.exceptions import ValidationError
-        sobreposicao = DisponibilidadeHorario.objects.filter(
-            professor=self.professor,
-            dia_semana=self.dia_semana,
-        ).exclude(id=self.id)
-
-        for horario in sobreposicao:
-            if (self.hora_inicio <= horario.hora_fim and 
-                self.hora_fim >= horario.hora_inicio):
-                raise ValidationError(
-                    'Existe sobreposição de horário com outro registro.'
-                )
-
-    def save(self, *args, **kwargs):
-        self.clean()
-        super().save(*args, **kwargs)
+# Métodos adicionais para AtribuicaoDisciplina

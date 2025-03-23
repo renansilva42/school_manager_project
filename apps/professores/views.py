@@ -16,6 +16,14 @@ class ProfessorListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Professor.objects.filter(ativo=True)
     
+class DisciplinaListView(LoginRequiredMixin, ListView):
+    model = Disciplina
+    template_name = 'professores/disciplina_list.html'
+    context_object_name = 'disciplinas'
+    
+    def get_queryset(self):
+        return Disciplina.objects.filter(ativo=True)
+
 class DisciplinaCreateView(LoginRequiredMixin, CreateView):
     model = Disciplina
     form_class = DisciplinaForm
