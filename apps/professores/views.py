@@ -5,6 +5,7 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from .models import Professor, AtribuicaoDisciplina, DisponibilidadeHorario, Disciplina
 from .forms import ProfessorForm, AtribuicaoDisciplinaForm, DisponibilidadeHorarioForm, DisciplinaForm
+from django.core.exceptions import ValidationError
 
 class ProfessorListView(LoginRequiredMixin, ListView):
     model = Professor
@@ -34,11 +35,23 @@ class ProfessorCreateView(LoginRequiredMixin, CreateView):
     template_name = 'professores/cadastro_professor.html'
     success_url = reverse_lazy('professores:professor_list')  # Adicione o namespace 'professores:'
 
+
+
 class AtribuicaoDisciplinaCreateView(LoginRequiredMixin, CreateView):
     model = AtribuicaoDisciplina
     form_class = AtribuicaoDisciplinaForm
     template_name = 'professores/atribuir_disciplina.html'
-    success_url = reverse_lazy('professores:professor_list')  # Ajuste para uma URL existente
+    
+    def form_valid(self, form):
+        try:
+            # Verificar duplicatas antes de salvar
+            atribuicao = form.save(commit=False)
+            atribuicao.clean()  # Executa validações personalizadas
+            return super().form_valid(form)
+        except ValidationError as e:
+            form.add_error(None, e)
+            return self.form_invalid(form)
+        
 
 class DisponibilidadeHorarioCreateView(LoginRequiredMixin, CreateView):
     model = DisponibilidadeHorario

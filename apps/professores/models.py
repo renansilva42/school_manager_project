@@ -1,5 +1,6 @@
 # /apps/professores/models.py
 from django.db import models
+from django.core.exceptions import ValidationError
 
 class Professor(models.Model):
     nome = models.CharField(max_length=100)
@@ -12,16 +13,6 @@ class Professor(models.Model):
 
     def __str__(self):
         return self.nome
-
-class AtribuicaoDisciplina(models.Model):
-    professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
-    disciplina = models.CharField(max_length=50)
-    turma = models.CharField(max_length=50)
-    ano_letivo = models.IntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.professor} - {self.disciplina} ({self.turma})"
 
 class DisponibilidadeHorario(models.Model):
     DIAS_SEMANA = [
@@ -67,6 +58,41 @@ class AtribuicaoDisciplina(models.Model):
     ano_letivo = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.professor} - {self.disciplina} ({self.turma})"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['professor', 'disciplina', 'turma', 'ano_letivo']),
+        ]
+        unique_together = ['professor', 'disciplina', 'turma', 'ano_letivo']
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if AtribuicaoDisciplina.objects.filter(
+            professor=self.professor,
+            disciplina=self.disciplina,
+            turma=self.turma,
+            ano_letivo=self.ano_letivo
+        ).exclude(id=self.id).exists():
+            raise ValidationError('Já existe uma atribuição similar para este professor.')
+
+def clean(self):
+        # Validar se já existe atribuição similar
+        if AtribuicaoDisciplina.objects.filter(
+            professor=self.professor,
+            disciplina=self.disciplina,
+            turma=self.turma,
+            ano_letivo=self.ano_letivo
+        ).exclude(id=self.id).exists():
+            raise ValidationError('Já existe uma atribuição similar para este professor.')
+
+def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+def __str__(self):
+        return f"{self.professor} - {self.disciplina} ({self.turma})"
 # Modificar DisponibilidadeHorario
 class DisponibilidadeHorario(models.Model):
     # ... (manter código existente) ...
