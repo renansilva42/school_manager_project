@@ -3,6 +3,10 @@
 # Navigate to the project directory
 cd "$(dirname "$0")"
 
+# Fix the alunos migration conflict
+echo "Fixing alunos migration conflict..."
+python fix_alunos_migration.py
+
 # Create the tables in the database
 echo "Creating tables in the database..."
 python manage.py dbshell < fix_tables.sql
