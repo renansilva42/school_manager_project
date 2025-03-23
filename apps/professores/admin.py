@@ -1,6 +1,6 @@
 # /apps/professores/admin.py
 from django.contrib import admin
-from .models import Professor, AtribuicaoDisciplina, DisponibilidadeHorario
+from .models import Professor, AtribuicaoDisciplina, DisponibilidadeHorario, Disciplina
 
 @admin.register(Professor)
 class ProfessorAdmin(admin.ModelAdmin):
@@ -25,3 +25,10 @@ class DisponibilidadeHorarioAdmin(admin.ModelAdmin):
     
 #     def has_add_permission(self, request):
 #         return SiteSettings.objects.count() == 0
+
+
+@admin.register(Disciplina)
+class DisciplinaAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'carga_horaria', 'ativo')
+    search_fields = ('nome',)
+    list_filter = ('ativo',)

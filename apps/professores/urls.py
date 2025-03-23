@@ -8,4 +8,7 @@ urlpatterns = [
     path('cadastro/', views.ProfessorCreateView.as_view(), name='professor_create'),
     path('atribuicao/', views.AtribuicaoDisciplinaCreateView.as_view(), name='atribuicao_create'),
     path('disponibilidade/', views.DisponibilidadeHorarioCreateView.as_view(), name='disponibilidade_create'),
+    path('disciplinas/', views.DisciplinaListView.as_view(), name='disciplina_list'),
+    path('disciplinas/criar/', views.DisciplinaCreateView.as_view(), name='disciplina_create'),
+    path('professor/<int:pk>/desativar/', views.desativar_professor, name='professor_desativar'),
 ]

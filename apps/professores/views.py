@@ -3,8 +3,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.contrib import messages
-from .models import Professor, AtribuicaoDisciplina, DisponibilidadeHorario
-from .forms import ProfessorForm, AtribuicaoDisciplinaForm, DisponibilidadeHorarioForm
+from .models import Professor, AtribuicaoDisciplina, DisponibilidadeHorario, Disciplina
+from .forms import ProfessorForm, AtribuicaoDisciplinaForm, DisponibilidadeHorarioForm, DisciplinaForm
 
 class ProfessorListView(LoginRequiredMixin, ListView):
     model = Professor
@@ -12,6 +12,22 @@ class ProfessorListView(LoginRequiredMixin, ListView):
     context_object_name = 'professores'
     paginate_by = 10
 
+    def get_queryset(self):
+        return Professor.objects.filter(ativo=True)
+    
+class DisciplinaCreateView(LoginRequiredMixin, CreateView):
+    model = Disciplina
+    form_class = DisciplinaForm
+    template_name = 'professores/disciplina_form.html'
+    success_url = reverse_lazy('professores:disciplina_list')
+    
+def desativar_professor(request, pk):
+    professor = get_object_or_404(Professor, pk=pk)
+    professor.ativo = False
+    professor.save()
+    messages.success(request, 'Professor desativado com sucesso.')
+    return redirect('professores:professor_list')
+    
 class ProfessorCreateView(LoginRequiredMixin, CreateView):
     model = Professor
     form_class = ProfessorForm

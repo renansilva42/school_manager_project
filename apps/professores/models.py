@@ -47,3 +47,44 @@ class SiteSettings(models.Model):
     def get_settings(cls):
         # Implement your settings retrieval logic
         return cls.objects.first()  # or however you want to retrieve settings
+    
+
+# Adicionar novo modelo
+class Disciplina(models.Model):
+    nome = models.CharField(max_length=100)
+    carga_horaria = models.IntegerField()
+    descricao = models.TextField(blank=True, null=True)
+    ativo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.nome
+
+# Modificar AtribuicaoDisciplina existente
+class AtribuicaoDisciplina(models.Model):
+    professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
+    disciplina = models.ForeignKey(Disciplina, on_delete=models.CASCADE)  # Alterado
+    turma = models.CharField(max_length=50)
+    ano_letivo = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+# Modificar DisponibilidadeHorario
+class DisponibilidadeHorario(models.Model):
+    # ... (manter código existente) ...
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        sobreposicao = DisponibilidadeHorario.objects.filter(
+            professor=self.professor,
+            dia_semana=self.dia_semana,
+        ).exclude(id=self.id)
+
+        for horario in sobreposicao:
+            if (self.hora_inicio <= horario.hora_fim and 
+                self.hora_fim >= horario.hora_inicio):
+                raise ValidationError(
+                    'Existe sobreposição de horário com outro registro.'
+                )
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
