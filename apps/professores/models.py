@@ -1,6 +1,8 @@
 # /apps/professores/models.py
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import User
+
 
 class Professor(models.Model):
     nome = models.CharField(max_length=100)
@@ -21,15 +23,21 @@ class DisponibilidadeHorario(models.Model):
         ('QUA', 'Quarta-feira'),
         ('QUI', 'Quinta-feira'),
         ('SEX', 'Sexta-feira'),
+        ('SAB', 'Sábado'),
+        ('DOM', 'Domingo'),
     ]
     
-    professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
+    professor = models.ForeignKey('Professor', on_delete=models.CASCADE, related_name='disponibilidades')
     dia_semana = models.CharField(max_length=3, choices=DIAS_SEMANA)
     hora_inicio = models.TimeField()
     hora_fim = models.TimeField()
-
+    
+    class Meta:
+        verbose_name = 'Disponibilidade de Horário'
+        verbose_name_plural = 'Disponibilidades de Horário'
+        
     def __str__(self):
-        return f"{self.professor} - {self.get_dia_semana_display()}"
+        return f"{self.professor} - {self.get_dia_semana_display()} {self.hora_inicio} - {self.hora_fim}"
     
 class SiteSettings(models.Model):
     # Add your site settings fields here
