@@ -44,59 +44,37 @@ def get_openai_response(messages, tools=None, tool_choice="auto"):
 def get_student_info(student_id=None, name=None):
     """
     Busca informações detalhadas sobre um aluno pelo ID ou nome.
-    Inclui URL da foto se disponível.
     """
     try:
-        # Verificar se pelo menos um parâmetro foi fornecido
         if student_id is None and (name is None or name.strip() == ""):
             return {"error": "É necessário fornecer o ID ou o nome do aluno"}
         
-        # Buscar o aluno
-        if student_id is not None:
-            aluno = Aluno.objects.get(id=student_id)
+        if student_id:
+            try:
+                aluno = Aluno.objects.get(id=student_id)
+            except Aluno.DoesNotExist:
+                return {"error": f"Aluno com ID {student_id} não encontrado"}
         else:
-            # Busca por nome (pode retornar múltiplos resultados)
             alunos = Aluno.objects.filter(nome__icontains=name)
             if not alunos.exists():
                 return {"error": f"Nenhum aluno encontrado com o nome '{name}'"}
             elif alunos.count() > 1:
-                # Se houver múltiplos resultados, retornar uma lista
                 return {
                     "message": f"Encontrados {alunos.count()} alunos com o nome '{name}'",
                     "alunos": [{"id": a.id, "nome": a.nome} for a in alunos]
                 }
             aluno = alunos.first()
         
-        # Calcular média das notas
-        media = aluno.notas.aggregate(Avg('valor'))['valor__avg'] or 0
-        
-        # Construir a resposta
-        response = {
-            "id": aluno.id,
+        # Return formatted student information
+        return {
             "nome": aluno.nome,
             "matricula": aluno.matricula,
-            "email": aluno.email or "Não informado",
-            "data_nascimento": aluno.data_nascimento.strftime('%d/%m/%Y') if aluno.data_nascimento else "Não informada",
             "serie": aluno.serie,
-            "nivel": aluno.get_nivel_display(),
             "turno": aluno.get_turno_display(),
-            "ano": aluno.get_ano_display(),
-            "telefone": aluno.telefone or "Não informado",
-            "endereco": aluno.endereco or "Não informado",
-            "media_notas": float(media),
-            "tem_foto": aluno.foto and True or False
+            "nivel": aluno.get_nivel_display(),
+            "media_geral": float(aluno.get_media_geral()),
+            "foto_url": aluno.get_foto_url()
         }
-        
-        # Adicionar URL da foto se disponível
-        if aluno.foto:
-            # Obter URL completa da foto
-            response["foto_url"] = aluno.foto.url
-            # Adicionar markdown para exibir a imagem
-            response["foto_markdown"] = f"![Foto de {aluno.nome}]({aluno.foto.url})"
-        
-        return response
-    except Aluno.DoesNotExist:
-        return {"error": f"Aluno com ID {student_id} não encontrado"}
     except Exception as e:
         return {"error": f"Erro ao buscar informações do aluno: {str(e)}"}
 
