@@ -1,16 +1,14 @@
 from django.core.management.base import BaseCommand
 from apps.alunos.models import Aluno, Nota
-from services.database import SupabaseService
+from services.database import DatabaseService
 from django.forms.models import model_to_dict
 import uuid
 from decimal import Decimal
 import json
 
 class Command(BaseCommand):
-    help = 'Migra dados do SQLite para o Supabase'
-
     def handle(self, *args, **kwargs):
-        db = SupabaseService()
+        db = DatabaseService()
         
         # Migrar alunos
         alunos = Aluno.objects.all()
