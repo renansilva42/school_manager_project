@@ -1,3 +1,4 @@
+# /apps/alunos/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -229,18 +230,33 @@ class AlunoListView(BaseAlunoView, ListView):
             html = render_to_string(
                 'alunos/partials/lista_alunos_partial.html',
                 {
-                    'alunos': context['page_obj'],  # Adiciona o page_obj ao contexto
-                    'paginator': context['paginator'],  # Adiciona o paginator
-                    'page_obj': context['page_obj'],  # Adiciona o page_obj
+                    'alunos': context['page_obj'],
+                    'paginator': context['paginator'],
+                    'page_obj': context['page_obj'],
+                    'is_paginated': context['is_paginated'],
+                    'request': self.request,  # Importante para preservar os parâmetros de busca/filtro
                 },
                 request=self.request
             )
+            
+            # Renderize também a paginação separadamente para AJAX
+            pagination_html = render_to_string(
+                'alunos/partials/pagination_partial.html',
+                {
+                    'paginator': context['paginator'],
+                    'page_obj': context['page_obj'],
+                    'is_paginated': context['is_paginated'],
+                    'request': self.request,
+                },
+                request=self.request
+            )
+            
             return JsonResponse({
                 'html': html,
+                'pagination': pagination_html,
                 'total_alunos': context['paginator'].count
             })
         return super().render_to_response(context, **response_kwargs)
-
 
 class NotaDeleteView(AdminRequiredMixin, DeleteView):
     """View para exclusão de notas"""

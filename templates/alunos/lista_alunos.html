@@ -122,25 +122,66 @@
         <!-- Pagination -->
         <nav aria-label="Navegação de páginas" class="mt-4">
             <ul class="pagination justify-content-center">
+                <!-- Botão Anterior -->
                 {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.turno %}&turno={{ request.GET.turno }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
                 {% endif %}
         
-                {% for num in page_obj.paginator.page_range %}
-                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                <!-- Primeira página sempre visível -->
+                {% if page_obj.paginator.num_pages > 1 %}
+                    <li class="page-item {% if page_obj.number == 1 %}active{% endif %}">
+                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.turno %}&turno={{ request.GET.turno }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}">1</a>
                     </li>
+                {% endif %}
+                
+                <!-- Ellipsis se necessário antes da página atual -->
+                {% if page_obj.number > 3 %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% endif %}
+                
+                <!-- Páginas ao redor da página atual -->
+                {% for num in page_obj.paginator.page_range %}
+                    {% if num > page_obj.number|add:"-2" and num < page_obj.number|add:"2" and num > 1 and num < page_obj.paginator.num_pages %}
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.turno %}&turno={{ request.GET.turno }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
                 {% endfor %}
-        
+                
+                <!-- Ellipsis se necessário depois da página atual -->
+                {% if page_obj.number < page_obj.paginator.num_pages|add:"-2" %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% endif %}
+                
+                <!-- Última página sempre visível (se tiver mais de uma página) -->
+                {% if page_obj.paginator.num_pages > 1 and page_obj.paginator.num_pages != 1 %}
+                    <li class="page-item {% if page_obj.number == page_obj.paginator.num_pages %}active{% endif %}">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.turno %}&turno={{ request.GET.turno }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}">{{ page_obj.paginator.num_pages }}</a>
+                    </li>
+                {% endif %}
+                
+                <!-- Botão Próxima -->
                 {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.turno %}&turno={{ request.GET.turno }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}">
                             <span aria-hidden="true">&raquo;</span>
                         </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
                     </li>
                 {% endif %}
             </ul>

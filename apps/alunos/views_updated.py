@@ -1,3 +1,4 @@
+#/apps/alunos/views_updated.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -228,13 +229,32 @@ class AlunoListView(BaseAlunoView, ListView):
         if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             html = render_to_string(
                 'alunos/partials/lista_alunos_partial.html',
-                context,
+                {
+                    'alunos': context['page_obj'],
+                    'paginator': context['paginator'],
+                    'page_obj': context['page_obj'],
+                    'is_paginated': context['is_paginated'],
+                    'request': self.request,  # Importante para preservar os parâmetros de busca/filtro
+                },
                 request=self.request
             )
-            # Adicione o total de alunos na resposta JSON
+            
+            # Renderize também a paginação separadamente para AJAX
+            pagination_html = render_to_string(
+                'alunos/partials/pagination_partial.html',
+                {
+                    'paginator': context['paginator'],
+                    'page_obj': context['page_obj'],
+                    'is_paginated': context['is_paginated'],
+                    'request': self.request,
+                },
+                request=self.request
+            )
+            
             return JsonResponse({
                 'html': html,
-                'total_alunos': context['paginator'].count  # Adiciona o total de alunos
+                'pagination': pagination_html,
+                'total_alunos': context['paginator'].count
             })
         return super().render_to_response(context, **response_kwargs)
 

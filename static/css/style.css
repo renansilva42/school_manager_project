@@ -372,6 +372,7 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   gap: 0.25rem;
   margin-top: 2rem;
+  flex-wrap: wrap; /* Permite quebra de linha em dispositivos pequenos */
 }
 
 .pagination .page-item {
@@ -399,14 +400,25 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .pagination .page-item.disabled .page-link {
-  opacity: 0.5;
-  pointer-events: none;
+  background-color: transparent;
+  border-color: transparent;
 }
 
 
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
+
+  .pagination .page-item {
+    margin: 2px;
+  }
+  
+  .pagination .page-link {
+    min-width: 36px;
+    height: 36px;
+    font-size: 0.875rem;
+    padding: 0;
+  }
 
   .modal-dialog.modal-lg {
       margin: 0.5rem;
@@ -718,5 +730,21 @@ h1, h2, h3, h4, h5, h6 {
   /* Subtítulo */
   .text-muted {
       font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pagination {
+    gap: 0.125rem;
+  }
+  
+  .pagination .page-item {
+    margin: 1px;
+  }
+  
+  .pagination .page-link {
+    min-width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
   }
 }
