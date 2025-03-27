@@ -2,48 +2,32 @@
 {% if is_paginated %}
 <nav aria-label="Navegação de páginas" class="mt-4">
     <ul class="pagination justify-content-center">
-        <!-- Botão Anterior -->
         <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
-            <a class="page-link" 
-               href="{% if page_obj.has_previous %}?page={{ page_obj.previous_page_number }}{{ query_params }}{% endif %}"
-               {% if not page_obj.has_previous %}tabindex="-1" aria-disabled="true"{% endif %}
-               aria-label="Anterior">
-                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            <button class="page-link pagination-btn" 
+                    data-page="{% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% endif %}"
+                    {% if not page_obj.has_previous %}disabled{% endif %}>
+                <i class="fas fa-chevron-left"></i>
                 <span class="d-none d-md-inline ms-1">Anterior</span>
-            </a>
+            </button>
         </li>
-
-        <!-- Números das Páginas (visível apenas em desktop) -->
-        <div class="d-none d-md-flex">
-            {% for num in page_obj.paginator.page_range %}
-                {% if num == page_obj.number %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ num }}</span>
-                    </li>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}{{ query_params }}">{{ num }}</a>
-                    </li>
-                {% endif %}
-            {% endfor %}
-        </div>
-
-        <!-- Indicador Mobile -->
-        <li class="page-item d-md-none">
-            <span class="page-link border-0 bg-transparent">
-                {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
-            </span>
-        </li>
-
-        <!-- Botão Próximo -->
+        
+        <!-- Números das Páginas -->
+        {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                <button class="page-link pagination-btn" 
+                        data-page="{{ num }}">
+                    {{ num }}
+                </button>
+            </li>
+        {% endfor %}
+        
         <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
-            <a class="page-link"
-               href="{% if page_obj.has_next %}?page={{ page_obj.next_page_number }}{{ query_params }}{% endif %}"
-               {% if not page_obj.has_next %}tabindex="-1" aria-disabled="true"{% endif %}
-               aria-label="Próximo">
+            <button class="page-link pagination-btn"
+                    data-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% endif %}"
+                    {% if not page_obj.has_next %}disabled{% endif %}>
                 <span class="d-none d-md-inline me-1">Próximo</span>
-                <i class="fas fa-chevron-right" aria-hidden="true"></i>
-            </a>
+                <i class="fas fa-chevron-right"></i>
+            </button>
         </li>
     </ul>
 </nav>

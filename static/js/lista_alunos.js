@@ -42,13 +42,16 @@ class AlunosManager {
             loadingOverlay: document.querySelector('.loading-overlay'),
             viewGrid: document.getElementById('viewGrid'),
             viewList: document.getElementById('viewList'),
-            totalResults: document.getElementById('total-results')
+            totalResults: document.getElementById('total-results'),
+            pagination: document.querySelector('.pagination')
         };
     }
 
     initializeState() {
         this.state = {
-            isLoading: false
+            isLoading: false,
+            currentPage: 1,
+            totalPages: 1
         };
     }
 
@@ -62,6 +65,11 @@ class AlunosManager {
             this.updateTurnoChoices(this.elements.nivel.value);
         } else {
             this.fetchAlunos();
+        }
+        
+        // Set initial pagination state from URL
+        if (urlParams.has('page')) {
+            this.state.currentPage = parseInt(urlParams.get('page')) || 1;
         }
     }
 
@@ -105,9 +113,19 @@ class AlunosManager {
         document.addEventListener('click', (e) => {
             if (e.target.matches('.pagination .page-link')) {
                 e.preventDefault();
-                const page = e.target.getAttribute('data-page') || 
-                            new URL(e.target.href).searchParams.get('page');
+                // Get page number either from data-page attribute or from URL
+                let page;
+                if (e.target.hasAttribute('data-page')) {
+                    page = e.target.getAttribute('data-page');
+                } else if (e.target.href) {
+                    const url = new URL(e.target.href);
+                    page = url.searchParams.get('page');
+                }
+                
                 if (page) {
+                    // Update current page state
+                    this.state.currentPage = parseInt(page);
+                    
                     const currentParams = {
                         nivel: this.elements.nivel.value,
                         turno: this.elements.turno.value,
@@ -115,6 +133,7 @@ class AlunosManager {
                         search: this.elements.search.value.trim(),
                         page: page
                     };
+                    
                     this.fetchAlunos(currentParams);
                 }
             }
@@ -169,6 +188,28 @@ class AlunosManager {
             const data = await response.json();
             this.elements.alunosContainer.innerHTML = data.html;
             this.elements.totalResults.textContent = data.total_alunos;
+            
+            // Update URL with new parameters
+            const newUrl = new URL(window.location.href);
+            Object.entries(params).forEach(([key, value]) => {
+                if (value) {
+                    newUrl.searchParams.set(key, value);
+                } else {
+                    newUrl.searchParams.delete(key);
+                }
+            });
+            window.history.pushState({}, '', newUrl);
+            
+            // Update pagination state
+            if (data.current_page) {
+                this.state.currentPage = parseInt(data.current_page);
+            }
+            if (data.total_pages) {
+                this.state.totalPages = parseInt(data.total_pages);
+            }
+            
+            // Update pagination UI
+            this.updatePaginationUI();
 
         } catch (error) {
             console.error('Error fetching alunos:', error);
@@ -182,6 +223,29 @@ class AlunosManager {
             this.state.isLoading = false;
             this.elements.loadingOverlay.style.display = 'none';
         }
+    }
+    
+    updatePaginationUI() {
+        if (!this.elements.pagination) return;
+        
+        // Update active state
+        const currentPage = this.state.currentPage;
+        const totalPages = this.state.totalPages;
+        
+        // Set active page
+        $('.pagination .page-item').removeClass('active');
+        $(`.pagination .page-item[data-page="${currentPage}"]`).addClass('active');
+        
+        // Disable/enable previous and next buttons
+        $('.pagination .page-item.prev').toggleClass('disabled', currentPage === 1);
+        $('.pagination .page-item.next').toggleClass('disabled', currentPage === totalPages);
+        
+        // Re-attach click handlers to all pagination links
+        document.querySelectorAll('.pagination .page-link').forEach(link => {
+            // Clear any previous click handlers
+            const newLink = link.cloneNode(true);
+            link.parentNode.replaceChild(newLink, link);
+        });
     }
 
     updateTurnoChoices(nivel) {
@@ -231,29 +295,38 @@ class AlunosManager {
 
     handleFormSubmit() {
         const {nivel, turno, ano, search} = this.elements;
+        // Reset to page 1 when applying new filters
+        this.state.currentPage = 1;
         this.fetchAlunos({
             nivel: nivel.value,
             turno: turno.value,
             ano: ano.value,
-            search: search.value.trim()
+            search: search.value.trim(),
+            page: 1
         });
     }
 
     handleTurnoChange() {
         const {nivel, turno} = this.elements;
         this.updateAnoChoices(turno.value, nivel.value);
+        // Reset to page 1 when changing filters
+        this.state.currentPage = 1;
         this.fetchAlunos({
             nivel: nivel.value,
-            turno: turno.value
+            turno: turno.value,
+            page: 1
         });
     }
 
     handleAnoChange() {
         const {nivel, turno, ano} = this.elements;
+        // Reset to page 1 when changing filters
+        this.state.currentPage = 1;
         this.fetchAlunos({
             nivel: nivel.value,
             turno: turno.value,
-            ano: ano.value
+            ano: ano.value,
+            page: 1
         });
     }
 }
