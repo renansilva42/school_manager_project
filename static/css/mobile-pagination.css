@@ -1,0 +1,115 @@
+/* Estilos para paginação mobile */
+.mobile-pagination {
+    margin: 1.5rem 0;
+}
+
+.swipe-indicator {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.75rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.swipe-text {
+    color: #6c757d;
+}
+
+.btn-pagination {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    color: #0d6efd;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-pagination:active {
+    transform: scale(0.95);
+    background-color: #f1f8ff;
+}
+
+.btn-pagination.disabled {
+    opacity: 0.5;
+    color: #6c757d;
+    pointer-events: none;
+}
+
+.page-indicator {
+    font-size: 1.25rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.current-page {
+    color: #0d6efd;
+    font-weight: 700;
+}
+
+.separator {
+    margin: 0 0.5rem;
+    color: #6c757d;
+}
+
+.total-pages {
+    color: #6c757d;
+}
+
+/* Estilos para o contêiner deslizável */
+.swipe-container {
+    position: relative;
+    overflow: hidden;
+    touch-action: pan-y;
+}
+
+/* Feedback visual para o deslize */
+.swipe-feedback {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50px;
+    background: linear-gradient(90deg, rgba(13, 110, 253, 0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.swipe-feedback.left {
+    left: 0;
+}
+
+.swipe-feedback.right {
+    right: 0;
+    background: linear-gradient(270deg, rgba(13, 110, 253, 0.1), transparent);
+}
+
+.swipe-feedback.active {
+    opacity: 1;
+}
+
+/* Animação de carregamento para transições de página */
+.page-transition {
+    animation: fadeTransition 0.3s ease;
+}
+
+@keyframes fadeTransition {
+    0% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Ajustes responsivos */
+@media (max-width: 576px) {
+    .btn-pagination {
+        width: 42px;
+        height: 42px;
+    }
+    
+    .page-indicator {
+        font-size: 1.1rem;
+    }
+}
