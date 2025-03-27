@@ -748,3 +748,99 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.75rem;
   }
 }
+
+/* Otimizações para Mobile */
+@media (max-width: 768px) {
+  .btn-pagination {
+      padding: 12px;
+      min-height: 48px;
+      min-width: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--primary-color);
+      color: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+
+  .page-indicator {
+      font-size: 1.1rem;
+      font-weight: 500;
+      padding: 0 15px;
+  }
+
+  .swipe-container {
+      position: relative;
+      overflow: hidden;
+      touch-action: pan-x;
+  }
+}
+
+/* Em style.css */
+.swipe-feedback {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.swipe-feedback.active {
+  opacity: 1;
+}
+
+.swipe-feedback.left {
+  left: 10px;
+}
+
+.swipe-feedback.right {
+  right: 10px;
+}
+
+/* Estilos para paginação mobile */
+@media (max-width: 768px) {
+  .pagination-mobile {
+      margin: 0;
+      padding: 10px;
+  }
+
+  .mobile-page-link {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      margin: 0 5px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .mobile-page-link:active {
+      transform: scale(0.95);
+  }
+
+  .page-indicator {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--dark);
+  }
+
+  .swipe-indicator {
+      opacity: 0.7;
+      animation: fadeInOut 2s infinite;
+  }
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0.7; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.7; }
+}

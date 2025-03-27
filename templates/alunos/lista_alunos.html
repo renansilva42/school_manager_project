@@ -118,42 +118,28 @@
         <!-- Pagination - Responsive Version -->
         <div class="pagination-container mt-4">
             <!-- Mobile Pagination (visible on small screens) -->
-            <div class="d-md-none mobile-pagination">
-                <div class="swipe-indicator">
-                    <div class="swipe-text text-center mb-2">
-                        <small class="text-muted">Deslize para navegar entre as páginas</small>
-                    </div>
-                    <div class="swipe-arrows d-flex justify-content-between align-items-center">
-                        {% if page_obj.has_previous %}
-                            <button class="btn btn-pagination prev-page" 
-                                    data-url="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.turno %}&turno={{ request.GET.turno }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}">
-                                <i class="fas fa-chevron-left fa-lg"></i>
-                            </button>
-                        {% else %}
-                            <button class="btn btn-pagination disabled">
-                                <i class="fas fa-chevron-left fa-lg"></i>
-                            </button>
-                        {% endif %}
-                        
-                        <div class="page-indicator">
-                            <span class="current-page">{{ page_obj.number }}</span>
-                            <span class="separator">/</span>
-                            <span class="total-pages">{{ page_obj.paginator.num_pages }}</span>
-                        </div>
-                        
-                        {% if page_obj.has_next %}
-                            <button class="btn btn-pagination next-page"
-                                    data-url="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.turno %}&turno={{ request.GET.turno }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}">
-                                <i class="fas fa-chevron-right fa-lg"></i>
-                            </button>
-                        {% else %}
-                            <button class="btn btn-pagination disabled">
-                                <i class="fas fa-chevron-right fa-lg"></i>
-                            </button>
-                        {% endif %}
-                    </div>
-                </div>
+            <!-- Versão Mobile da Paginação -->
+<div class="d-md-none mobile-pagination">
+    <div class="swipe-indicator">
+        <div class="swipe-text text-center mb-2">
+            <small class="text-muted">Deslize para navegar entre as páginas</small>
+        </div>
+        <!-- Botões de navegação otimizados para toque -->
+        <div class="swipe-arrows d-flex justify-content-between align-items-center">
+            <button class="btn btn-pagination prev-page" style="min-height: 48px; min-width: 48px;">
+                <i class="fas fa-chevron-left fa-lg"></i>
+            </button>
+            <div class="page-indicator">
+                <span class="current-page">{{ page_obj.number }}</span>
+                <span class="separator">/</span>
+                <span class="total-pages">{{ page_obj.paginator.num_pages }}</span>
             </div>
+            <button class="btn btn-pagination next-page" style="min-height: 48px; min-width: 48px;">
+                <i class="fas fa-chevron-right fa-lg"></i>
+            </button>
+        </div>
+    </div>
+</div>
             
             <!-- Desktop Pagination (hidden on small screens) -->
             <nav aria-label="Navegação de páginas" class="d-none d-md-block">

@@ -284,3 +284,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// Em mobile-pagination.js
+function preloadNextPage() {
+    if (nextButton && nextButton.dataset.url) {
+        const nextUrl = nextButton.dataset.url;
+        fetch(nextUrl, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+    }
+}
