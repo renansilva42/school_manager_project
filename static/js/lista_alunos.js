@@ -1,4 +1,7 @@
 // Constants and configurations
+// Flag global para evitar requisições AJAX duplicadas no carregamento inicial
+let initialPageLoadComplete = false;
+
 const ANO_OPTIONS = {
     EFI: {
         M: [
@@ -30,6 +33,12 @@ class AlunosManager {
         
         this.initializeElements();
         this.initializeState();
+        
+        // Definir flag para evitar requisições no carregamento inicial
+        setTimeout(() => {
+            initialPageLoadComplete = true;
+        }, 500);
+        
         this.initializeEventListeners();
         this.initializeView();
     }
@@ -54,15 +63,26 @@ class AlunosManager {
         // Configurar estado inicial a partir da URL
         const urlParams = new URLSearchParams(window.location.search);
         
+        // Verifica se há dados de alunos já carregados na página
+        const hasInitialData = document.querySelector('#alunos-container .aluno-card') !== null;
+        
         this.state = {
             isLoading: false,
             currentPage: parseInt(urlParams.get('page')) || 1,
-            totalPages: 1,
+            totalPages: parseInt(document.querySelector('.pagination')?.dataset.totalPages) || 1,
             // Flag para evitar requisições duplicadas
             requestInProgress: false,
             // Indica se a página já tem dados carregados do servidor
-            initialDataLoaded: document.querySelector('#alunos-container .aluno-card') !== null
+            initialDataLoaded: hasInitialData,
+            // Flag para skip da primeira requisição AJAX
+            skipInitialAjaxRequest: hasInitialData
         };
+        
+        console.log('AlunosManager state initialized:', {
+            currentPage: this.state.currentPage,
+            totalPages: this.state.totalPages,
+            initialDataLoaded: this.state.initialDataLoaded
+        });
     }
 
     initializeView() {
@@ -86,9 +106,6 @@ class AlunosManager {
                     this.elements.ano.value = urlParams.get('ano');
                 }
             }
-        } else if (!this.state.initialDataLoaded) {
-            // Apenas busque dados se não houver dados iniciais carregados
-            this.fetchAlunos();
         }
         
         // Atualizar a UI de paginação com base no estado atual
@@ -214,8 +231,16 @@ class AlunosManager {
     }
 
     async fetchAlunos(params = {}) {
+        // Verificar se devemos pular a requisição inicial
+        if (!initialPageLoadComplete && this.state.skipInitialAjaxRequest) {
+            console.log('Skipping initial AJAX request - page already loaded with data');
+            return;
+        }
+        
         // Prevenir requisições simultâneas
-        if (this.state.isLoading || this.state.requestInProgress) return;
+        if (this.state.isLoading || this.state.requestInProgress) {
+            return;
+        }
         
         try {
             this.state.isLoading = true;
@@ -225,6 +250,8 @@ class AlunosManager {
             const queryParams = new URLSearchParams(
                 Object.entries(params).filter(([_, value]) => value)
             );
+            
+            console.log('Fetching alunos with params:', queryParams.toString());
             
             const response = await fetch(`/alunos/buscar/?${queryParams.toString()}`, {
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
@@ -238,6 +265,7 @@ class AlunosManager {
             
             // Marcar que os dados foram carregados
             this.state.initialDataLoaded = true;
+            this.state.skipInitialAjaxRequest = false; // Desativar o skip após a primeira requisição
             
             // Update URL with new parameters
             const newUrl = new URL(window.location.href);
@@ -349,7 +377,7 @@ class AlunosManager {
             turno.disabled = true;
             
             // Apenas buscar dados se explicitamente solicitado
-            if (shouldFetchData) {
+            if (shouldFetchData && initialPageLoadComplete) {
                 this.fetchAlunos({nivel, turno: 'M'});
             }
         } else if (nivel === 'EFF') {
@@ -359,7 +387,7 @@ class AlunosManager {
             });
             
             // Apenas buscar dados se explicitamente solicitado
-            if (shouldFetchData) {
+            if (shouldFetchData && initialPageLoadComplete) {
                 this.fetchAlunos({nivel});
             }
         } else {
@@ -367,7 +395,7 @@ class AlunosManager {
             this.elements.ano.disabled = true;
             
             // Apenas buscar dados se explicitamente solicitado
-            if (shouldFetchData) {
+            if (shouldFetchData && initialPageLoadComplete) {
                 this.fetchAlunos();
             }
         }
