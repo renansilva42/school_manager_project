@@ -1,3 +1,4 @@
+# /apps/alunos/urls.py
 from django.urls import path
 from . import views
 from .constants import URL_NAMES

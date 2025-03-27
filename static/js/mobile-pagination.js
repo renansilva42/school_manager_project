@@ -1,3 +1,4 @@
+// static/js/mobile-pagination.js
 /**
  * mobile-pagination.js
  * Implementa navegação otimizada para dispositivos móveis com suporte a gestos de deslize
@@ -49,31 +50,29 @@ document.addEventListener('DOMContentLoaded', function() {
         /**
          * Conecta os botões de navegação móvel ao manipulador do AlunosManager
          */
-        function connectMobileButtonsToAlunosManager() {
-            // Botão de página anterior
-            if (prevButton) {
-                prevButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    triggerHapticFeedback();
-                    
-                    if (window.handlePaginationClick) {
-                        window.handlePaginationClick(e, this.dataset.url);
-                    }
-                });
+        // Em mobile-pagination.js
+function connectMobileButtonsToAlunosManager() {
+    const prevButton = document.querySelector('.prev-page');
+    const nextButton = document.querySelector('.next-page');
+    
+    if (prevButton) {
+        prevButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (window.handlePaginationClick) {
+                window.handlePaginationClick(e, this.dataset.url);
             }
-            
-            // Botão de próxima página
-            if (nextButton) {
-                nextButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    triggerHapticFeedback();
-                    
-                    if (window.handlePaginationClick) {
-                        window.handlePaginationClick(e, this.dataset.url);
-                    }
-                });
+        });
+    }
+    
+    if (nextButton) {
+        nextButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (window.handlePaginationClick) {
+                window.handlePaginationClick(e, this.dataset.url);
             }
-        }
+        });
+    }
+}
         
         /**
          * Inicializa eventos de deslize para navegação entre páginas

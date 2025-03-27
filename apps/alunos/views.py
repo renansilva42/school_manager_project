@@ -234,12 +234,11 @@ class AlunoListView(BaseAlunoView, ListView):
                     'paginator': context['paginator'],
                     'page_obj': context['page_obj'],
                     'is_paginated': context['is_paginated'],
-                    'request': self.request,  # Importante para preservar os parâmetros de busca/filtro
+                    'request': self.request,
                 },
                 request=self.request
             )
             
-            # Renderize também a paginação separadamente para AJAX
             pagination_html = render_to_string(
                 'alunos/partials/pagination_partial.html',
                 {
@@ -254,7 +253,9 @@ class AlunoListView(BaseAlunoView, ListView):
             return JsonResponse({
                 'html': html,
                 'pagination': pagination_html,
-                'total_alunos': context['paginator'].count
+                'total_alunos': context['paginator'].count,
+                'current_page': context['page_obj'].number,
+                'total_pages': context['paginator'].num_pages,
             })
         return super().render_to_response(context, **response_kwargs)
 
@@ -789,3 +790,4 @@ class AlunoMediaAPIView(LoginRequiredMixin, View):  # Também atualize esta clas
         except Exception as e:
             logger.error(f"Error calculating averages: {str(e)}")
             return JsonResponse({'error': 'Erro ao calcular médias'}, status=400)
+        

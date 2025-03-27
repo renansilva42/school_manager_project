@@ -159,8 +159,12 @@
             
                     <!-- Primeira página sempre visível -->
                     {% if page_obj.paginator.num_pages > 1 %}
-                        <li class="page-item {% if page_obj.number == 1 %}active{% endif %}">
-                            <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.turno %}&turno={{ request.GET.turno }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}">1</a>
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                            <a class="page-link" 
+                            href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.turno %}&turno={{ request.GET.turno }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}"
+                            data-page="{{ num }}">
+                                {{ num }}
+                            </a>
                         </li>
                     {% endif %}
                     

@@ -1,3 +1,4 @@
+// static/js/lista_alunos.js
 // Constants and configurations
 // Flag global para evitar requisições AJAX duplicadas no carregamento inicial
 let initialPageLoadComplete = false;
@@ -161,7 +162,6 @@ class AlunosManager {
     
     setupPaginationInterception() {
         // Método global para gerenciar clicks em links de paginação
-        // Isso permite que outros scripts como mobile-pagination.js se conectem a ele
         window.handlePaginationClick = (e, pageUrl) => {
             e.preventDefault();
             
@@ -177,11 +177,14 @@ class AlunosManager {
             if (pageUrl) {
                 url = new URL(pageUrl, window.location.origin);
                 page = url.searchParams.get('page') || 1;
-            } else if (e.currentTarget.hasAttribute('data-page')) {
-                page = e.currentTarget.getAttribute('data-page');
-            } else if (e.currentTarget.href) {
-                url = new URL(e.currentTarget.href);
-                page = url.searchParams.get('page') || 1;
+            } else if (e.target.closest('.page-link')) { // Modificado aqui
+                const pageLink = e.target.closest('.page-link');
+                if (pageLink.hasAttribute('data-page')) {
+                    page = pageLink.getAttribute('data-page');
+                } else if (pageLink.href) {
+                    url = new URL(pageLink.href);
+                    page = url.searchParams.get('page') || 1;
+                }
             }
             
             if (page) {
@@ -198,15 +201,16 @@ class AlunosManager {
                 this.state.currentPage = parseInt(page);
                 this.fetchAlunos(currentParams);
                 
-                return true; // Indica que o evento foi manipulado
+                return true;
             }
             
-            return false; // Indica que o evento não foi manipulado
+            return false;
         };
         
-        // Aplicar o interceptor aos links de paginação
+        // Aplicar o interceptor aos links de paginação usando delegação de eventos
         document.addEventListener('click', (e) => {
-            if (e.target.matches('.pagination .page-link')) {
+            const pageLink = e.target.closest('.pagination .page-link');
+            if (pageLink) {
                 window.handlePaginationClick(e);
             }
         });
