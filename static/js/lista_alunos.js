@@ -161,8 +161,8 @@ class AlunosManager {
     }
     
     setupPaginationInterception() {
-        // Método global para gerenciar clicks em links de paginação
-        window.handlePaginationClick = (e, pageUrl) => {
+        // Método para gerenciar clicks em links de paginação
+        const handlePaginationClick = (e) => {
             e.preventDefault();
             
             if (this.state.requestInProgress) return;
@@ -173,18 +173,14 @@ class AlunosManager {
             let page;
             let url;
             
-            // Determinar a página a partir do evento ou da URL fornecida
-            if (pageUrl) {
-                url = new URL(pageUrl, window.location.origin);
+            // Determinar a página a partir do elemento clicado
+            const pageLink = e.currentTarget;
+            
+            if (pageLink.hasAttribute('data-page')) {
+                page = pageLink.getAttribute('data-page');
+            } else if (pageLink.href) {
+                url = new URL(pageLink.href);
                 page = url.searchParams.get('page') || 1;
-            } else if (e.target.closest('.page-link')) { // Modificado aqui
-                const pageLink = e.target.closest('.page-link');
-                if (pageLink.hasAttribute('data-page')) {
-                    page = pageLink.getAttribute('data-page');
-                } else if (pageLink.href) {
-                    url = new URL(pageLink.href);
-                    page = url.searchParams.get('page') || 1;
-                }
             }
             
             if (page) {
@@ -207,12 +203,53 @@ class AlunosManager {
             return false;
         };
         
-        // Aplicar o interceptor aos links de paginação usando delegação de eventos
-        document.addEventListener('click', (e) => {
-            const pageLink = e.target.closest('.pagination .page-link');
-            if (pageLink) {
-                window.handlePaginationClick(e);
+        // Aplicar o interceptor aos links de paginação existentes
+        this.attachPaginationHandlers(handlePaginationClick.bind(this));
+        
+        // Salvar o método para uso posterior (quando a paginação for atualizada)
+        this.handlePaginationClick = handlePaginationClick.bind(this);
+        
+        // Também expor o método globalmente para compatibilidade com código existente
+        window.handlePaginationClick = (e, pageUrl) => {
+            if (pageUrl) {
+                e.preventDefault();
+                
+                if (this.state.requestInProgress) return;
+                
+                this.state.userInitiatedRequest = true;
+                
+                const url = new URL(pageUrl, window.location.origin);
+                const page = url.searchParams.get('page') || 1;
+                
+                const currentParams = {
+                    nivel: this.elements.nivel.value,
+                    turno: this.elements.turno.value,
+                    ano: this.elements.ano.value,
+                    search: this.elements.search.value.trim(),
+                    page: page
+                };
+                
+                this.state.currentPage = parseInt(page);
+                this.fetchAlunos(currentParams);
+                
+                return true;
             }
+            
+            return this.handlePaginationClick(e);
+        };
+    }
+    
+    // Método para anexar manipuladores de eventos aos links de paginação
+    attachPaginationHandlers(handler) {
+        if (!this.elements.pagination) return;
+        
+        const paginationLinks = this.elements.pagination.querySelectorAll('.page-link');
+        
+        paginationLinks.forEach(link => {
+            // Remover manipuladores antigos para evitar duplicação
+            link.removeEventListener('click', handler);
+            // Adicionar novo manipulador
+            link.addEventListener('click', handler);
         });
     }
     
@@ -312,6 +349,15 @@ class AlunosManager {
                 this.state.totalPages = parseInt(data.total_pages);
             }
             
+            // Atualizar a paginação no DOM se estiver presente na resposta
+            if (data.pagination_html) {
+                if (this.elements.pagination) {
+                    this.elements.pagination.outerHTML = data.pagination_html;
+                    // Atualizar a referência ao elemento de paginação
+                    this.elements.pagination = document.querySelector('.pagination');
+                }
+            }
+            
             // Update pagination UI
             this.updatePaginationUI();
 
@@ -344,19 +390,47 @@ class AlunosManager {
         const currentPage = this.state.currentPage;
         const totalPages = this.state.totalPages;
         
-        // Set active page
-        $('.pagination .page-item').removeClass('active');
-        $(`.pagination .page-item[data-page="${currentPage}"]`).addClass('active');
+        // Set active page - usando JavaScript puro em vez de jQuery
+        const pageItems = this.elements.pagination.querySelectorAll('.page-item');
+        pageItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.page === currentPage.toString()) {
+                item.classList.add('active');
+            }
+        });
         
         // Disable/enable previous and next buttons
-        $('.pagination .page-item.prev').toggleClass('disabled', currentPage === 1);
-        $('.pagination .page-item.next').toggleClass('disabled', currentPage === totalPages);
+        const prevButton = this.elements.pagination.querySelector('.page-item.prev');
+        const nextButton = this.elements.pagination.querySelector('.page-item.next');
+        
+        if (prevButton) {
+            if (currentPage === 1) {
+                prevButton.classList.add('disabled');
+            } else {
+                prevButton.classList.remove('disabled');
+            }
+        }
+        
+        if (nextButton) {
+            if (currentPage === totalPages) {
+                nextButton.classList.add('disabled');
+            } else {
+                nextButton.classList.remove('disabled');
+            }
+        }
         
         // Atualizar os links de paginação para usar os filtros atuais
         this.updatePaginationLinks();
+        
+        // Reattach event handlers to pagination links
+        if (this.handlePaginationClick) {
+            this.attachPaginationHandlers(this.handlePaginationClick);
+        }
     }
     
     updatePaginationLinks() {
+        if (!this.elements.pagination) return;
+        
         // Obter os filtros atuais
         const currentFilters = {
             nivel: this.elements.nivel.value,
@@ -371,29 +445,29 @@ class AlunosManager {
         );
         
         // Atualizar os links de paginação para incluir os filtros atuais
-        document.querySelectorAll('.pagination .page-link').forEach(link => {
-            if (link.hasAttribute('href')) {
-                const url = new URL(link.getAttribute('href'), window.location.origin);
-                
-                // Preservar o parâmetro de página
-                const page = url.searchParams.get('page');
-                
-                // Limpar parâmetros existentes
-                url.search = '';
-                
-                // Adicionar os filtros ativos
-                Object.entries(activeFilters).forEach(([key, value]) => {
-                    url.searchParams.set(key, value);
-                });
-                
-                // Adicionar o parâmetro de página de volta
-                if (page) {
-                    url.searchParams.set('page', page);
-                }
-                
-                // Atualizar o href
-                link.setAttribute('href', url.toString());
+        const paginationLinks = this.elements.pagination.querySelectorAll('.page-link[href]');
+        
+        paginationLinks.forEach(link => {
+            const url = new URL(link.getAttribute('href'), window.location.origin);
+            
+            // Preservar o parâmetro de página
+            const page = url.searchParams.get('page');
+            
+            // Limpar parâmetros existentes
+            url.search = '';
+            
+            // Adicionar os filtros ativos
+            Object.entries(activeFilters).forEach(([key, value]) => {
+                url.searchParams.set(key, value);
+            });
+            
+            // Adicionar o parâmetro de página de volta
+            if (page) {
+                url.searchParams.set('page', page);
             }
+            
+            // Atualizar o href
+            link.setAttribute('href', url.toString());
         });
     }
 
@@ -495,4 +569,6 @@ class AlunosManager {
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     new AlunosManager();
+    // Marcar que o carregamento inicial está completo
+    initialPageLoadComplete = true;
 });
