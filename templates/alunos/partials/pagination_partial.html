@@ -1,61 +1,50 @@
 <!-- templates/alunos/partials/pagination_partial.html -->
 {% if is_paginated %}
 <nav aria-label="Navegação de páginas" class="mt-4">
-    <!-- Versão Desktop -->
-    <ul class="pagination justify-content-center d-none d-md-flex">
-        <!-- Manter o código original aqui -->
-    </ul>
-
-    <!-- Nova Versão Mobile -->
-    <ul class="pagination pagination-mobile d-flex d-md-none justify-content-between align-items-center">
+    <ul class="pagination justify-content-center">
         <!-- Botão Anterior -->
-        {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link mobile-page-link" 
-                   href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.turno %}&turno={{ request.GET.turno }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}"
-                   data-page="{{ page_obj.previous_page_number }}">
-                    <i class="fas fa-chevron-left"></i>
-                </a>
-            </li>
-        {% else %}
-            <li class="page-item disabled">
-                <span class="page-link mobile-page-link">
-                    <i class="fas fa-chevron-left"></i>
-                </span>
-            </li>
-        {% endif %}
+        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+            <a class="page-link" 
+               href="{% if page_obj.has_previous %}?page={{ page_obj.previous_page_number }}{{ query_params }}{% endif %}"
+               {% if not page_obj.has_previous %}tabindex="-1" aria-disabled="true"{% endif %}
+               aria-label="Anterior">
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                <span class="d-none d-md-inline ms-1">Anterior</span>
+            </a>
+        </li>
 
-        <!-- Indicador de Página -->
-        <li class="page-item">
-            <span class="page-indicator">
+        <!-- Números das Páginas (visível apenas em desktop) -->
+        <div class="d-none d-md-flex">
+            {% for num in page_obj.paginator.page_range %}
+                {% if num == page_obj.number %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{{ query_params }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Indicador Mobile -->
+        <li class="page-item d-md-none">
+            <span class="page-link border-0 bg-transparent">
                 {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
             </span>
         </li>
 
         <!-- Botão Próximo -->
-        {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link mobile-page-link" 
-                   href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.nivel %}&nivel={{ request.GET.nivel }}{% endif %}{% if request.GET.turno %}&turno={{ request.GET.turno }}{% endif %}{% if request.GET.ano %}&ano={{ request.GET.ano }}{% endif %}"
-                   data-page="{{ page_obj.next_page_number }}">
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-            </li>
-        {% else %}
-            <li class="page-item disabled">
-                <span class="page-link mobile-page-link">
-                    <i class="fas fa-chevron-right"></i>
-                </span>
-            </li>
-        {% endif %}
+        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+            <a class="page-link"
+               href="{% if page_obj.has_next %}?page={{ page_obj.next_page_number }}{{ query_params }}{% endif %}"
+               {% if not page_obj.has_next %}tabindex="-1" aria-disabled="true"{% endif %}
+               aria-label="Próximo">
+                <span class="d-none d-md-inline me-1">Próximo</span>
+                <i class="fas fa-chevron-right" aria-hidden="true"></i>
+            </a>
+        </li>
     </ul>
 </nav>
-
-<!-- Adicionar indicador de swipe para mobile -->
-<div class="swipe-indicator d-md-none text-center mt-2">
-    <small class="text-muted">
-        <i class="fas fa-hand-point-up me-1"></i>
-        Deslize para navegar
-    </small>
-</div>
 {% endif %}

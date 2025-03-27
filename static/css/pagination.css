@@ -1,0 +1,31 @@
+/* static/css/pagination.css */
+.pagination {
+    margin: 1rem 0;
+}
+
+.page-link {
+    padding: 0.5rem 1rem;
+    color: var(--bs-primary);
+    transition: all 0.3s ease;
+}
+
+.page-link:hover {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.page-item.active .page-link {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.page-item.disabled .page-link {
+    color: var(--bs-gray-500);
+}
+
+@media (max-width: 768px) {
+    .pagination {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
