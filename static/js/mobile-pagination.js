@@ -83,16 +83,42 @@ document.addEventListener('DOMContentLoaded', function() {
             leftFeedback.classList.remove('active');
             rightFeedback.classList.remove('active');
             
-            // Deslize para a direita (próxima página)
-            if (diffX > minSwipeDistance && nextButton && !nextButton.classList.contains('disabled')) {
-                triggerHapticFeedback();
-                loadPage(nextButton.dataset.url);
-            }
-            
-            // Deslize para a esquerda (página anterior)
-            if (diffX < -minSwipeDistance && prevButton && !prevButton.classList.contains('disabled')) {
-                triggerHapticFeedback();
-                loadPage(prevButton.dataset.url);
+            // Verificar se o AlunosManager está ativo para evitar conflitos
+            if (window.alunosManagerActive && window.handlePaginationClick) {
+                // Deslize para a direita (próxima página)
+                if (diffX > minSwipeDistance && nextButton && !nextButton.classList.contains('disabled')) {
+                    triggerHapticFeedback();
+                    
+                    // Usar o manipulador centralizado de paginação
+                    window.handlePaginationClick(
+                        { currentTarget: nextButton, preventDefault: () => {} }, 
+                        nextButton.dataset.url
+                    );
+                }
+                
+                // Deslize para a esquerda (página anterior)
+                if (diffX < -minSwipeDistance && prevButton && !prevButton.classList.contains('disabled')) {
+                    triggerHapticFeedback();
+                    
+                    // Usar o manipulador centralizado de paginação
+                    window.handlePaginationClick(
+                        { currentTarget: prevButton, preventDefault: () => {} }, 
+                        prevButton.dataset.url
+                    );
+                }
+            } else {
+                // Comportamento legado
+                // Deslize para a direita (próxima página)
+                if (diffX > minSwipeDistance && nextButton && !nextButton.classList.contains('disabled')) {
+                    triggerHapticFeedback();
+                    legacyLoadPage(nextButton.dataset.url);
+                }
+                
+                // Deslize para a esquerda (página anterior)
+                if (diffX < -minSwipeDistance && prevButton && !prevButton.classList.contains('disabled')) {
+                    triggerHapticFeedback();
+                    legacyLoadPage(prevButton.dataset.url);
+                }
             }
             
             isSwiping = false;
@@ -108,7 +134,14 @@ document.addEventListener('DOMContentLoaded', function() {
             prevButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 triggerHapticFeedback();
-                loadPage(this.dataset.url);
+                
+                if (window.alunosManagerActive && window.handlePaginationClick) {
+                    // Usar o manipulador centralizado
+                    window.handlePaginationClick(e, this.dataset.url);
+                } else {
+                    // Fallback para o comportamento legado
+                    legacyLoadPage(this.dataset.url);
+                }
             });
         }
         
@@ -117,24 +150,37 @@ document.addEventListener('DOMContentLoaded', function() {
             nextButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 triggerHapticFeedback();
-                loadPage(this.dataset.url);
+                
+                if (window.alunosManagerActive && window.handlePaginationClick) {
+                    // Usar o manipulador centralizado
+                    window.handlePaginationClick(e, this.dataset.url);
+                } else {
+                    // Fallback para o comportamento legado
+                    legacyLoadPage(this.dataset.url);
+                }
             });
         }
         
         // Converter links de paginação desktop para AJAX
         document.querySelectorAll('.pagination .page-link').forEach(link => {
             link.addEventListener('click', function(e) {
+                // Se o AlunosManager está gerenciando, deixe-o lidar com isso
+                if (window.alunosManagerActive && window.handlePaginationClick) {
+                    return;
+                }
+                
+                // Caso contrário, use o comportamento legado
                 e.preventDefault();
-                loadPage(this.getAttribute('href'));
+                legacyLoadPage(this.getAttribute('href'));
             });
         });
     }
     
     /**
-     * Carrega uma página de forma assíncrona usando AJAX
+     * Carrega uma página de forma assíncrona usando AJAX (comportamento legado)
      * @param {string} url - URL da página a ser carregada
      */
-    function loadPage(url) {
+    function legacyLoadPage(url) {
         if (!url) return;
         
         // Mostrar indicador de carregamento
@@ -235,13 +281,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (newDesktopPagination) {
             document.querySelector('.pagination').innerHTML = newDesktopPagination.innerHTML;
             
-            // Reconectar eventos de clique
-            document.querySelectorAll('.pagination .page-link').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    loadPage(this.getAttribute('href'));
+            // Se o AlunosManager estiver ativo, não reconecte os eventos aqui
+            if (!window.alunosManagerActive) {
+                // Reconectar eventos de clique apenas no modo legado
+                document.querySelectorAll('.pagination .page-link').forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        legacyLoadPage(this.getAttribute('href'));
+                    });
                 });
-            });
+            }
         }
     }
     
@@ -287,6 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Em mobile-pagination.js
 function preloadNextPage() {
+    const nextButton = document.querySelector('.next-page');
     if (nextButton && nextButton.dataset.url) {
         const nextUrl = nextButton.dataset.url;
         fetch(nextUrl, {
