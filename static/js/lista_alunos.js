@@ -34,10 +34,7 @@ class AlunosManager {
         this.initializeElements();
         this.initializeState();
         
-        // Definir flag para evitar requisições no carregamento inicial
-        setTimeout(() => {
-            initialPageLoadComplete = true;
-        }, 500);
+        // Flag já está ativa desde o início para permitir requisições do usuário
         
         this.initializeEventListeners();
         this.initializeView();
@@ -75,7 +72,9 @@ class AlunosManager {
             // Indica se a página já tem dados carregados do servidor
             initialDataLoaded: hasInitialData,
             // Flag para skip da primeira requisição AJAX
-            skipInitialAjaxRequest: hasInitialData
+            skipInitialAjaxRequest: hasInitialData,
+            // Flag para indicar se a requisição foi iniciada pelo usuário
+            userInitiatedRequest: false
         };
         
         console.log('AlunosManager state initialized:', {
@@ -136,15 +135,23 @@ class AlunosManager {
         // Form handlers
         this.elements.filterForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            // Marcar como requisição iniciada pelo usuário
+            this.state.userInitiatedRequest = true;
             this.handleFormSubmit();
         });
         this.elements.nivel.addEventListener('change', () => {
+            // Marcar como requisição iniciada pelo usuário
+            this.state.userInitiatedRequest = true;
             this.updateTurnoChoices(this.elements.nivel.value, true);
         });
         this.elements.turno.addEventListener('change', () => {
+            // Marcar como requisição iniciada pelo usuário
+            this.state.userInitiatedRequest = true;
             this.handleTurnoChange();
         });
         this.elements.ano.addEventListener('change', () => {
+            // Marcar como requisição iniciada pelo usuário
+            this.state.userInitiatedRequest = true;
             this.handleAnoChange();
         });
     
@@ -159,6 +166,9 @@ class AlunosManager {
             e.preventDefault();
             
             if (this.state.requestInProgress) return;
+            
+            // Marcar como requisição iniciada pelo usuário
+            this.state.userInitiatedRequest = true;
             
             let page;
             let url;
@@ -231,8 +241,8 @@ class AlunosManager {
     }
 
     async fetchAlunos(params = {}) {
-        // Verificar se devemos pular a requisição inicial
-        if (!initialPageLoadComplete && this.state.skipInitialAjaxRequest) {
+        // Permitir requisições iniciadas pelo usuário mesmo durante a inicialização
+        if (!this.state.userInitiatedRequest && !initialPageLoadComplete && this.state.skipInitialAjaxRequest) {
             console.log('Skipping initial AJAX request - page already loaded with data');
             return;
         }
@@ -257,11 +267,23 @@ class AlunosManager {
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             });
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}, message: ${response.statusText}`);
+            }
 
             const data = await response.json();
+            
+            // Verificar se o JSON contém a propriedade html
+            if (!data.html) {
+                console.error('Invalid response format - missing html property:', data);
+                throw new Error('Formato de resposta inválido');
+            }
+            
             this.elements.alunosContainer.innerHTML = data.html;
-            this.elements.totalResults.textContent = data.total_alunos;
+            
+            if (data.total_alunos !== undefined) {
+                this.elements.totalResults.textContent = data.total_alunos;
+            }
             
             // Marcar que os dados foram carregados
             this.state.initialDataLoaded = true;
@@ -295,9 +317,13 @@ class AlunosManager {
                 <div class="alert alert-danger">
                     <h5>Erro ao carregar os alunos</h5>
                     <p>Por favor, tente novamente.</p>
+                    <small class="text-muted">${error.message}</small>
                 </div>
             `;
         } finally {
+            // Resetar a flag de requisição iniciada pelo usuário
+            this.state.userInitiatedRequest = false;
+            
             // Atraso pequeno para evitar cliques rápidos
             setTimeout(() => {
                 this.state.isLoading = false;
@@ -376,8 +402,8 @@ class AlunosManager {
             turno.value = 'M';
             turno.disabled = true;
             
-            // Apenas buscar dados se explicitamente solicitado
-            if (shouldFetchData && initialPageLoadComplete) {
+            // Sempre buscar dados quando explicitamente solicitado
+            if (shouldFetchData) {
                 this.fetchAlunos({nivel, turno: 'M'});
             }
         } else if (nivel === 'EFF') {
@@ -386,16 +412,16 @@ class AlunosManager {
                 this.addOption(turno, value, value === 'M' ? 'Manhã' : 'Tarde');
             });
             
-            // Apenas buscar dados se explicitamente solicitado
-            if (shouldFetchData && initialPageLoadComplete) {
+            // Sempre buscar dados quando explicitamente solicitado
+            if (shouldFetchData) {
                 this.fetchAlunos({nivel});
             }
         } else {
             turno.disabled = true;
             this.elements.ano.disabled = true;
             
-            // Apenas buscar dados se explicitamente solicitado
-            if (shouldFetchData && initialPageLoadComplete) {
+            // Sempre buscar dados quando explicitamente solicitado
+            if (shouldFetchData) {
                 this.fetchAlunos();
             }
         }
