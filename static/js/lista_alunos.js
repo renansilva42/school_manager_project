@@ -25,13 +25,13 @@ const ANO_OPTIONS = {
 
 class AlunosManager {
     constructor() {
+        // Indica que este gerenciador está ativo na página
+        window.alunosManagerActive = true;
+        
         this.initializeElements();
         this.initializeState();
         this.initializeEventListeners();
         this.initializeView();
-        
-        // Indica que este gerenciador está ativo na página
-        window.alunosManagerActive = true;
     }
 
     initializeElements() {
@@ -51,12 +51,17 @@ class AlunosManager {
     }
 
     initializeState() {
+        // Configurar estado inicial a partir da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        
         this.state = {
             isLoading: false,
-            currentPage: 1,
+            currentPage: parseInt(urlParams.get('page')) || 1,
             totalPages: 1,
             // Flag para evitar requisições duplicadas
-            requestInProgress: false
+            requestInProgress: false,
+            // Indica se a página já tem dados carregados do servidor
+            initialDataLoaded: document.querySelector('#alunos-container .aluno-card') !== null
         };
     }
 
@@ -65,9 +70,11 @@ class AlunosManager {
         this.toggleView(savedView);
 
         const urlParams = new URLSearchParams(window.location.search);
+        
+        // Configurar os filtros com base nos parâmetros da URL
         if (urlParams.has('nivel')) {
             this.elements.nivel.value = urlParams.get('nivel');
-            this.updateTurnoChoices(this.elements.nivel.value);
+            this.updateTurnoChoices(this.elements.nivel.value, false);
             
             // Se também tiver turno na URL
             if (urlParams.has('turno')) {
@@ -79,14 +86,13 @@ class AlunosManager {
                     this.elements.ano.value = urlParams.get('ano');
                 }
             }
-        } else {
+        } else if (!this.state.initialDataLoaded) {
+            // Apenas busque dados se não houver dados iniciais carregados
             this.fetchAlunos();
         }
         
-        // Set initial pagination state from URL
-        if (urlParams.has('page')) {
-            this.state.currentPage = parseInt(urlParams.get('page')) || 1;
-        }
+        // Atualizar a UI de paginação com base no estado atual
+        this.updatePaginationUI();
     }
 
     initializeEventListeners() {
@@ -116,7 +122,7 @@ class AlunosManager {
             this.handleFormSubmit();
         });
         this.elements.nivel.addEventListener('change', () => {
-            this.updateTurnoChoices(this.elements.nivel.value);
+            this.updateTurnoChoices(this.elements.nivel.value, true);
         });
         this.elements.turno.addEventListener('change', () => {
             this.handleTurnoChange();
@@ -230,6 +236,9 @@ class AlunosManager {
             this.elements.alunosContainer.innerHTML = data.html;
             this.elements.totalResults.textContent = data.total_alunos;
             
+            // Marcar que os dados foram carregados
+            this.state.initialDataLoaded = true;
+            
             // Update URL with new parameters
             const newUrl = new URL(window.location.href);
             Object.entries(params).forEach(([key, value]) => {
@@ -330,7 +339,7 @@ class AlunosManager {
         });
     }
 
-    updateTurnoChoices(nivel) {
+    updateTurnoChoices(nivel, shouldFetchData = true) {
         const {turno} = this.elements;
         turno.innerHTML = '<option value="">Selecione o Turno</option>';
         
@@ -338,17 +347,29 @@ class AlunosManager {
             this.addOption(turno, 'M', 'Manhã');
             turno.value = 'M';
             turno.disabled = true;
-            this.fetchAlunos({nivel, turno: 'M'});
+            
+            // Apenas buscar dados se explicitamente solicitado
+            if (shouldFetchData) {
+                this.fetchAlunos({nivel, turno: 'M'});
+            }
         } else if (nivel === 'EFF') {
             turno.disabled = false;
             ['M', 'T'].forEach(value => {
                 this.addOption(turno, value, value === 'M' ? 'Manhã' : 'Tarde');
             });
-            this.fetchAlunos({nivel});
+            
+            // Apenas buscar dados se explicitamente solicitado
+            if (shouldFetchData) {
+                this.fetchAlunos({nivel});
+            }
         } else {
             turno.disabled = true;
             this.elements.ano.disabled = true;
-            this.fetchAlunos();
+            
+            // Apenas buscar dados se explicitamente solicitado
+            if (shouldFetchData) {
+                this.fetchAlunos();
+            }
         }
         
         this.updateAnoChoices(turno.value, nivel);
