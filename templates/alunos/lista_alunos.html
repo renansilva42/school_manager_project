@@ -240,6 +240,8 @@
 </div>
 
 {% block extra_js %}
+    <!-- Include jQuery before other scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="{% static 'js/lista_alunos.js' %}"></script>
     <script src="{% static 'js/mobile-pagination.js' %}"></script>
 {% endblock %}
