@@ -163,7 +163,7 @@ class AlunoListView(BaseAlunoView, ListView):
     """View for listing students with filtering and search capabilities"""
     template_name = 'alunos/lista_alunos.html'
     context_object_name = 'alunos'
-    paginate_by = 9
+    paginate_by = 15  # Aumentado para mostrar mais alunos por "página" no feed infinito
     
     def get_queryset(self):
         logger.debug("Starting get_queryset")
@@ -223,10 +223,19 @@ class AlunoListView(BaseAlunoView, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['filter_form'] = AlunoFilterForm(self.request.GET)
+        
+        # Verificar se estamos no modo de scroll infinito
+        context['infinite_scroll'] = self.request.GET.get('infinite_scroll') == 'true'
+        
         return context
 
     def render_to_response(self, context, **response_kwargs):
         if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # Verificar se estamos no modo de scroll infinito
+            is_infinite_scroll = self.request.GET.get('infinite_scroll') == 'true'
+            current_page = context['page_obj'].number
+            
+            # Renderizar os cards de alunos
             html = render_to_string(
                 'alunos/partials/lista_alunos_partial.html',
                 {
@@ -239,24 +248,44 @@ class AlunoListView(BaseAlunoView, ListView):
                 request=self.request
             )
             
-            pagination_html = render_to_string(
-                'alunos/partials/pagination_partial.html',
-                {
-                    'paginator': context['paginator'],
-                    'page_obj': context['page_obj'],
-                    'is_paginated': context['is_paginated'],
-                    'request': self.request,
-                },
-                request=self.request
-            )
+            # Para carregamento infinito, não precisamos mais renderizar a paginação HTML
+            # pois será substituída pela funcionalidade de scroll
+            if not is_infinite_scroll:
+                pagination_html = render_to_string(
+                    'alunos/partials/pagination_partial.html',
+                    {
+                        'paginator': context['paginator'],
+                        'page_obj': context['page_obj'],
+                        'is_paginated': context['is_paginated'],
+                        'request': self.request,
+                    },
+                    request=self.request
+                )
+            else:
+                pagination_html = ""
             
-            return JsonResponse({
+            # Construir a resposta com informações adicionais para suportar scroll infinito
+            response_data = {
                 'html': html,
-                'pagination': pagination_html,
                 'total_alunos': context['paginator'].count,
-                'current_page': context['page_obj'].number,
+                'current_page': current_page,
                 'total_pages': context['paginator'].num_pages,
-            })
+                'has_more': current_page < context['paginator'].num_pages,
+            }
+            
+            # Adicionar pagination_html apenas se não estivermos em modo de scroll infinito
+            if not is_infinite_scroll:
+                response_data['pagination_html'] = pagination_html
+            
+            # Para scroll infinito, adicione sinalizadores de carregamento
+            if is_infinite_scroll:
+                # Determinar se estamos na primeira página (modo replace)
+                # ou nas páginas subsequentes (modo append)
+                mode = 'replace' if current_page == 1 else 'append'
+                response_data['mode'] = mode
+            
+            return JsonResponse(response_data)
+        
         return super().render_to_response(context, **response_kwargs)
 
 class NotaDeleteView(AdminRequiredMixin, DeleteView):
