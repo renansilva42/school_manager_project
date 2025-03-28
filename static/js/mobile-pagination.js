@@ -1,4 +1,3 @@
-// static/js/mobile-pagination.js
 /**
  * mobile-pagination.js
  * Implementa navegação otimizada para dispositivos móveis com suporte a gestos de deslize
@@ -50,29 +49,99 @@ document.addEventListener('DOMContentLoaded', function() {
         /**
          * Conecta os botões de navegação móvel ao manipulador do AlunosManager
          */
-        // Em mobile-pagination.js
-function connectMobileButtonsToAlunosManager() {
-    const prevButton = document.querySelector('.prev-page');
-    const nextButton = document.querySelector('.next-page');
-    
-    if (prevButton) {
-        prevButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (window.handlePaginationClick) {
-                window.handlePaginationClick(e, this.dataset.url);
+        function connectMobileButtonsToAlunosManager() {
+            const prevButton = document.querySelector('.prev-page');
+            const nextButton = document.querySelector('.next-page');
+            
+            // Também conectar botões da paginação padrão para funcionar em mobile
+            connectStandardPaginationButtons();
+            
+            if (prevButton) {
+                prevButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (this.classList.contains('disabled')) return;
+                    
+                    if (window.handlePaginationClick) {
+                        // Criar um novo evento com os dados necessários
+                        const mockEvent = new Event('click');
+                        mockEvent.preventDefault = () => {};
+                        
+                        // Usar o URL do botão ou gerar um com a página anterior
+                        const url = this.dataset.url || createPageUrl(getCurrentPage() - 1);
+                        window.handlePaginationClick(mockEvent, url);
+                    }
+                });
             }
-        });
-    }
-    
-    if (nextButton) {
-        nextButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (window.handlePaginationClick) {
-                window.handlePaginationClick(e, this.dataset.url);
+            
+            if (nextButton) {
+                nextButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (this.classList.contains('disabled')) return;
+                    
+                    if (window.handlePaginationClick) {
+                        // Criar um novo evento com os dados necessários
+                        const mockEvent = new Event('click');
+                        mockEvent.preventDefault = () => {};
+                        
+                        // Usar o URL do botão ou gerar um com a próxima página
+                        const url = this.dataset.url || createPageUrl(getCurrentPage() + 1);
+                        window.handlePaginationClick(mockEvent, url);
+                    }
+                });
             }
-        });
-    }
-}
+        }
+        
+        /**
+         * Conecta os botões de paginação padrão ao AlunosManager no modo mobile
+         */
+        function connectStandardPaginationButtons() {
+            document.querySelectorAll('.pagination .page-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (this.parentElement && this.parentElement.classList.contains('disabled')) return;
+                    
+                    if (window.handlePaginationClick) {
+                        window.handlePaginationClick(e, this.href);
+                    }
+                });
+            });
+        }
+        
+        /**
+         * Obtém a página atual através da URL ou do elemento ativo na paginação
+         */
+        function getCurrentPage() {
+            // Tentar obter da URL primeiro
+            const urlParams = new URLSearchParams(window.location.search);
+            const pageFromUrl = urlParams.get('page');
+            if (pageFromUrl) return parseInt(pageFromUrl);
+            
+            // Tenta obter do elemento ativo na paginação
+            const activePage = document.querySelector('.pagination .page-item.active');
+            if (activePage) {
+                const pageLink = activePage.querySelector('.page-link');
+                if (pageLink) {
+                    const dataPage = pageLink.getAttribute('data-page');
+                    if (dataPage) return parseInt(dataPage);
+                    
+                    // Ou extrair do texto do link
+                    const pageText = pageLink.textContent.trim();
+                    if (!isNaN(pageText)) return parseInt(pageText);
+                }
+            }
+            
+            // Valor padrão
+            return 1;
+        }
+        
+        /**
+         * Cria um URL para uma página específica
+         */
+        function createPageUrl(page) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', page);
+            return url.toString();
+        }
         
         /**
          * Inicializa eventos de deslize para navegação entre páginas
@@ -140,7 +209,10 @@ function connectMobileButtonsToAlunosManager() {
                             currentTarget: nextButton, 
                             preventDefault: function() {} 
                         };
-                        window.handlePaginationClick(mockEvent, nextButton.dataset.url);
+                        
+                        // Usar o URL do botão ou gerar um com a próxima página
+                        const url = nextButton.dataset.url || createPageUrl(getCurrentPage() + 1);
+                        window.handlePaginationClick(mockEvent, url);
                     }
                     
                     // Deslize para a esquerda (página anterior)
@@ -152,7 +224,10 @@ function connectMobileButtonsToAlunosManager() {
                             currentTarget: prevButton, 
                             preventDefault: function() {} 
                         };
-                        window.handlePaginationClick(mockEvent, prevButton.dataset.url);
+                        
+                        // Usar o URL do botão ou gerar um com a página anterior
+                        const url = prevButton.dataset.url || createPageUrl(getCurrentPage() - 1);
+                        window.handlePaginationClick(mockEvent, url);
                     }
                 } else {
                     // Comportamento legado
@@ -181,6 +256,8 @@ function connectMobileButtonsToAlunosManager() {
             if (prevButton) {
                 prevButton.addEventListener('click', function(e) {
                     e.preventDefault();
+                    if (this.classList.contains('disabled')) return;
+                    
                     triggerHapticFeedback();
                     legacyLoadPage(this.dataset.url);
                 });
@@ -190,6 +267,8 @@ function connectMobileButtonsToAlunosManager() {
             if (nextButton) {
                 nextButton.addEventListener('click', function(e) {
                     e.preventDefault();
+                    if (this.classList.contains('disabled')) return;
+                    
                     triggerHapticFeedback();
                     legacyLoadPage(this.dataset.url);
                 });
@@ -199,6 +278,8 @@ function connectMobileButtonsToAlunosManager() {
             document.querySelectorAll('.pagination .page-link').forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
+                    if (this.parentElement && this.parentElement.classList.contains('disabled')) return;
+                    
                     legacyLoadPage(this.getAttribute('href'));
                 });
             });
@@ -266,7 +347,10 @@ function connectMobileButtonsToAlunosManager() {
                 }
                 
                 // Rolar para o topo da lista
-                document.getElementById('results-container').scrollIntoView({ behavior: 'smooth' });
+                const resultsContainer = document.getElementById('results-container');
+                if (resultsContainer) {
+                    resultsContainer.scrollIntoView({ behavior: 'smooth' });
+                }
             });
         }
         
@@ -301,25 +385,75 @@ function connectMobileButtonsToAlunosManager() {
             }
             
             if (newCurrentPage) {
-                document.querySelector('.current-page').textContent = newCurrentPage.textContent;
+                const currentPageElement = document.querySelector('.current-page');
+                if (currentPageElement) {
+                    currentPageElement.textContent = newCurrentPage.textContent;
+                }
             }
             
             // Atualizar paginação desktop
             const newDesktopPagination = doc.querySelector('.pagination');
             if (newDesktopPagination) {
-                document.querySelector('.pagination').innerHTML = newDesktopPagination.innerHTML;
-                
-                // Se o AlunosManager não estiver ativo, reconecte os eventos aqui
-                if (!alunosManagerActive) {
-                    // Reconectar eventos de clique apenas no modo legado
-                    document.querySelectorAll('.pagination .page-link').forEach(link => {
-                        link.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            legacyLoadPage(this.getAttribute('href'));
+                const desktopPagination = document.querySelector('.pagination');
+                if (desktopPagination) {
+                    desktopPagination.innerHTML = newDesktopPagination.innerHTML;
+                    
+                    // Garantir que todos os botões de paginação tenham um número visível
+                    ensurePageNumbersAreVisible(desktopPagination);
+                    
+                    // Se o AlunosManager não estiver ativo, reconecte os eventos aqui
+                    if (!alunosManagerActive) {
+                        // Reconectar eventos de clique apenas no modo legado
+                        document.querySelectorAll('.pagination .page-link').forEach(link => {
+                            link.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                legacyLoadPage(this.getAttribute('href'));
+                            });
                         });
-                    });
+                    } else {
+                        // Reconectar ao AlunosManager
+                        connectStandardPaginationButtons();
+                    }
                 }
             }
+        }
+        
+        /**
+         * Garante que todos os botões de paginação numéricos tenham um número visível
+         * @param {HTMLElement} paginationElement - Elemento de paginação
+         */
+        function ensurePageNumbersAreVisible(paginationElement) {
+            const pageItems = paginationElement.querySelectorAll('.page-item');
+            
+            pageItems.forEach(item => {
+                // Ignorar itens prev/next
+                if (item.classList.contains('prev') || item.classList.contains('next')) {
+                    return;
+                }
+                
+                const link = item.querySelector('.page-link');
+                if (link) {
+                    // Se o link não tem texto visível, encontre o número da página
+                    if (link.textContent.trim() === '') {
+                        // Tentar obter o número da página de várias fontes
+                        let pageNumber = link.getAttribute('data-page');
+                        
+                        if (!pageNumber && link.href) {
+                            const url = new URL(link.href, window.location.origin);
+                            pageNumber = url.searchParams.get('page');
+                        }
+                        
+                        if (!pageNumber && item.dataset.page) {
+                            pageNumber = item.dataset.page;
+                        }
+                        
+                        // Se encontrou um número, adicione-o ao texto do link
+                        if (pageNumber) {
+                            link.textContent = pageNumber;
+                        }
+                    }
+                }
+            });
         }
         
         /**
@@ -378,3 +512,34 @@ function preloadNextPage() {
         });
     }
 }
+
+// Garantir que os botões de paginação tenham texto visível assim que o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        const pagination = document.querySelector('.pagination');
+        if (pagination) {
+            const pageItems = pagination.querySelectorAll('.page-item');
+            pageItems.forEach(item => {
+                // Ignorar botões prev/next
+                if (item.classList.contains('prev') || item.classList.contains('next')) {
+                    return;
+                }
+                
+                const link = item.querySelector('.page-link');
+                if (link && link.textContent.trim() === '') {
+                    // Tenta obter o número da página de diferentes fontes
+                    let pageNumber = item.dataset.page || link.dataset.page;
+                    
+                    if (!pageNumber && link.href) {
+                        const url = new URL(link.href, window.location.origin);
+                        pageNumber = url.searchParams.get('page');
+                    }
+                    
+                    if (pageNumber) {
+                        link.textContent = pageNumber;
+                    }
+                }
+            });
+        }
+    }, 200);
+});

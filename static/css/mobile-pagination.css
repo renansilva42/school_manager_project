@@ -1,115 +1,113 @@
-/* Estilos para paginação mobile */
+/* 
+ * mobile-pagination.css 
+ * Estilos para navegação otimizada para dispositivos móveis
+ */
+
+/* Efeitos de transição para carregamento de página */
+.page-transition {
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+/* Container de botões de paginação móvel */
 .mobile-pagination {
-    margin: 1.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    margin: 10px 0;
+    border-top: 1px solid #e9ecef;
+    border-bottom: 1px solid #e9ecef;
 }
 
-.swipe-indicator {
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 0.75rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.swipe-text {
-    color: #6c757d;
-}
-
+/* Botões de navegação */
 .btn-pagination {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
+    padding: 8px 15px;
+    color: #007bff;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #fff;
-    border: 1px solid #dee2e6;
-    color: #0d6efd;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-width: 44px;
+    min-height: 44px; /* Tamanho mínimo para toque em mobile */
 }
 
-.btn-pagination:active {
-    transform: scale(0.95);
-    background-color: #f1f8ff;
+.btn-pagination:hover:not(.disabled) {
+    background-color: #e9ecef;
 }
 
 .btn-pagination.disabled {
-    opacity: 0.5;
     color: #6c757d;
     pointer-events: none;
+    opacity: 0.65;
 }
 
-.page-indicator {
-    font-size: 1.25rem;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-}
-
+/* Indicador de página atual */
 .current-page {
-    color: #0d6efd;
-    font-weight: 700;
+    font-weight: bold;
+    color: #343a40;
 }
 
-.separator {
-    margin: 0 0.5rem;
-    color: #6c757d;
-}
-
-.total-pages {
-    color: #6c757d;
-}
-
-/* Estilos para o contêiner deslizável */
-.swipe-container {
-    position: relative;
-    overflow: hidden;
-    touch-action: pan-y;
-}
-
-/* Feedback visual para o deslize */
+/* Feedback visual para deslize */
 .swipe-feedback {
     position: absolute;
     top: 0;
-    bottom: 0;
+    height: 100%;
     width: 50px;
-    background: linear-gradient(90deg, rgba(13, 110, 253, 0.1), transparent);
+    background-color: rgba(0, 123, 255, 0.2);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.2s ease;
     pointer-events: none;
 }
 
 .swipe-feedback.left {
     left: 0;
+    border-right: 3px solid rgba(0, 123, 255, 0.5);
 }
 
 .swipe-feedback.right {
     right: 0;
-    background: linear-gradient(270deg, rgba(13, 110, 253, 0.1), transparent);
+    border-left: 3px solid rgba(0, 123, 255, 0.5);
 }
 
 .swipe-feedback.active {
     opacity: 1;
 }
 
-/* Animação de carregamento para transições de página */
-.page-transition {
-    animation: fadeTransition 0.3s ease;
-}
-
-@keyframes fadeTransition {
-    0% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
-/* Ajustes responsivos */
+/* Melhorias para paginação padrão em dispositivos móveis */
 @media (max-width: 576px) {
-    .btn-pagination {
-        width: 42px;
-        height: 42px;
+    .pagination {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
     }
     
-    .page-indicator {
-        font-size: 1.1rem;
+    .pagination .page-item {
+        margin: 2px;
+    }
+    
+    .pagination .page-link {
+        min-width: 40px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    
+    /* Garantir que o número da página seja visível */
+    .pagination .page-link:empty::before {
+        content: attr(data-page);
+    }
+    
+    /* Efeito de toque */
+    .pagination .page-link:active:not(.disabled) {
+        background-color: #007bff;
+        color: white;
+        transform: scale(0.95);
     }
 }

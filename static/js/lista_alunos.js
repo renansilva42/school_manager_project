@@ -181,6 +181,12 @@ class AlunosManager {
             } else if (pageLink.href) {
                 url = new URL(pageLink.href);
                 page = url.searchParams.get('page') || 1;
+            } else {
+                // Se não tem href nem data-page, verifique se o botão tem um valor específico
+                const pageText = pageLink.textContent.trim();
+                if (!isNaN(pageText) && pageText !== '') {
+                    page = pageText;
+                }
             }
             
             if (page) {
@@ -211,13 +217,13 @@ class AlunosManager {
         
         // Também expor o método globalmente para compatibilidade com código existente
         window.handlePaginationClick = (e, pageUrl) => {
+            if (e) e.preventDefault();
+            
+            if (this.state.requestInProgress) return;
+            
+            this.state.userInitiatedRequest = true;
+            
             if (pageUrl) {
-                e.preventDefault();
-                
-                if (this.state.requestInProgress) return;
-                
-                this.state.userInitiatedRequest = true;
-                
                 const url = new URL(pageUrl, window.location.origin);
                 const page = url.searchParams.get('page') || 1;
                 
@@ -235,7 +241,11 @@ class AlunosManager {
                 return true;
             }
             
-            return this.handlePaginationClick(e);
+            if (e && e.currentTarget) {
+                return this.handlePaginationClick(e);
+            }
+            
+            return false;
         };
     }
     
@@ -243,13 +253,40 @@ class AlunosManager {
     attachPaginationHandlers(handler) {
         if (!this.elements.pagination) return;
         
+        // Primeiro, selecionamos todos os elementos que precisam de handlers de paginação
         const paginationLinks = this.elements.pagination.querySelectorAll('.page-link');
+        const pageItems = this.elements.pagination.querySelectorAll('.page-item');
         
         paginationLinks.forEach(link => {
             // Remover manipuladores antigos para evitar duplicação
             link.removeEventListener('click', handler);
             // Adicionar novo manipulador
             link.addEventListener('click', handler);
+            
+            // Garantir que o link tenha conteúdo visível
+            if (link.textContent.trim() === '' && link.parentElement.classList.contains('page-item') && 
+                !link.parentElement.classList.contains('prev') && !link.parentElement.classList.contains('next')) {
+                // Se for um item de página numérica sem texto, adicione o número da página
+                const dataPage = link.getAttribute('data-page');
+                if (dataPage) {
+                    link.textContent = dataPage;
+                } else if (link.href) {
+                    const url = new URL(link.href);
+                    const page = url.searchParams.get('page');
+                    if (page) {
+                        link.textContent = page;
+                    }
+                }
+            }
+        });
+        
+        // Também adicione handlers aos itens de página (para melhorar a área clicável)
+        pageItems.forEach(item => {
+            // Só adicione se não for um item que já contenha um link
+            if (!item.querySelector('.page-link')) {
+                item.removeEventListener('click', handler);
+                item.addEventListener('click', handler);
+            }
         });
     }
     
@@ -390,12 +427,42 @@ class AlunosManager {
         const currentPage = this.state.currentPage;
         const totalPages = this.state.totalPages;
         
-        // Set active page - usando JavaScript puro em vez de jQuery
+        // Inicializar os links de paginação corretamente
+        // Verificar se os botões numéricos têm texto visível
         const pageItems = this.elements.pagination.querySelectorAll('.page-item');
         pageItems.forEach(item => {
             item.classList.remove('active');
-            if (item.dataset.page === currentPage.toString()) {
-                item.classList.add('active');
+            
+            // Verifique se é um item numérico (não prev/next)
+            if (!item.classList.contains('prev') && !item.classList.contains('next')) {
+                // Verificar se tem data-page
+                if (item.dataset.page) {
+                    if (item.dataset.page === currentPage.toString()) {
+                        item.classList.add('active');
+                    }
+                    
+                    // Verificar se o link tem conteúdo
+                    const link = item.querySelector('.page-link');
+                    if (link && link.textContent.trim() === '') {
+                        link.textContent = item.dataset.page;
+                    }
+                } else {
+                    // Verificar pelo link href se existe
+                    const link = item.querySelector('.page-link');
+                    if (link && link.href) {
+                        const url = new URL(link.href);
+                        const page = url.searchParams.get('page');
+                        
+                        if (page === currentPage.toString()) {
+                            item.classList.add('active');
+                        }
+                        
+                        // Garantir que o link tenha conteúdo
+                        if (link.textContent.trim() === '') {
+                            link.textContent = page;
+                        }
+                    }
+                }
             }
         });
         
@@ -468,6 +535,11 @@ class AlunosManager {
             
             // Atualizar o href
             link.setAttribute('href', url.toString());
+            
+            // Também adicionar data-page para facilitar acesso
+            if (page && !link.hasAttribute('data-page')) {
+                link.setAttribute('data-page', page);
+            }
         });
     }
 
