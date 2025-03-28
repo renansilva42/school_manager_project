@@ -430,37 +430,102 @@ class AlunosManager {
         // Inicializar os links de paginação corretamente
         // Verificar se os botões numéricos têm texto visível
         const pageItems = this.elements.pagination.querySelectorAll('.page-item');
+        
+        // Array para armazenar as páginas que devem ser visíveis
+        let visiblePages = [];
+        
+        // Sempre mostrar a primeira página
+        visiblePages.push(1);
+        
+        // Sempre mostrar a última página
+        if (totalPages > 1) {
+            visiblePages.push(totalPages);
+        }
+        
+        // Determinar o intervalo de páginas em torno da página atual
+        const range = 2; // Páginas antes e depois da atual
+        
+        // Incluir páginas próximas da atual
+        for (let i = Math.max(2, currentPage - range); i <= Math.min(totalPages - 1, currentPage + range); i++) {
+            visiblePages.push(i);
+        }
+        
+        // Garantir que não haja "buracos" de apenas uma página
+        if (visiblePages.includes(3) && !visiblePages.includes(2)) {
+            visiblePages.push(2);
+        }
+        
+        if (visiblePages.includes(totalPages - 2) && !visiblePages.includes(totalPages - 1)) {
+            visiblePages.push(totalPages - 1);
+        }
+        
+        // Ordenar as páginas
+        visiblePages.sort((a, b) => a - b);
+        
+        // Adicionar reticências apenas onde necessário
+        let pagesWithEllipsis = [];
+        let lastPage = 0;
+        
+        for (let i = 0; i < visiblePages.length; i++) {
+            const page = visiblePages[i];
+            
+            // Se houver um salto maior que 1, adicionar reticências
+            if (page - lastPage > 1) {
+                pagesWithEllipsis.push('...');
+            }
+            
+            pagesWithEllipsis.push(page);
+            lastPage = page;
+        }
+        
+        // Agora, atualize a exibição da paginação
         pageItems.forEach(item => {
             item.classList.remove('active');
             
-            // Verifique se é um item numérico (não prev/next)
-            if (!item.classList.contains('prev') && !item.classList.contains('next')) {
-                // Verificar se tem data-page
+            // Pular botões prev e next
+            if (item.classList.contains('prev') || item.classList.contains('next')) {
+                return;
+            }
+            
+            // Verificar se deve mostrar este item
+            const link = item.querySelector('.page-link');
+            if (link) {
+                let pageNumber;
+                
+                // Determinar o número da página deste botão
                 if (item.dataset.page) {
-                    if (item.dataset.page === currentPage.toString()) {
+                    pageNumber = parseInt(item.dataset.page);
+                } else if (link.dataset.page) {
+                    pageNumber = parseInt(link.dataset.page);
+                } else if (link.textContent.trim() !== '...') {
+                    pageNumber = parseInt(link.textContent.trim());
+                }
+                
+                if (pageNumber) {
+                    // Se for a página atual, marcar como ativa
+                    if (pageNumber === currentPage) {
                         item.classList.add('active');
                     }
                     
-                    // Verificar se o link tem conteúdo
-                    const link = item.querySelector('.page-link');
-                    if (link && link.textContent.trim() === '') {
-                        link.textContent = item.dataset.page;
-                    }
-                } else {
-                    // Verificar pelo link href se existe
-                    const link = item.querySelector('.page-link');
-                    if (link && link.href) {
-                        const url = new URL(link.href);
-                        const page = url.searchParams.get('page');
+                    // Decidir se deve mostrar ou ocultar este botão
+                    if (visiblePages.includes(pageNumber)) {
+                        item.style.display = '';
                         
-                        if (page === currentPage.toString()) {
-                            item.classList.add('active');
-                        }
-                        
-                        // Garantir que o link tenha conteúdo
+                        // Garantir que o botão tenha um número visível
                         if (link.textContent.trim() === '') {
-                            link.textContent = page;
+                            link.textContent = pageNumber;
                         }
+                    } else {
+                        // Se não estiver nas páginas visíveis, ocultar
+                        item.style.display = 'none';
+                    }
+                } else if (link.textContent.trim() === '...') {
+                    // Se for um botão de reticências, mostrar apenas se necessário
+                    if (pagesWithEllipsis.includes('...')) {
+                        item.style.display = '';
+                        pagesWithEllipsis.splice(pagesWithEllipsis.indexOf('...'), 1);
+                    } else {
+                        item.style.display = 'none';
                     }
                 }
             }

@@ -1,31 +1,62 @@
-/* static/css/pagination.css */
-.pagination {
-    margin: 1rem 0;
+/* Estilos para a paginação na versão desktop */
+
+/* Garantir que os botões de paginação tenham tamanho adequado e sejam visíveis */
+.pagination .page-link {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    color: #007bff;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    position: relative;
 }
 
-.page-link {
-    padding: 0.5rem 1rem;
-    color: var(--bs-primary);
-    transition: all 0.3s ease;
+/* Estilo quando o cursor está sobre o botão */
+.pagination .page-link:hover:not(.disabled) {
+    z-index: 2;
+    color: #0056b3;
+    text-decoration: none;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
 }
 
-.page-link:hover {
-    background-color: var(--bs-primary);
-    color: white;
+/* Estilo para o botão da página atual */
+.pagination .page-item.active .page-link {
+    z-index: 3;
+    color: #fff;
+    background-color: #007bff;
+    border-color: #007bff;
 }
 
-.page-item.active .page-link {
-    background-color: var(--bs-primary);
-    border-color: var(--bs-primary);
+/* Estilo para botões desabilitados */
+.pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
 }
 
-.page-item.disabled .page-link {
-    color: var(--bs-gray-500);
+/* Estilos específicos para botões vazios */
+.pagination .page-link:empty::before {
+    content: attr(data-page);
 }
 
+/* Ajuste para dispositivos de tela menor */
 @media (max-width: 768px) {
     .pagination {
-        width: 100%;
-        justify-content: space-between;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        justify-content: center;
+    }
+    
+    .pagination .page-item:not(.prev):not(.next):not(.active):not(:nth-child(2)):not(:last-child-2) {
+        display: none;
+    }
+    
+    .pagination .page-item.active ~ .page-item:not(.next):not(:last-child-2) {
+        display: none;
     }
 }
