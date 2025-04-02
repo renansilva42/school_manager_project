@@ -252,90 +252,110 @@ function addMessage(message, isUser = false) {
         // Função para processar a entrada do usuário
         // Substitua a função processUserInput no arquivo chatbot.html com esta versão:
         function processUserInput() {
-    const message = userInput.value.trim();
-    if (message === '') return;
-    
-    // Adicionar mensagem do usuário
-    addMessage(message, true);
-    userInput.value = '';
-    
-    // Mostrar indicador de digitação
-    showTypingIndicator();
-    
-    // Fazer requisição AJAX para o backend
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
-    fetch('/chatbot/response/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': csrfToken
-        },
-        body: `message=${encodeURIComponent(message)}`
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`Erro HTTP: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        removeTypingIndicator();
-        
-        console.log("Resposta do servidor:", data); // Para depuração
-        
-        if (data && data.response) {
-            // Verificar se a resposta contém uma referência a uma imagem
-            const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
-            let match = imgRegex.exec(data.response);
+            const message = userInput.value.trim();
+            if (message === '') return;
             
-            if (match) {
-                // Extrair o texto e a URL da imagem
-                const altText = match[1];
-                let imgUrl = match[2];
-                
-                // Corrigir a URL se necessário (remover ./ do início)
-                if (imgUrl.startsWith('./')) {
-                    imgUrl = imgUrl.substring(2);
+            // Adicionar mensagem do usuário
+            addMessage(message, true);
+            userInput.value = '';
+            
+            // Mostrar indicador de digitação
+            showTypingIndicator();
+            
+            // Fazer requisição AJAX para o backend
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch('/chatbot/response/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken
+                },
+                body: `message=${encodeURIComponent(message)}`
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`);
                 }
+                return response.json();
+            })
+            .then(data => {
+                removeTypingIndicator();
                 
-                // Criar uma resposta com texto e imagem
-                const textPart = data.response.replace(imgRegex, '').trim();
-                addMessage([textPart, {type: 'image', url: imgUrl}]);
-            } else if (data.response.includes('<table>') || data.response.includes('<ul>')) {
-                // Se contiver HTML, renderizar como HTML
-                const messageElement = document.createElement('div');
-                messageElement.classList.add('message', 'bot-message');
+                console.log("Resposta do servidor:", data); // Para depuração
                 
-                const now = new Date();
-                const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                               now.getMinutes().toString().padStart(2, '0');
-                
-                messageElement.innerHTML = `
-                    ${data.response}
-                    <div class="message-time">${timeString}</div>
-                `;
-                
-                chatMessages.appendChild(messageElement);
-            } else {
-                // Caso contrário, usar a função addMessage normal
-                addMessage(data.response);
-            }
-        } else {
-            // Resposta vazia ou inválida
-            console.error('Resposta do servidor vazia ou inválida:', data);
-            addMessage('Não consegui obter informações do sistema. Isso pode ocorrer se o aluno não estiver cadastrado ou houver um problema com o banco de dados. Por favor, tente reformular sua pergunta ou contate o administrador.');
+                if (data && data.response) {
+                    // Verificar se a resposta contém uma referência a uma imagem
+                    const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
+                    let match = imgRegex.exec(data.response);
+                    
+                    if (match) {
+                        // Extrair o texto e a URL da imagem
+                        const altText = match[1];
+                        let imgUrl = match[2];
+                        
+                        // Corrigir a URL se necessário (remover ./ do início)
+                        if (imgUrl.startsWith('./')) {
+                            imgUrl = imgUrl.substring(2);
+                        }
+                        
+                        // Criar uma resposta com texto e imagem
+                        const textPart = data.response.replace(imgRegex, '').trim();
+                        addMessage([textPart, {type: 'image', url: imgUrl}]);
+                    } else if (data.response.includes('<table>') || data.response.includes('<ul>')) {
+                        // Se contiver HTML, renderizar como HTML
+                        const messageElement = document.createElement('div');
+                        messageElement.classList.add('message', 'bot-message');
+                        
+                        const now = new Date();
+                        const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                                          now.getMinutes().toString().padStart(2, '0');
+                        
+                        messageElement.innerHTML = `
+                            ${data.response}
+                            <div class="message-time">${timeString}</div>
+                        `;
+                        
+                        chatMessages.appendChild(messageElement);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    } else if (data.response.includes('**')) {
+                        // Se contiver formatação markdown, converter para HTML
+                        let htmlResponse = data.response
+                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\n/g, '<br>');
+                        
+                        const messageElement = document.createElement('div');
+                        messageElement.classList.add('message', 'bot-message');
+                        
+                        const now = new Date();
+                        const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                                          now.getMinutes().toString().padStart(2, '0');
+                        
+                        messageElement.innerHTML = `
+                            ${htmlResponse}
+                            <div class="message-time">${timeString}</div>
+                        `;
+                        
+                        chatMessages.appendChild(messageElement);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    } else {
+                        // Caso contrário, usar a função addMessage normal
+                        addMessage(data.response);
+                    }
+                } else {
+                    // Resposta vazia ou inválida
+                    console.error('Resposta do servidor vazia ou inválida:', data);
+                    addMessage('Não consegui obter informações do sistema. Isso pode ocorrer se o aluno não estiver cadastrado ou houver um problema com o banco de dados. Por favor, tente reformular sua pergunta ou contate o administrador.');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                removeTypingIndicator();
+                addMessage(`Ocorreu um erro na comunicação com o servidor: ${error.message}. Por favor, verifique sua conexão e tente novamente.`);
+            });
         }
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        removeTypingIndicator();
-        addMessage(`Ocorreu um erro na comunicação com o servidor: ${error.message}. Por favor, verifique sua conexão e tente novamente.`);
-    });
-}
         
-        // Event listeners
+       // Event listeners
         sendButton.addEventListener('click', processUserInput);
         
         userInput.addEventListener('keypress', function(e) {

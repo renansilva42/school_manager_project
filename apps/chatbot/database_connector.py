@@ -14,6 +14,8 @@ class ChatbotDatabaseConnector:
     def __init__(self):
         logger.info("Inicializando conector de banco de dados do chatbot")
     
+    # Dentro do método get_student_info, atualize a busca por nome para ser mais flexível
+
     def get_student_info(self, student_id=None, name=None, matricula=None):
         """
         Busca informações completas de um aluno pelo ID, nome ou matrícula
@@ -38,8 +40,33 @@ class ChatbotDatabaseConnector:
             
             # Se for informado o nome, realizar busca aproximada
             elif name:
-                # Busca aproximada por nome
+                # Prepara o nome para busca - remove caracteres especiais e normaliza
+                import unicodedata
+                from django.db.models import Q
+                
+                # Normaliza o nome removendo acentos 
+                def normalizar_nome(nome):
+                    nome = unicodedata.normalize('NFKD', nome)
+                    nome = ''.join([c for c in nome if not unicodedata.combining(c)])
+                    return nome.upper()
+                
+                nome_normalizado = normalizar_nome(name)
+                logger.info(f"Buscando aluno com nome normalizado: {nome_normalizado}")
+                
+                # Busca direta pelo nome
                 alunos = Aluno.objects.filter(nome__icontains=name)
+                
+                # Se não encontrou, tenta busca com nome normalizado
+                if alunos.count() == 0:
+                    # Busca por palavras individuais do nome
+                    termos = nome_normalizado.split()
+                    query = Q()
+                    for termo in termos:
+                        if len(termo) > 2:  # Ignorar termos muito curtos
+                            query |= Q(nome__icontains=termo)
+                    
+                    alunos = Aluno.objects.filter(query)
+                
                 if alunos.count() == 0:
                     return {"error": "Aluno não encontrado com o nome informado"}
                 elif alunos.count() > 1:

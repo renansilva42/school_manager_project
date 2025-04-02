@@ -1,84 +1,12 @@
-# apps/chatbot/views.py
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.shortcuts import render
-from apps.chatbot.utils import get_openai_response, compare_students
-from apps.chatbot.database_connector import ChatbotDatabaseConnector
-import json
 import logging
+import json
+import traceback
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 from django.conf import settings
-
-
-def format_dict_response(data, indent=0):
-    """Formata um dicionário de forma recursiva para exibição amigável"""
-    
-    if not isinstance(data, dict):
-        return str(data)
-    
-    result = ""
-    prefix = "  " * indent
-    
-    # Tratamento especial para tipos específicos de resposta
-    if "aluno" in data and "notas" in data:
-        # Formatação para notas de alunos
-        result += f"**Informações do Aluno {data['aluno'].get('nome', '')}**\n\n"
-        
-        if "message" in data:
-            result += f"{data['message']}\n\n"
-            return result
-            
-        result += "<table>\n<tr><th>Disciplina</th><th>Valor</th><th>Data</th></tr>\n"
-        
-        for nota in data["notas"]:
-            if isinstance(nota, dict):
-                disciplina = nota.get("disciplina", "N/A")
-                valor = nota.get("valor", "N/A")
-                data_nota = nota.get("data", "N/A")
-                result += f"<tr><td>{disciplina}</td><td>{valor}</td><td>{data_nota}</td></tr>\n"
-            
-        result += "</table>\n\n"
-        
-        if "media_geral" in data:
-            result += f"**Média Geral:** {data['media_geral']}"
-            
-        return result
-    
-    # Para análise de desempenho
-    if "media_geral" in data and "situacao_geral" in data and "disciplinas" in data:
-        result += f"**Análise de Desempenho de {data.get('aluno', {}).get('nome', '')}**\n\n"
-        result += f"Média Geral: {data['media_geral']}\n"
-        result += f"Situação: {data['situacao_geral']}\n\n"
-        
-        result += "<table>\n<tr><th>Disciplina</th><th>Média</th><th>Situação</th></tr>\n"
-        
-        for disc in data["disciplinas"]:
-            result += f"<tr><td>{disc['disciplina']}</td><td>{disc['media']}</td><td>{disc['situacao']}</td></tr>\n"
-            
-        result += "</table>\n"
-        return result
-    
-    # Formato geral para outros tipos de dicionários
-    for key, value in data.items():
-        if key in ["error", "message"]:
-            result += f"{value}\n"
-        elif isinstance(value, dict):
-            result += f"{prefix}**{key.replace('_', ' ').title()}**:\n"
-            result += format_dict_response(value, indent + 1)
-        elif isinstance(value, list) and value and isinstance(value[0], dict):
-            result += f"{prefix}**{key.replace('_', ' ').title()}**:\n"
-            for item in value:
-                result += f"{prefix}  - "
-                if "nome" in item:
-                    result += f"{item['nome']}"
-                    if "id" in item:
-                        result += f" (ID: {item['id']})"
-                    result += "\n"
-                else:
-                    result += format_dict_response(item, indent + 2)
-        else:
-            result += f"{prefix}**{key.replace('_', ' ').title()}**: {value}\n"
-    
-    return result
+from .utils import get_openai_response, format_dict_response
+from .database_connector import ChatbotDatabaseConnector
 
 # Configurar o logger
 logger = logging.getLogger(__name__)
@@ -93,7 +21,7 @@ def chatbot_response(request):
         message = request.POST.get('message', '')
         
         # Adicionar registro de log para a mensagem recebida
-        logger.info(f"Mensagem recebida: {message}")
+        logger.info(f"Mensagem recebida: '{message}'")
         
         # Define all available tools/functions
         tools = [
@@ -121,12 +49,59 @@ def chatbot_response(request):
                     }
                 }
             },
-            # Outros tools mantidos como estão...
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_student_grades",
+                    "description": "Busca as notas de um aluno",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "student_id": {
+                                "type": ["integer", "null"],
+                                "description": "ID do aluno no sistema"
+                            },
+                            "name": {
+                                "type": ["string", "null"],
+                                "description": "Nome do aluno para busca"
+                            },
+                            "matricula": {
+                                "type": ["integer", "null"],
+                                "description": "Número de matrícula do aluno"
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "analyze_student_performance",
+                    "description": "Analisa o desempenho acadêmico de um aluno",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "student_id": {
+                                "type": ["integer", "null"],
+                                "description": "ID do aluno no sistema"
+                            },
+                            "name": {
+                                "type": ["string", "null"],
+                                "description": "Nome do aluno para busca"
+                            },
+                            "matricula": {
+                                "type": ["integer", "null"],
+                                "description": "Número de matrícula do aluno"
+                            }
+                        }
+                    }
+                }
+            }
         ]
 
         # Prepare messages for the API
         messages = [
-            {"role": "system", "content": "Você é um assistente virtual do sistema School Manager, especializado em fornecer informações sobre alunos. Quando perguntarem sobre responsáveis, busque informações do aluno e mostre os dados na seção 'responsáveis'."},
+            {"role": "system", "content": "Você é um assistente virtual do sistema School Manager, especializado em fornecer informações sobre alunos. Quando perguntarem sobre responsáveis de um aluno, você DEVE usar a função get_student_info para obter todas as informações do aluno, incluindo seus responsáveis cadastrados. Utilize o parâmetro name com o nome do aluno para fazer a consulta."},
             {"role": "user", "content": message}
         ]
 
@@ -141,10 +116,48 @@ def chatbot_response(request):
                 logger.error(f"Erro de conexão com o banco de dados: {str(db_error)}")
                 return JsonResponse({"response": f"Não foi possível conectar ao banco de dados: {str(db_error)}"})
             
+            # Extrair nome do aluno em caso de pergunta sobre responsável
+            if "responsável" in message.lower() or "responsavel" in message.lower():
+                import re
+                aluno_match = re.search(r'aluno\s+([A-Za-zÀ-ÖØ-öø-ÿ\s]+)(\?|$|\.|,)', message, re.IGNORECASE)
+                if aluno_match:
+                    aluno_name = aluno_match.group(1).strip().upper()
+                    logger.info(f"Nome do aluno extraído da mensagem: {aluno_name}")
+                    
+                    # Verificar o aluno diretamente antes de chamar a API
+                    db_connector = ChatbotDatabaseConnector()
+                    result = db_connector.get_student_info(name=aluno_name)
+                    
+                    if "error" in result:
+                        logger.warning(f"Aluno não encontrado na verificação prévia: {aluno_name}")
+                        return JsonResponse({"response": f"Não encontrei um aluno com o nome {aluno_name} no sistema. Por favor, verifique se o nome está correto."})
+                    
+                    # Se encontramos múltiplos alunos, informar ao usuário
+                    if "message" in result and "alunos" in result:
+                        alunos_list = [f"{aluno['nome']} (ID: {aluno['id']})" for aluno in result['alunos']]
+                        response_text = f"{result['message']}\nEncontrei os seguintes alunos:\n" + "\n".join(alunos_list) + "\n\nPor favor, especifique de qual aluno você precisa informações."
+                        return JsonResponse({"response": response_text})
+                    
+                    # Se chegamos aqui, temos um único aluno - vamos formatar a resposta sobre os responsáveis
+                    if "responsaveis" in result and result["responsaveis"]:
+                        nome_aluno = result.get("dados_pessoais", {}).get("nome", result.get("nome", aluno_name))
+                        resp_text = f"Os responsáveis pelo aluno {nome_aluno} são:\n\n"
+                        
+                        for idx, resp in enumerate(result["responsaveis"], 1):
+                            resp_text += f"**Responsável {idx}**\n"
+                            for k, v in resp.items():
+                                if v:
+                                    resp_text += f"- {k.replace('_', ' ').title()}: {v}\n"
+                            resp_text += "\n"
+                        
+                        return JsonResponse({"response": resp_text})
+                    else:
+                        return JsonResponse({"response": f"O aluno {aluno_name} está cadastrado no sistema, mas não possui responsáveis registrados."})
+            
             # Get response from OpenAI
             logger.info("Enviando requisição para OpenAI")
             response = get_openai_response(messages=messages, tools=tools)
-            logger.info(f"Resposta recebida da OpenAI: {response}")
+            logger.info(f"Resposta recebida da OpenAI: {str(response)}")
             
             # Check if the response includes a function call
             if hasattr(response, 'function_call') and response.function_call:
@@ -165,16 +178,6 @@ def chatbot_response(request):
                 # Execute the appropriate function based on the name
                 if function_name == "get_student_info":
                     logger.info(f"Buscando informações do aluno com: {function_args}")
-                    # Se o usuário está perguntando sobre responsável, vamos buscar pelo nome do aluno
-                    if "name" not in function_args or not function_args["name"]:
-                        # Extrair o nome do aluno da mensagem original
-                        import re
-                        name_match = re.search(r'aluno\s+([A-Za-zÀ-ÖØ-öø-ÿ\s]+)', message, re.IGNORECASE)
-                        if name_match:
-                            aluno_name = name_match.group(1).strip()
-                            function_args["name"] = aluno_name
-                            logger.info(f"Nome do aluno extraído da mensagem: {aluno_name}")
-                    
                     result = db_connector.get_student_info(**function_args)
                 elif function_name == "get_student_grades":
                     result = db_connector.get_student_grades(**function_args)
@@ -184,7 +187,7 @@ def chatbot_response(request):
                     logger.error(f"Função desconhecida solicitada: {function_name}")
                     return JsonResponse({"response": f"Não sei como executar a função {function_name}."})
                 
-                logger.info(f"Resultado da função: {result}")
+                logger.info(f"Resultado da função: {str(result)[:500]}...") # Limitar o tamanho do log
                 
                 # Format the response based on the result
                 if "error" in result:
@@ -203,14 +206,20 @@ def chatbot_response(request):
                     if "responsável" in message.lower() or "responsavel" in message.lower():
                         # Formatação específica para perguntas sobre responsáveis
                         if "responsaveis" in result and result["responsaveis"]:
-                            resp_text = f"Os responsáveis do aluno {result.get('dados_pessoais', {}).get('nome', '')} são:\n\n"
+                            nome_aluno = result.get("dados_pessoais", {}).get("nome", "")
+                            resp_text = f"Os responsáveis pelo aluno {nome_aluno} são:\n\n"
+                            
                             for idx, resp in enumerate(result["responsaveis"], 1):
                                 resp_text += f"**Responsável {idx}**\n"
                                 for k, v in resp.items():
                                     if v:
                                         resp_text += f"- {k.replace('_', ' ').title()}: {v}\n"
                                 resp_text += "\n"
+                            
                             return JsonResponse({"response": resp_text})
+                        else:
+                            nome_aluno = result.get("dados_pessoais", {}).get("nome", "")
+                            return JsonResponse({"response": f"O aluno {nome_aluno} está cadastrado no sistema, mas não possui responsáveis registrados."})
                     
                     # Processamento padrão para outros tipos de informações
                     if "foto_url" in result or (isinstance(result, dict) and "dados_pessoais" in result and "foto_url" in result["dados_pessoais"]):
@@ -282,7 +291,6 @@ def chatbot_response(request):
 
         except Exception as e:
             # Registrar detalhes da exceção para depuração
-            import traceback
             logger.error(f"Erro no chatbot_response: {str(e)}\n{traceback.format_exc()}")
             return JsonResponse({
                 "response": f"Ocorreu um erro ao processar sua solicitação: {str(e)}\nPor favor, contate o administrador do sistema."

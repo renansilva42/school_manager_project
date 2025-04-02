@@ -9,6 +9,10 @@ from django.db.models import Avg, Max, Min
 from apps.alunos.models import Aluno, Nota
 from decimal import Decimal
 from django.urls import reverse
+import logging
+
+# Configurar o logger
+logger = logging.getLogger(__name__)
 
 # Verifica a versão do openai para definir a forma correta de uso
 try:
@@ -21,319 +25,105 @@ def get_openai_response(messages, tools=None, tool_choice="auto"):
     """
     Obtém resposta da API OpenAI com suporte a function calling.
     """
-
-    if use_legacy_api:
-        openai.api_key = settings.OPENAI_API_KEY
-        response = openai.ChatCompletion.create(
-            model="gpt-4o-mini-2024-07-18",
-            messages=messages,
-            tools=tools,
-            tool_choice=tool_choice
-        )
-    else:
-        client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini-2024-07-18",
-            messages=messages,
-            tools=tools,
-            tool_choice=tool_choice
-        )
-    
-    return response.choices[0].message
-
-def get_student_info(student_id=None, name=None):
-    """
-    Busca informações detalhadas sobre um aluno pelo ID ou nome.
-    """
     try:
-        if student_id is None and (name is None or name.strip() == ""):
-            return {"error": "É necessário fornecer o ID ou o nome do aluno"}
-        
-        if student_id:
-            try:
-                aluno = Aluno.objects.get(id=student_id)
-            except Aluno.DoesNotExist:
-                return {"error": f"Aluno com ID {student_id} não encontrado"}
+        if use_legacy_api:
+            openai.api_key = settings.OPENAI_API_KEY
+            response = openai.ChatCompletion.create(
+                model="gpt-4o-mini-2024-07-18",
+                messages=messages,
+                tools=tools,
+                tool_choice=tool_choice
+            )
         else:
-            alunos = Aluno.objects.filter(nome__icontains=name)
-            if not alunos.exists():
-                return {"error": f"Nenhum aluno encontrado com o nome '{name}'"}
-            elif alunos.count() > 1:
-                return {
-                    "message": f"Encontrados {alunos.count()} alunos com o nome '{name}'",
-                    "alunos": [{"id": a.id, "nome": a.nome} for a in alunos]
-                }
-            aluno = alunos.first()
-        
-        # Return formatted student information
-        return {
-            "nome": aluno.nome,
-            "matricula": aluno.matricula,
-            "serie": aluno.serie,
-            "turno": aluno.get_turno_display(),
-            "nivel": aluno.get_nivel_display(),
-            "media_geral": float(aluno.get_media_geral()),
-            "foto_url": aluno.get_foto_url()
-        }
-    except Exception as e:
-        return {"error": f"Erro ao buscar informações do aluno: {str(e)}"}
-
-def get_student_grades(student_id=None, name=None):
-    """
-    Busca as notas de um aluno pelo ID ou nome.
-    """
-    try:
-        # Verificar se pelo menos um parâmetro foi fornecido
-        if student_id is None and (name is None or name.strip() == ""):
-            return {"error": "É necessário fornecer o ID ou o nome do aluno"}
-            
-        if student_id:
-            aluno = Aluno.objects.get(id=student_id)
-        elif name:
-            alunos = Aluno.objects.filter(nome__icontains=name)
-            if not alunos.exists():
-                return {"error": f"Nenhum aluno encontrado com o nome '{name}'"}
-            elif alunos.count() > 1:
-                # Se houver múltiplos resultados, retornar uma lista
-                return {
-                    "message": f"Encontrados {alunos.count()} alunos com o nome '{name}'",
-                    "alunos": [{"id": a.id, "nome": a.nome} for a in alunos]
-                }
-            aluno = alunos.first()
-        
-        notas = Nota.objects.filter(aluno=aluno)
-        
-        if not notas:
-            return {
-                "aluno": {
-                    "id": aluno.id,
-                    "nome": aluno.nome
-                },
-                "message": f"O aluno {aluno.nome} não possui notas registradas."
-            }
-        
-        resultado = {
-            "aluno": {
-                "id": aluno.id,
-                "nome": aluno.nome
-            },
-            "notas": []
-        }
-        
-        for nota in notas:
-            # Convert Decimal to float for JSON serialization
-            valor = float(nota.valor) if isinstance(nota.valor, Decimal) else nota.valor
-            
-            resultado["notas"].append({
-                "disciplina": nota.disciplina,
-                "valor": valor,
-                "data": nota.data.strftime("%d/%m/%Y") if nota.data else "Não informada"
-            })
-        
-        # Calcular média geral
-        media = sum(n["valor"] for n in resultado["notas"]) / len(resultado["notas"])
-        resultado["media_geral"] = round(media, 2)
-        
-        return resultado
-    except Aluno.DoesNotExist:
-        return {"error": f"Aluno com ID {student_id} não encontrado"}
-    except Exception as e:
-        return {"error": f"Erro ao buscar notas do aluno: {str(e)}"}
-
-def analyze_student_performance(student_id=None, name=None):
-    """
-    Analisa o desempenho de um aluno com base em suas notas.
-    """
-    try:
-        # Verificar se pelo menos um parâmetro foi fornecido
-        if student_id is None and (name is None or name.strip() == ""):
-            return {"error": "É necessário fornecer o ID ou o nome do aluno"}
-            
-        if student_id:
-            aluno = Aluno.objects.get(id=student_id)
-        elif name:
-            alunos = Aluno.objects.filter(nome__icontains=name)
-            if not alunos.exists():
-                return {"error": f"Nenhum aluno encontrado com o nome '{name}'"}
-            elif alunos.count() > 1:
-                # Se houver múltiplos resultados, retornar uma lista
-                return {
-                    "message": f"Encontrados {alunos.count()} alunos com o nome '{name}'",
-                    "alunos": [{"id": a.id, "nome": a.nome} for a in alunos]
-                }
-            aluno = alunos.first()
-        
-        notas = Nota.objects.filter(aluno=aluno)
-        
-        if not notas:
-            return {
-                "aluno": {
-                    "id": aluno.id,
-                    "nome": aluno.nome
-                },
-                "message": f"O aluno {aluno.nome} não possui notas registradas para análise."
-            }
-        
-        # Agrupar notas por disciplina
-        disciplinas = {}
-        for nota in notas:
-            valor = float(nota.valor) if isinstance(nota.valor, Decimal) else nota.valor
-            if nota.disciplina not in disciplinas:
-                disciplinas[nota.disciplina] = []
-            disciplinas[nota.disciplina].append(valor)
-        
-        # Calcular estatísticas por disciplina
-        analise_disciplinas = []
-        for disciplina, valores in disciplinas.items():
-            media = sum(valores) / len(valores)
-            analise_disciplinas.append({
-                "disciplina": disciplina,
-                "media": round(media, 2),
-                "maior_nota": max(valores),
-                "menor_nota": min(valores),
-                "quantidade_notas": len(valores),
-                "situacao": "Aprovado" if media >= 6 else "Em recuperação" if media >= 4 else "Reprovado"
-            })
-        
-        # Calcular média geral
-        todas_notas = [nota for notas_disc in disciplinas.values() for nota in notas_disc]
-        media_geral = sum(todas_notas) / len(todas_notas)
-        
-        # Determinar disciplinas com melhor e pior desempenho
-        disciplinas_ordenadas = sorted(analise_disciplinas, key=lambda x: x["media"], reverse=True)
-        melhor_disciplina = disciplinas_ordenadas[0] if disciplinas_ordenadas else None
-        pior_disciplina = disciplinas_ordenadas[-1] if disciplinas_ordenadas else None
-        
-        resultado = {
-            "aluno": {
-                "id": aluno.id,
-                "nome": aluno.nome,
-                "serie": aluno.serie,
-                "turno": aluno.get_turno_display()
-            },
-            "media_geral": round(media_geral, 2),
-            "situacao_geral": "Aprovado" if media_geral >= 6 else "Em recuperação" if media_geral >= 4 else "Reprovado",
-            "disciplinas": analise_disciplinas,
-            "melhor_desempenho": melhor_disciplina,
-            "pior_desempenho": pior_disciplina
-        }
-        
-        return resultado
-    except Aluno.DoesNotExist:
-        return {"error": f"Aluno com ID {student_id} não encontrado"}
-    except Exception as e:
-        return {"error": f"Erro ao analisar desempenho do aluno: {str(e)}"}
-
-def compare_students(student_names=None, student_ids=None):
-    """
-    Compara o desempenho de dois ou mais alunos.
-    """
-    try:
-        alunos = []
-        
-        # Buscar alunos por ID
-        if student_ids:
-            for id in student_ids:
-                try:
-                    aluno = Aluno.objects.get(id=id)
-                    alunos.append(aluno)
-                except Aluno.DoesNotExist:
-                    pass
-        
-        # Buscar alunos por nome
-        if student_names:
-            for nome in student_names:
-                aluno = Aluno.objects.filter(nome__icontains=nome).first()
-                if aluno and aluno not in alunos:
-                    alunos.append(aluno)
-        
-        if not alunos:
-            return {"error": "Nenhum aluno encontrado para comparação"}
-        
-        if len(alunos) < 2:
-            return {"error": "É necessário pelo menos dois alunos para fazer uma comparação"}
-        
-        # Coletar dados de cada aluno
-        dados_alunos = []
-        for aluno in alunos:
-            notas = Nota.objects.filter(aluno=aluno)
-            
-            if not notas:
-                dados_alunos.append({
-                    "id": aluno.id,
-                    "nome": aluno.nome,
-                    "serie": aluno.serie,
-                    "turno": aluno.get_turno_display(),
-                    "sem_notas": True
-                })
-                continue
-            
-            # Calcular média geral
-            media = notas.aggregate(Avg('valor'))['valor__avg'] or 0
-            media = float(media) if isinstance(media, Decimal) else media
-            
-            # Agrupar notas por disciplina
-            disciplinas = {}
-            for nota in notas:
-                valor = float(nota.valor) if isinstance(nota.valor, Decimal) else nota.valor
-                if nota.disciplina not in disciplinas:
-                    disciplinas[nota.disciplina] = []
-                disciplinas[nota.disciplina].append(valor)
-            
-            # Calcular médias por disciplina
-            medias_disciplinas = {}
-            for disciplina, valores in disciplinas.items():
-                medias_disciplinas[disciplina] = round(sum(valores) / len(valores), 2)
-            
-            dados_alunos.append({
-                "id": aluno.id,
-                "nome": aluno.nome,
-                "serie": aluno.serie,
-                "turno": aluno.get_turno_display(),
-                "media_geral": round(media, 2),
-                "medias_disciplinas": medias_disciplinas,
-                "sem_notas": False
-            })
-        
-        # Encontrar disciplinas em comum
-        todas_disciplinas = set()
-        for dados in dados_alunos:
-            if not dados.get("sem_notas"):
-                todas_disciplinas.update(dados["medias_disciplinas"].keys())
-        
-        disciplinas_comuns = list(todas_disciplinas)
-        
-        # Preparar comparação por disciplina
-        comparacao_disciplinas = {}
-        for disciplina in disciplinas_comuns:
-            comparacao_disciplinas[disciplina] = []
-            for dados in dados_alunos:
-                if not dados.get("sem_notas") and disciplina in dados["medias_disciplinas"]:
-                    comparacao_disciplinas[disciplina].append({
-                        "aluno": dados["nome"],
-                        "media": dados["medias_disciplinas"][disciplina]
-                    })
-            # Ordenar por média (maior para menor)
-            comparacao_disciplinas[disciplina] = sorted(
-                comparacao_disciplinas[disciplina], 
-                key=lambda x: x["media"], 
-                reverse=True
+            client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+            response = client.chat.completions.create(
+                model="gpt-4o-mini-2024-07-18",
+                messages=messages,
+                tools=tools,
+                tool_choice=tool_choice
             )
         
-        # Determinar aluno com melhor desempenho geral
-        alunos_com_notas = [a for a in dados_alunos if not a.get("sem_notas")]
-        if alunos_com_notas:
-            melhor_aluno = max(alunos_com_notas, key=lambda x: x["media_geral"])
-        else:
-            melhor_aluno = None
-        
-        resultado = {
-            "alunos": dados_alunos,
-            "disciplinas_comuns": disciplinas_comuns,
-            "comparacao_disciplinas": comparacao_disciplinas,
-            "melhor_desempenho_geral": melhor_aluno
-        }
-        
-        return resultado
+        return response.choices[0].message
     except Exception as e:
-        return {"error": f"Erro ao comparar alunos: {str(e)}"}
+        logger.error(f"Erro ao chamar a API OpenAI: {str(e)}")
+        raise
+
+def format_dict_response(data, indent=0):
+    """
+    Formata um dicionário para exibição como texto.
+    """
+    if not data:
+        return "Sem dados disponíveis."
+        
+    result = ""
+    prefix = "  " * indent
+    
+    # Para formatações específicas de dados
+    if "notas" in data and isinstance(data["notas"], list):
+        result += f"**Notas do Aluno {data.get('aluno', {}).get('nome', '')}**\n\n"
+        result += "<table>\n<tr><th>Disciplina</th><th>Nota</th><th>Data</th></tr>\n"
+        
+        for nota in data["notas"]:
+            disciplina = nota.get("disciplina", "N/A")
+            valor = nota.get("valor", "N/A")
+            data_nota = nota.get("data", "N/A")
+            result += f"<tr><td>{disciplina}</td><td>{valor}</td><td>{data_nota}</td></tr>\n"
+        
+        result += "</table>\n\n"
+        
+        if "media_geral" in data:
+            result += f"**Média Geral:** {data['media_geral']}"
+            
+        return result
+    
+    # Para análise de desempenho
+    if "media_geral" in data and "situacao_geral" in data and "disciplinas" in data:
+        result += f"**Análise de Desempenho de {data.get('aluno', {}).get('nome', '')}**\n\n"
+        result += f"Média Geral: {data['media_geral']}\n"
+        result += f"Situação: {data['situacao_geral']}\n\n"
+        
+        result += "<table>\n<tr><th>Disciplina</th><th>Média</th><th>Situação</th></tr>\n"
+        
+        for disc in data["disciplinas"]:
+            result += f"<tr><td>{disc['disciplina']}</td><td>{disc['media']}</td><td>{disc['situacao']}</td></tr>\n"
+            
+        result += "</table>\n"
+        return result
+    
+    # Formato específico para responsáveis quando é uma pergunta direta
+    if "responsaveis" in data and isinstance(data["responsaveis"], list) and len(data["responsaveis"]) > 0:
+        nome_aluno = data.get("dados_pessoais", {}).get("nome", data.get("nome", ""))
+        if nome_aluno:
+            result += f"**Responsáveis do Aluno {nome_aluno}**\n\n"
+            
+            for idx, resp in enumerate(data["responsaveis"], 1):
+                result += f"**Responsável {idx}**\n"
+                for k, v in resp.items():
+                    if v:
+                        result += f"- {k.replace('_', ' ').title()}: {v}\n"
+                result += "\n"
+            
+            return result
+    
+    # Formato geral para outros tipos de dicionários
+    for key, value in data.items():
+        if key in ["error", "message"]:
+            result += f"{value}\n"
+        elif isinstance(value, dict):
+            result += f"{prefix}**{key.replace('_', ' ').title()}**:\n"
+            result += format_dict_response(value, indent + 1)
+        elif isinstance(value, list) and value and isinstance(value[0], dict):
+            result += f"{prefix}**{key.replace('_', ' ').title()}**:\n"
+            for item in value:
+                result += f"{prefix}  - "
+                if "nome" in item:
+                    result += f"{item['nome']}"
+                    if "id" in item:
+                        result += f" (ID: {item['id']})"
+                    result += "\n"
+                else:
+                    result += format_dict_response(item, indent + 2)
+        else:
+            result += f"{prefix}**{key.replace('_', ' ').title()}**: {value}\n"
+    
+    return result

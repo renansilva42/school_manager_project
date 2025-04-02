@@ -186,7 +186,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Atualizar a seção LOGGING
+# Adicionar ou atualizar a seção LOGGING
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -243,6 +243,10 @@ LOGGING = {
         }
     }
 }
+
+# Criar diretórios de logs
+import os
+os.makedirs('logs', exist_ok=True)
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
