@@ -14,55 +14,135 @@ class ChatbotDatabaseConnector:
     def __init__(self):
         logger.info("Inicializando conector de banco de dados do chatbot")
     
-    def get_student_info(self, student_id=None, name=None):
+    def get_student_info(self, student_id=None, name=None, matricula=None):
         """
-        Busca informações de um aluno pelo ID ou nome
+        Busca informações completas de um aluno pelo ID, nome ou matrícula
+        Retorna todos os dados disponíveis no modelo Aluno para que o chatbot
+        possa responder perguntas específicas sobre qualquer informação do aluno.
         """
         try:
-            if student_id:
-                aluno = Aluno.objects.filter(id=student_id).first()
-                if aluno:
-                    return {
-                        "id": aluno.id,
-                        "nome": aluno.nome,
-                        "matricula": aluno.matricula,
-                        "data_nascimento": aluno.data_nascimento.strftime('%d/%m/%Y') if aluno.data_nascimento else None,
-                        "turma": aluno.turma.nome if aluno.turma else None
-                    }
-                return {"error": "Aluno não encontrado"}
+            # Identificar o aluno
+            aluno = None
             
+            # Se a matrícula for informada, buscar diretamente por ela
+            if matricula:
+                aluno = Aluno.objects.filter(matricula=matricula).first()
+                if not aluno:
+                    return {"error": "Aluno não encontrado com a matrícula informada"}
+            
+            # Caso seja informado um student_id, fazer busca por ID
+            elif student_id:
+                aluno = Aluno.objects.filter(id=student_id).first()
+                if not aluno:
+                    return {"error": "Aluno não encontrado pelo ID"}
+            
+            # Se for informado o nome, realizar busca aproximada
             elif name:
                 # Busca aproximada por nome
                 alunos = Aluno.objects.filter(nome__icontains=name)
-                if alunos.count() == 1:
-                    aluno = alunos.first()
-                    return {
-                        "id": aluno.id,
-                        "nome": aluno.nome,
-                        "matricula": aluno.matricula,
-                        "data_nascimento": aluno.data_nascimento.strftime('%d/%m/%Y') if aluno.data_nascimento else None,
-                        "turma": aluno.turma.nome if aluno.turma else None
-                    }
+                if alunos.count() == 0:
+                    return {"error": "Aluno não encontrado com o nome informado"}
                 elif alunos.count() > 1:
                     return {
                         "message": f"Encontrados {alunos.count()} alunos com esse nome",
-                        "alunos": [{"id": a.id, "nome": a.nome} for a in alunos]
+                        "alunos": [{"id": a.id, "nome": a.nome, "matricula": a.matricula} for a in alunos]
                     }
-                return {"error": "Aluno não encontrado"}
+                aluno = alunos.first()
             
-            return {"error": "É necessário fornecer ID ou nome do aluno"}
+            else:
+                return {"error": "É necessário fornecer matrícula, ID ou nome do aluno"}
+            
+            # Construir resposta completa com todos os dados disponíveis do aluno
+            idade = aluno.get_idade() if hasattr(aluno, 'get_idade') else None
+            foto_url = aluno.get_foto_url() if hasattr(aluno, 'get_foto_url') else None
+            
+            # Obter o display de campos com choices
+            try:
+                nivel_display = aluno.get_nivel_display()
+            except:
+                nivel_display = aluno.nivel
+                
+            try:
+                turno_display = aluno.get_turno_display()
+            except:
+                turno_display = aluno.turno
+                
+            try:
+                ano_display = aluno.get_ano_display()
+            except:
+                ano_display = aluno.ano
+            
+            # Estruturar resposta em categorias para facilitar a interpretação
+            resposta = {
+                "id": aluno.id,
+                "status": "Ativo" if aluno.ativo else "Inativo",
+                
+                "dados_pessoais": {
+                    "nome": aluno.nome,
+                    "matricula": aluno.matricula,
+                    "cpf": aluno.cpf,
+                    "rg": aluno.rg,
+                    "data_nascimento": aluno.data_nascimento.strftime('%d/%m/%Y') if aluno.data_nascimento else None,
+                    "idade": idade,
+                    "foto_url": foto_url
+                },
+                
+                "contato": {
+                    "email": aluno.email,
+                    "telefone": aluno.telefone
+                },
+                
+                "endereco": {
+                    "logradouro": aluno.endereco,
+                    "cidade": aluno.cidade,
+                    "uf": aluno.uf
+                },
+                
+                "dados_academicos": {
+                    "nivel": nivel_display,
+                    "turno": turno_display,
+                    "ano": ano_display,
+                    "turma": aluno.turma.nome if aluno.turma else None,
+                    "data_matricula": aluno.data_matricula.strftime('%d/%m/%Y') if aluno.data_matricula else None
+                },
+                
+                "responsaveis": [
+                    {
+                        "nome": aluno.nome_responsavel1,
+                        "telefone": aluno.telefone_responsavel1
+                    }
+                ],
+                
+                "informacoes_adicionais": {
+                    "observacoes": aluno.observacoes,
+                    "dados_json": aluno.dados_adicionais,
+                    "versao_cadastro": aluno.version,
+                    "data_criacao": aluno.created_at.strftime('%d/%m/%Y %H:%M:%S') if hasattr(aluno, 'created_at') else None
+                }
+            }
+            
+            # Adicionar segundo responsável se existir
+            if aluno.nome_responsavel2:
+                resposta["responsaveis"].append({
+                    "nome": aluno.nome_responsavel2,
+                    "telefone": aluno.telefone_responsavel2
+                })
+            
+            return resposta
         except Exception as e:
             logger.error(f"Erro ao buscar informações do aluno: {str(e)}")
             return {"error": f"Erro ao buscar informações: {str(e)}"}
     
-    def get_student_grades(self, student_id=None, name=None):
+    def get_student_grades(self, student_id=None, name=None, matricula=None):
         """
         Busca as notas de um aluno
         """
         try:
             # Primeiro, identificar o aluno
             aluno = None
-            if student_id:
+            if matricula:
+                aluno = Aluno.objects.filter(matricula=matricula).first()
+            elif student_id:
                 aluno = Aluno.objects.filter(id=student_id).first()
             elif name:
                 alunos = Aluno.objects.filter(nome__icontains=name)
@@ -107,14 +187,16 @@ class ChatbotDatabaseConnector:
             logger.error(f"Erro ao buscar notas do aluno: {str(e)}")
             return {"error": f"Erro ao buscar notas: {str(e)}"}
     
-    def analyze_student_performance(self, student_id=None, name=None):
+    def analyze_student_performance(self, student_id=None, name=None, matricula=None):
         """
         Analisa o desempenho acadêmico de um aluno
         """
         try:
             # Primeiro, identificar o aluno
             aluno = None
-            if student_id:
+            if matricula:
+                aluno = Aluno.objects.filter(matricula=matricula).first()
+            elif student_id:
                 aluno = Aluno.objects.filter(id=student_id).first()
             elif name:
                 alunos = Aluno.objects.filter(nome__icontains=name)

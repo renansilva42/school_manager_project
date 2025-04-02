@@ -25,7 +25,7 @@ def chatbot_response(request):
                 "type": "function",
                 "function": {
                     "name": "get_student_info",
-                    "description": "Busca informações detalhadas sobre um aluno pelo nome ou ID",
+                    "description": "Busca informações detalhadas sobre um aluno pelo ID, nome ou matrícula",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -36,6 +36,10 @@ def chatbot_response(request):
                             "name": {
                                 "type": ["string", "null"],
                                 "description": "Nome do aluno para busca"
+                            },
+                            "matricula": {
+                                "type": ["integer", "null"],
+                                "description": "Número de matrícula do aluno"
                             }
                         }
                     }
