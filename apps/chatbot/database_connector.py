@@ -72,23 +72,43 @@ class ChatbotDatabaseConnector:
                         logger.error(f"Nome inválido fornecido para busca: {name}")
                         return {"error": "Nome inválido fornecido para busca"}
                     
-                    # Busca direta pelo nome
-                    alunos = Aluno.objects.filter(nome__icontains=name)
+                    # Verificar se o modelo Aluno está sendo importado corretamente
+                    logger.info(f"Verificando modelo Aluno: {Aluno.__module__}.{Aluno.__name__}")
                     
-                    # Se não encontrou, tenta busca com nome normalizado
-                    if alunos.count() == 0:
-                        # Busca por palavras individuais do nome
-                        termos = nome_normalizado.split()
-                        query = Q()
-                        for termo in termos:
-                            if len(termo) > 2:  # Ignorar termos muito curtos
-                                query |= Q(nome__icontains=termo)
+                    # Busca direta pelo nome com debug
+                    logger.info(f"Iniciando busca por nome: '{name}'")
+                    try:
+                        alunos = list(Aluno.objects.filter(nome__icontains=name))
+                        logger.info(f"Busca direta encontrou {len(alunos)} alunos")
                         
-                        alunos = Aluno.objects.filter(query)
+                        # Verificar o tipo de cada objeto retornado
+                        for i, a in enumerate(alunos):
+                            logger.info(f"Aluno {i+1}: tipo={type(a)}, repr={repr(a)}")
+                            
+                        # Se não encontrou, tenta busca com nome normalizado
+                        if len(alunos) == 0:
+                            # Busca por palavras individuais do nome
+                            termos = nome_normalizado.split()
+                            query = Q()
+                            for termo in termos:
+                                if len(termo) > 2:  # Ignorar termos muito curtos
+                                    query |= Q(nome__icontains=termo)
+                            
+                            logger.info(f"Tentando busca alternativa com termos: {termos}")
+                            alunos_query = Aluno.objects.filter(query)
+                            alunos = list(alunos_query)
+                            logger.info(f"Busca alternativa encontrou {len(alunos)} alunos")
+                            
+                            # Verificar o tipo de cada objeto retornado
+                            for i, a in enumerate(alunos):
+                                logger.info(f"Aluno alternativo {i+1}: tipo={type(a)}, repr={repr(a)}")
+                    except Exception as e:
+                        logger.error(f"Erro durante a busca de alunos: {str(e)}")
+                        return {"error": f"Erro durante a busca de alunos: {str(e)}"}
                     
-                    if alunos.count() == 0:
+                    if len(alunos) == 0:
                         return {"error": "Aluno não encontrado com o nome informado"}
-                    elif alunos.count() > 1:
+                    elif len(alunos) > 1:
                         try:
                             alunos_list = []
                             for a in alunos:
@@ -105,8 +125,11 @@ class ChatbotDatabaseConnector:
                             logger.error(f"Erro ao processar lista de alunos: {str(e)}")
                             return {"error": f"Erro ao processar lista de alunos: {str(e)}"}
                     # Verificar se encontrou algum aluno
-                    if alunos.count() > 0:
-                        aluno = alunos.first()
+                    if len(alunos) > 0:
+                        # Como agora alunos é uma lista, usamos indexação em vez de first()
+                        aluno = alunos[0]
+                        logger.info(f"Selecionando primeiro aluno: tipo={type(aluno)}, repr={repr(aluno)}")
+                        
                         # Verificar se o objeto aluno é válido
                         if not isinstance(aluno, Aluno):
                             logger.error(f"Objeto retornado não é um Aluno: {type(aluno)}")
@@ -186,7 +209,7 @@ class ChatbotDatabaseConnector:
                     "nivel": nivel_display,
                     "turno": turno_display,
                     "ano": ano_display,
-                    "turma": aluno.turma.nome if hasattr(aluno, 'turma') and aluno.turma else None,
+                    "turma": aluno.turma if hasattr(aluno, 'turma') and aluno.turma else None,
                     "data_matricula": aluno.data_matricula.strftime('%d/%m/%Y') if hasattr(aluno, 'data_matricula') and aluno.data_matricula else None
                 },
                 
@@ -225,41 +248,78 @@ class ChatbotDatabaseConnector:
             # Primeiro, identificar o aluno
             aluno = None
             if matricula:
-                aluno = Aluno.objects.filter(matricula=matricula).first()
+                try:
+                    aluno = Aluno.objects.filter(matricula=str(matricula)).first()
+                    if not aluno:
+                        logger.warning(f"Aluno não encontrado com matrícula: {matricula}")
+                        return {"error": "Aluno não encontrado com a matrícula informada"}
+                except Exception as e:
+                    logger.error(f"Erro ao buscar por matrícula {matricula}: {str(e)}")
+                    return {"error": f"Erro ao buscar por matrícula: {str(e)}"}
             elif student_id:
-                aluno = Aluno.objects.filter(id=student_id).first()
+                try:
+                    aluno = Aluno.objects.filter(id=student_id).first()
+                    if not aluno:
+                        logger.warning(f"Aluno não encontrado com ID: {student_id}")
+                        return {"error": "Aluno não encontrado pelo ID"}
+                except Exception as e:
+                    logger.error(f"Erro ao buscar por ID {student_id}: {str(e)}")
+                    return {"error": f"Erro ao buscar por ID: {str(e)}"}
             elif name:
                 # Verificar se o nome é válido
                 if not name or not isinstance(name, str):
                     logger.error(f"Nome inválido fornecido para busca: {name}")
                     return {"error": "Nome inválido fornecido para busca"}
                 
-                alunos = Aluno.objects.filter(nome__icontains=name)
-                if alunos.count() == 1:
-                    aluno = alunos.first()
-                    # Verificar se o objeto aluno é válido
-                    if not isinstance(aluno, Aluno):
-                        logger.error(f"Objeto retornado não é um Aluno: {type(aluno)}")
-                        return {"error": f"Erro interno: objeto retornado não é um Aluno"}
-                elif alunos.count() > 1:
-                    try:
-                        alunos_list = []
-                        for a in alunos:
-                            if isinstance(a, Aluno):
-                                alunos_list.append({"id": a.id, "nome": a.nome})
-                            else:
-                                logger.warning(f"Objeto não é um Aluno: {type(a)}")
+                logger.info(f"Buscando alunos com nome: '{name}'")
+                try:
+                    alunos = list(Aluno.objects.filter(nome__icontains=name))
+                    logger.info(f"Busca encontrou {len(alunos)} alunos")
+                    
+                    # Verificar o tipo de cada objeto retornado
+                    for i, a in enumerate(alunos):
+                        logger.info(f"Aluno {i+1}: tipo={type(a)}, repr={repr(a)}")
                         
-                        return {
-                            "message": f"Encontrados {len(alunos_list)} alunos com esse nome",
-                            "alunos": alunos_list
-                        }
-                    except Exception as e:
-                        logger.error(f"Erro ao processar lista de alunos: {str(e)}")
-                        return {"error": f"Erro ao processar lista de alunos: {str(e)}"}
+                    if len(alunos) == 1:
+                        aluno = alunos[0]
+                        logger.info(f"Selecionando único aluno: tipo={type(aluno)}, repr={repr(aluno)}")
+                        # Verificar se o objeto aluno é válido
+                        if not isinstance(aluno, Aluno):
+                            logger.error(f"Objeto retornado não é um Aluno: {type(aluno)}")
+                            return {"error": f"Erro interno: objeto retornado não é um Aluno"}
+                    elif len(alunos) > 1:
+                        try:
+                            alunos_list = []
+                            for a in alunos:
+                                if isinstance(a, Aluno):
+                                    alunos_list.append({"id": a.id, "nome": a.nome})
+                                else:
+                                    logger.warning(f"Objeto não é um Aluno: {type(a)}")
+                            
+                            return {
+                                "message": f"Encontrados {len(alunos_list)} alunos com esse nome",
+                                "alunos": alunos_list
+                            }
+                        except Exception as e:
+                            logger.error(f"Erro ao processar lista de alunos: {str(e)}")
+                            return {"error": f"Erro ao processar lista de alunos: {str(e)}"}
+                    else:
+                        logger.warning(f"Nenhum aluno encontrado com o nome: {name}")
+                        return {"error": f"Nenhum aluno encontrado com o nome: {name}"}
+                except Exception as e:
+                    logger.error(f"Erro durante a busca de alunos: {str(e)}")
+                    return {"error": f"Erro durante a busca de alunos: {str(e)}"}
             
             if not aluno:
                 return {"error": "Aluno não encontrado"}
+            
+            # Verificação adicional para garantir que aluno não seja None ou um tipo não esperado
+            if isinstance(aluno, str):
+                logger.error(f"Objeto aluno é uma string: {aluno}")
+                return {"error": f"Erro interno: o objeto aluno é uma string, não um objeto Aluno"}
+            elif not isinstance(aluno, Aluno):
+                logger.error(f"Objeto aluno é do tipo inesperado: {type(aluno)}")
+                return {"error": f"Erro interno: o objeto aluno é do tipo {type(aluno)}, não do tipo Aluno"}
             
             # Buscar as notas
             notas = Nota.objects.filter(aluno=aluno)
@@ -272,14 +332,19 @@ class ChatbotDatabaseConnector:
             # Formatar as notas por disciplina
             notas_por_disciplina = {}
             for nota in notas:
-                disciplina = nota.disciplina.nome if nota.disciplina else "Sem disciplina"
-                if disciplina not in notas_por_disciplina:
-                    notas_por_disciplina[disciplina] = []
+                disciplina = nota.disciplina if hasattr(nota, 'disciplina') and nota.disciplina else "Sem disciplina"
+                if isinstance(disciplina, str):
+                    disciplina_nome = disciplina
+                else:
+                    disciplina_nome = disciplina.nome if hasattr(disciplina, 'nome') else str(disciplina)
                 
-                notas_por_disciplina[disciplina].append({
+                if disciplina_nome not in notas_por_disciplina:
+                    notas_por_disciplina[disciplina_nome] = []
+                
+                notas_por_disciplina[disciplina_nome].append({
                     "valor": nota.valor,
-                    "data": nota.data.strftime('%d/%m/%Y') if nota.data else None,
-                    "descricao": nota.descricao
+                    "data": nota.data.strftime('%d/%m/%Y') if hasattr(nota, 'data') and nota.data else None,
+                    "descricao": nota.descricao if hasattr(nota, 'descricao') else None
                 })
             
             return {
@@ -299,41 +364,78 @@ class ChatbotDatabaseConnector:
             # Primeiro, identificar o aluno
             aluno = None
             if matricula:
-                aluno = Aluno.objects.filter(matricula=matricula).first()
+                try:
+                    aluno = Aluno.objects.filter(matricula=str(matricula)).first()
+                    if not aluno:
+                        logger.warning(f"Aluno não encontrado com matrícula: {matricula}")
+                        return {"error": "Aluno não encontrado com a matrícula informada"}
+                except Exception as e:
+                    logger.error(f"Erro ao buscar por matrícula {matricula}: {str(e)}")
+                    return {"error": f"Erro ao buscar por matrícula: {str(e)}"}
             elif student_id:
-                aluno = Aluno.objects.filter(id=student_id).first()
+                try:
+                    aluno = Aluno.objects.filter(id=student_id).first()
+                    if not aluno:
+                        logger.warning(f"Aluno não encontrado com ID: {student_id}")
+                        return {"error": "Aluno não encontrado pelo ID"}
+                except Exception as e:
+                    logger.error(f"Erro ao buscar por ID {student_id}: {str(e)}")
+                    return {"error": f"Erro ao buscar por ID: {str(e)}"}
             elif name:
                 # Verificar se o nome é válido
                 if not name or not isinstance(name, str):
                     logger.error(f"Nome inválido fornecido para busca: {name}")
                     return {"error": "Nome inválido fornecido para busca"}
                 
-                alunos = Aluno.objects.filter(nome__icontains=name)
-                if alunos.count() == 1:
-                    aluno = alunos.first()
-                    # Verificar se o objeto aluno é válido
-                    if not isinstance(aluno, Aluno):
-                        logger.error(f"Objeto retornado não é um Aluno: {type(aluno)}")
-                        return {"error": f"Erro interno: objeto retornado não é um Aluno"}
-                elif alunos.count() > 1:
-                    try:
-                        alunos_list = []
-                        for a in alunos:
-                            if isinstance(a, Aluno):
-                                alunos_list.append({"id": a.id, "nome": a.nome})
-                            else:
-                                logger.warning(f"Objeto não é um Aluno: {type(a)}")
+                logger.info(f"Buscando alunos com nome: '{name}'")
+                try:
+                    alunos = list(Aluno.objects.filter(nome__icontains=name))
+                    logger.info(f"Busca encontrou {len(alunos)} alunos")
+                    
+                    # Verificar o tipo de cada objeto retornado
+                    for i, a in enumerate(alunos):
+                        logger.info(f"Aluno {i+1}: tipo={type(a)}, repr={repr(a)}")
                         
-                        return {
-                            "message": f"Encontrados {len(alunos_list)} alunos com esse nome",
-                            "alunos": alunos_list
-                        }
-                    except Exception as e:
-                        logger.error(f"Erro ao processar lista de alunos: {str(e)}")
-                        return {"error": f"Erro ao processar lista de alunos: {str(e)}"}
+                    if len(alunos) == 1:
+                        aluno = alunos[0]
+                        logger.info(f"Selecionando único aluno: tipo={type(aluno)}, repr={repr(aluno)}")
+                        # Verificar se o objeto aluno é válido
+                        if not isinstance(aluno, Aluno):
+                            logger.error(f"Objeto retornado não é um Aluno: {type(aluno)}")
+                            return {"error": f"Erro interno: objeto retornado não é um Aluno"}
+                    elif len(alunos) > 1:
+                        try:
+                            alunos_list = []
+                            for a in alunos:
+                                if isinstance(a, Aluno):
+                                    alunos_list.append({"id": a.id, "nome": a.nome})
+                                else:
+                                    logger.warning(f"Objeto não é um Aluno: {type(a)}")
+                            
+                            return {
+                                "message": f"Encontrados {len(alunos_list)} alunos com esse nome",
+                                "alunos": alunos_list
+                            }
+                        except Exception as e:
+                            logger.error(f"Erro ao processar lista de alunos: {str(e)}")
+                            return {"error": f"Erro ao processar lista de alunos: {str(e)}"}
+                    else:
+                        logger.warning(f"Nenhum aluno encontrado com o nome: {name}")
+                        return {"error": f"Nenhum aluno encontrado com o nome: {name}"}
+                except Exception as e:
+                    logger.error(f"Erro durante a busca de alunos: {str(e)}")
+                    return {"error": f"Erro durante a busca de alunos: {str(e)}"}
             
             if not aluno:
                 return {"error": "Aluno não encontrado"}
+            
+            # Verificação adicional para garantir que aluno não seja None ou um tipo não esperado
+            if isinstance(aluno, str):
+                logger.error(f"Objeto aluno é uma string: {aluno}")
+                return {"error": f"Erro interno: o objeto aluno é uma string, não um objeto Aluno"}
+            elif not isinstance(aluno, Aluno):
+                logger.error(f"Objeto aluno é do tipo inesperado: {type(aluno)}")
+                return {"error": f"Erro interno: o objeto aluno é do tipo {type(aluno)}, não do tipo Aluno"}
             
             # Buscar as notas
             notas = Nota.objects.filter(aluno=aluno)
@@ -346,12 +448,17 @@ class ChatbotDatabaseConnector:
             # Calcular médias por disciplina
             medias_por_disciplina = {}
             for nota in notas:
-                disciplina = nota.disciplina.nome if nota.disciplina else "Sem disciplina"
-                if disciplina not in medias_por_disciplina:
-                    medias_por_disciplina[disciplina] = {"soma": 0, "count": 0}
+                disciplina = nota.disciplina if hasattr(nota, 'disciplina') and nota.disciplina else "Sem disciplina"
+                if isinstance(disciplina, str):
+                    disciplina_nome = disciplina
+                else:
+                    disciplina_nome = disciplina.nome if hasattr(disciplina, 'nome') else str(disciplina)
                 
-                medias_por_disciplina[disciplina]["soma"] += nota.valor
-                medias_por_disciplina[disciplina]["count"] += 1
+                if disciplina_nome not in medias_por_disciplina:
+                    medias_por_disciplina[disciplina_nome] = {"soma": 0, "count": 0}
+                
+                medias_por_disciplina[disciplina_nome]["soma"] += nota.valor
+                medias_por_disciplina[disciplina_nome]["count"] += 1
             
             # Calcular média geral e formatar resultados
             media_geral = 0
@@ -372,7 +479,7 @@ class ChatbotDatabaseConnector:
             
             # Buscar média da turma para comparação
             media_turma = 0
-            if aluno.turma:
+            if hasattr(aluno, 'turma') and aluno.turma:
                 media_turma_query = Nota.objects.filter(
                     aluno__turma=aluno.turma
                 ).aggregate(media=Avg('valor'))
