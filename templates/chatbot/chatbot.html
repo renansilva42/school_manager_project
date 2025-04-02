@@ -281,7 +281,10 @@ function addMessage(message, isUser = false) {
     })
     .then(data => {
         removeTypingIndicator();
-        if (data.response) {
+        
+        console.log("Resposta do servidor:", data); // Para depuração
+        
+        if (data && data.response) {
             // Verificar se a resposta contém uma referência a uma imagem
             const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
             let match = imgRegex.exec(data.response);
@@ -319,14 +322,16 @@ function addMessage(message, isUser = false) {
                 addMessage(data.response);
             }
         } else {
-            addMessage('A resposta do servidor está vazia. Por favor, verifique os logs do sistema.');
+            // Resposta vazia ou inválida
+            console.error('Resposta do servidor vazia ou inválida:', data);
+            addMessage('Não consegui obter informações do sistema. Isso pode ocorrer se o aluno não estiver cadastrado ou houver um problema com o banco de dados. Por favor, tente reformular sua pergunta ou contate o administrador.');
         }
         chatMessages.scrollTop = chatMessages.scrollHeight;
     })
     .catch(error => {
         console.error('Erro:', error);
         removeTypingIndicator();
-        addMessage(`Erro ao comunicar com o servidor: ${error.message}. Verifique a conexão com o banco de dados e os logs do sistema.`);
+        addMessage(`Ocorreu um erro na comunicação com o servidor: ${error.message}. Por favor, verifique sua conexão e tente novamente.`);
     });
 }
         

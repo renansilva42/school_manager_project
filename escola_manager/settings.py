@@ -186,12 +186,17 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Atualizar a seção LOGGING
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
             'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'detailed': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
         },
     },
@@ -212,6 +217,12 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': 'logs/url_errors.log',
             'formatter': 'verbose',
+        },
+        'chatbot_log': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/chatbot.log',
+            'formatter': 'detailed',
         }
     },
     'loggers': {
@@ -223,6 +234,11 @@ LOGGING = {
         'core.middleware': {
             'handlers': ['url_errors'],
             'level': 'ERROR',
+            'propagate': True,
+        },
+        'apps.chatbot': {
+            'handlers': ['chatbot_log', 'console'],
+            'level': 'DEBUG',
             'propagate': True,
         }
     }

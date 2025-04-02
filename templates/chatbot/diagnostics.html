@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Diagnóstico do Chatbot{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2>Diagnóstico do Chatbot</h2>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-{{ results.status|yesno:'success,danger' }}">
+                Status Geral: {{ results.status }}
+                {% if results.errors %}
+                    <ul class="mt-2 mb-0">
+                        {% for error in results.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            
+            <h4>Conexão com o Banco de Dados</h4>
+            <p>{{ results.database }}</p>
+            
+            <h4>Configuração da OpenAI API</h4>
+            <p>{{ results.openai }}</p>
+            
+            <div class="mt-4">
+                <a href="{% url 'chatbot' %}" class="btn btn-primary">Voltar para o Chatbot</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
