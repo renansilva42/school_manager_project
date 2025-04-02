@@ -163,13 +163,18 @@ def chatbot_response(request):
             if hasattr(response, 'function_call') and response.function_call:
                 function_name = response.function_call.name
                 logger.info(f"Função a ser chamada: {function_name}")
+                # Resto do código para function_call
+            elif hasattr(response, 'tool_calls') and response.tool_calls:
+                tool_call = response.tool_calls[0]
+                function_name = tool_call.function.name
+                logger.info(f"Função a ser chamada via tool_call: {function_name}")
                 
                 # Parse function arguments safely
                 try:
-                    function_args = json.loads(response.function_call.arguments)
+                    function_args = json.loads(tool_call.function.arguments)
                     logger.info(f"Argumentos da função: {function_args}")
                 except json.JSONDecodeError as e:
-                    logger.error(f"Erro ao decodificar argumentos JSON: {str(e)}, argumentos: {response.function_call.arguments}")
+                    logger.error(f"Erro ao decodificar argumentos JSON: {str(e)}, argumentos: {tool_call.function.arguments}")
                     return JsonResponse({"response": "Erro ao processar argumentos da função."})
                 
                 # Initialize database connector

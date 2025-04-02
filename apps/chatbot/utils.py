@@ -23,7 +23,7 @@ except AttributeError:
 
 def get_openai_response(messages, tools=None, tool_choice="auto"):
     """
-    Obtém resposta da API OpenAI com suporte a function calling.
+    Obtém resposta da API OpenAI com suporte a function calling e tool calling.
     """
     try:
         if use_legacy_api:
@@ -43,7 +43,20 @@ def get_openai_response(messages, tools=None, tool_choice="auto"):
                 tool_choice=tool_choice
             )
         
-        return response.choices[0].message
+        # Obtenha a primeira escolha da resposta
+        choice = response.choices[0].message
+        
+        # Verifique e registre o tipo de resposta recebida
+        if hasattr(choice, 'tool_calls') and choice.tool_calls:
+            logger.info(f"Resposta contém tool_calls: {choice.tool_calls}")
+        elif hasattr(choice, 'function_call') and choice.function_call:
+            logger.info(f"Resposta contém function_call: {choice.function_call}")
+        elif hasattr(choice, 'content') and choice.content:
+            logger.info(f"Resposta contém content: {choice.content[:100]}...")
+        else:
+            logger.warning("Resposta não contém tool_calls, function_call nem content")
+            
+        return choice
     except Exception as e:
         logger.error(f"Erro ao chamar a API OpenAI: {str(e)}")
         raise
