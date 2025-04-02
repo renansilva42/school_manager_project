@@ -121,43 +121,50 @@ def chatbot_response(request):
                 import re
                 aluno_match = re.search(r'aluno\s+([A-Za-zÀ-ÖØ-öø-ÿ\s]+)(\?|$|\.|,)', message, re.IGNORECASE)
                 if aluno_match:
-                    aluno_name = aluno_match.group(1).strip().upper()
-                    logger.info(f"Nome do aluno extraído da mensagem: {aluno_name}")
-                    
-                    # Verificar o aluno diretamente antes de chamar a API
-                    db_connector = ChatbotDatabaseConnector()
-                    # Garantir que o nome do aluno seja uma string válida
-                    if isinstance(aluno_name, str) and aluno_name.strip():
+                    try:
+                        aluno_name = aluno_match.group(1).strip().upper()
+                        logger.info(f"Nome do aluno extraído da mensagem: {aluno_name}")
+                        
+                        # Verificar se o nome do aluno é válido
+                        if not aluno_name or len(aluno_name) < 2:
+                            logger.warning(f"Nome do aluno muito curto ou vazio: '{aluno_name}'")
+                            return JsonResponse({"response": "Não consegui identificar o nome do aluno na sua pergunta. Por favor, especifique o nome completo do aluno."})
+                        
+                        # Verificar o aluno diretamente antes de chamar a API
+                        db_connector = ChatbotDatabaseConnector()
                         result = db_connector.get_student_info(name=aluno_name)
-                    else:
-                        logger.warning(f"Nome do aluno inválido: {aluno_name}")
-                        return JsonResponse({"response": "Não consegui identificar o nome do aluno na sua pergunta. Por favor, especifique o nome completo do aluno."})
-                    
-                    if "error" in result:
-                        logger.warning(f"Aluno não encontrado na verificação prévia: {aluno_name}")
-                        return JsonResponse({"response": f"Não encontrei um aluno com o nome {aluno_name} no sistema. Por favor, verifique se o nome está correto."})
-                    
-                    # Se encontramos múltiplos alunos, informar ao usuário
-                    if "message" in result and "alunos" in result:
-                        alunos_list = [f"{aluno['nome']} (ID: {aluno['id']})" for aluno in result['alunos']]
-                        response_text = f"{result['message']}\nEncontrei os seguintes alunos:\n" + "\n".join(alunos_list) + "\n\nPor favor, especifique de qual aluno você precisa informações."
-                        return JsonResponse({"response": response_text})
-                    
-                    # Se chegamos aqui, temos um único aluno - vamos formatar a resposta sobre os responsáveis
-                    if "responsaveis" in result and result["responsaveis"]:
-                        nome_aluno = result.get("dados_pessoais", {}).get("nome", result.get("nome", aluno_name))
-                        resp_text = f"Os responsáveis pelo aluno {nome_aluno} são:\n\n"
                         
-                        for idx, resp in enumerate(result["responsaveis"], 1):
-                            resp_text += f"**Responsável {idx}**\n"
-                            for k, v in resp.items():
-                                if v:
-                                    resp_text += f"- {k.replace('_', ' ').title()}: {v}\n"
-                            resp_text += "\n"
+                        if "error" in result:
+                            logger.warning(f"Aluno não encontrado na verificação prévia: {aluno_name}")
+                            return JsonResponse({"response": f"Não encontrei um aluno com o nome {aluno_name} no sistema. Por favor, verifique se o nome está correto."})
                         
-                        return JsonResponse({"response": resp_text})
-                    else:
-                        return JsonResponse({"response": f"O aluno {aluno_name} está cadastrado no sistema, mas não possui responsáveis registrados."})
+                        # Se encontramos múltiplos alunos, informar ao usuário
+                        if "message" in result and "alunos" in result:
+                            alunos_list = [f"{aluno['nome']} (ID: {aluno['id']})" for aluno in result['alunos']]
+                            response_text = f"{result['message']}\nEncontrei os seguintes alunos:\n" + "\n".join(alunos_list) + "\n\nPor favor, especifique de qual aluno você precisa informações."
+                            return JsonResponse({"response": response_text})
+                        
+                        # Se chegamos aqui, temos um único aluno - vamos formatar a resposta sobre os responsáveis
+                        if "responsaveis" in result and result["responsaveis"]:
+                            nome_aluno = result.get("dados_pessoais", {}).get("nome", result.get("nome", aluno_name))
+                            resp_text = f"Os responsáveis pelo aluno {nome_aluno} são:\n\n"
+                            
+                            for idx, resp in enumerate(result["responsaveis"], 1):
+                                resp_text += f"**Responsável {idx}**\n"
+                                for k, v in resp.items():
+                                    if v:
+                                        resp_text += f"- {k.replace('_', ' ').title()}: {v}\n"
+                                resp_text += "\n"
+                            
+                            return JsonResponse({"response": resp_text})
+                        else:
+                            return JsonResponse({"response": f"O aluno {aluno_name} está cadastrado no sistema, mas não possui responsáveis registrados."})
+                    except Exception as e:
+                        logger.error(f"Erro ao extrair ou processar nome do aluno: {str(e)}")
+                        return JsonResponse({"response": "Ocorreu um erro ao processar o nome do aluno. Por favor, tente novamente com o nome completo."})
+                else:
+                    logger.warning("Não foi possível extrair o nome do aluno da mensagem")
+                    return JsonResponse({"response": "Não consegui identificar o nome do aluno na sua pergunta. Por favor, especifique o nome completo do aluno."})
             
             # Get response from OpenAI
             logger.info("Enviando requisição para OpenAI")

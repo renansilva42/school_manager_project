@@ -89,10 +89,21 @@ class ChatbotDatabaseConnector:
                     if alunos.count() == 0:
                         return {"error": "Aluno não encontrado com o nome informado"}
                     elif alunos.count() > 1:
-                        return {
-                            "message": f"Encontrados {alunos.count()} alunos com esse nome",
-                            "alunos": [{"id": a.id, "nome": a.nome, "matricula": a.matricula} for a in alunos]
-                        }
+                        try:
+                            alunos_list = []
+                            for a in alunos:
+                                if isinstance(a, Aluno):
+                                    alunos_list.append({"id": a.id, "nome": a.nome, "matricula": a.matricula})
+                                else:
+                                    logger.warning(f"Objeto não é um Aluno: {type(a)}")
+                            
+                            return {
+                                "message": f"Encontrados {len(alunos_list)} alunos com esse nome",
+                                "alunos": alunos_list
+                            }
+                        except Exception as e:
+                            logger.error(f"Erro ao processar lista de alunos: {str(e)}")
+                            return {"error": f"Erro ao processar lista de alunos: {str(e)}"}
                     # Verificar se encontrou algum aluno
                     if alunos.count() > 0:
                         aluno = alunos.first()
@@ -218,14 +229,34 @@ class ChatbotDatabaseConnector:
             elif student_id:
                 aluno = Aluno.objects.filter(id=student_id).first()
             elif name:
+                # Verificar se o nome é válido
+                if not name or not isinstance(name, str):
+                    logger.error(f"Nome inválido fornecido para busca: {name}")
+                    return {"error": "Nome inválido fornecido para busca"}
+                
                 alunos = Aluno.objects.filter(nome__icontains=name)
                 if alunos.count() == 1:
                     aluno = alunos.first()
+                    # Verificar se o objeto aluno é válido
+                    if not isinstance(aluno, Aluno):
+                        logger.error(f"Objeto retornado não é um Aluno: {type(aluno)}")
+                        return {"error": f"Erro interno: objeto retornado não é um Aluno"}
                 elif alunos.count() > 1:
-                    return {
-                        "message": f"Encontrados {alunos.count()} alunos com esse nome",
-                        "alunos": [{"id": a.id, "nome": a.nome} for a in alunos]
-                    }
+                    try:
+                        alunos_list = []
+                        for a in alunos:
+                            if isinstance(a, Aluno):
+                                alunos_list.append({"id": a.id, "nome": a.nome})
+                            else:
+                                logger.warning(f"Objeto não é um Aluno: {type(a)}")
+                        
+                        return {
+                            "message": f"Encontrados {len(alunos_list)} alunos com esse nome",
+                            "alunos": alunos_list
+                        }
+                    except Exception as e:
+                        logger.error(f"Erro ao processar lista de alunos: {str(e)}")
+                        return {"error": f"Erro ao processar lista de alunos: {str(e)}"}
             
             if not aluno:
                 return {"error": "Aluno não encontrado"}
@@ -272,14 +303,34 @@ class ChatbotDatabaseConnector:
             elif student_id:
                 aluno = Aluno.objects.filter(id=student_id).first()
             elif name:
+                # Verificar se o nome é válido
+                if not name or not isinstance(name, str):
+                    logger.error(f"Nome inválido fornecido para busca: {name}")
+                    return {"error": "Nome inválido fornecido para busca"}
+                
                 alunos = Aluno.objects.filter(nome__icontains=name)
                 if alunos.count() == 1:
                     aluno = alunos.first()
+                    # Verificar se o objeto aluno é válido
+                    if not isinstance(aluno, Aluno):
+                        logger.error(f"Objeto retornado não é um Aluno: {type(aluno)}")
+                        return {"error": f"Erro interno: objeto retornado não é um Aluno"}
                 elif alunos.count() > 1:
-                    return {
-                        "message": f"Encontrados {alunos.count()} alunos com esse nome",
-                        "alunos": [{"id": a.id, "nome": a.nome} for a in alunos]
-                    }
+                    try:
+                        alunos_list = []
+                        for a in alunos:
+                            if isinstance(a, Aluno):
+                                alunos_list.append({"id": a.id, "nome": a.nome})
+                            else:
+                                logger.warning(f"Objeto não é um Aluno: {type(a)}")
+                        
+                        return {
+                            "message": f"Encontrados {len(alunos_list)} alunos com esse nome",
+                            "alunos": alunos_list
+                        }
+                    except Exception as e:
+                        logger.error(f"Erro ao processar lista de alunos: {str(e)}")
+                        return {"error": f"Erro ao processar lista de alunos: {str(e)}"}
             
             if not aluno:
                 return {"error": "Aluno não encontrado"}
