@@ -1,11 +1,14 @@
 # apps/chatbot/views.py
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.db.models import Q, Avg
 from django.shortcuts import render
-from apps.alunos.models import Aluno, Nota
-from apps.chatbot.utils import get_openai_response, get_student_info, get_student_grades, analyze_student_performance, compare_students
+from apps.chatbot.utils import get_openai_response, compare_students
+from apps.chatbot.database_connector import ChatbotDatabaseConnector
 import json
+import logging
+
+# Configurar o logger
+logger = logging.getLogger(__name__)
 
 @login_required
 def chatbot(request):
@@ -95,13 +98,16 @@ def chatbot_response(request):
                 function_name = response.function_call.name
                 function_args = json.loads(response.function_call.arguments)
                 
+                # Initialize database connector
+                db_connector = ChatbotDatabaseConnector()
+                
                 # Execute the appropriate function based on the name
                 if function_name == "get_student_info":
-                    result = get_student_info(**function_args)
+                    result = db_connector.get_student_info(**function_args)
                 elif function_name == "get_student_grades":
-                    result = get_student_grades(**function_args)
+                    result = db_connector.get_student_grades(**function_args)
                 elif function_name == "analyze_student_performance":
-                    result = analyze_student_performance(**function_args)
+                    result = db_connector.analyze_student_performance(**function_args)
                 
                 # Format the response based on the result
                 if "error" in result:
