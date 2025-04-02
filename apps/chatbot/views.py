@@ -165,13 +165,29 @@ def chatbot_response(request):
         ]
 
         try:
+            # Verificar conexão com o banco de dados primeiro
+            from django.db import connection
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT 1")
+                    # Conexão OK
+            except Exception as db_error:
+                logger.error(f"Erro de conexão com o banco de dados: {str(db_error)}")
+                return JsonResponse({"response": f"Não foi possível conectar ao banco de dados: {str(db_error)}"})
+            
             # Get response from OpenAI
             response = get_openai_response(messages=messages, tools=tools)
             
             # Check if the response includes a function call
             if hasattr(response, 'function_call'):
                 function_name = response.function_call.name
-                function_args = json.loads(response.function_call.arguments)
+                
+                # Parse function arguments safely
+                try:
+                    function_args = json.loads(response.function_call.arguments)
+                except json.JSONDecodeError as e:
+                    logger.error(f"Erro ao decodificar argumentos JSON: {str(e)}, argumentos: {response.function_call.arguments}")
+                    return JsonResponse({"response": "Erro ao processar argumentos da função."})
                 
                 # Initialize database connector
                 db_connector = ChatbotDatabaseConnector()
@@ -183,10 +199,15 @@ def chatbot_response(request):
                     result = db_connector.get_student_grades(**function_args)
                 elif function_name == "analyze_student_performance":
                     result = db_connector.analyze_student_performance(**function_args)
+                else:
+                    logger.error(f"Função desconhecida solicitada: {function_name}")
+                    return JsonResponse({"response": f"Não sei como executar a função {function_name}."})
                 
                 # Format the response based on the result
                 if "error" in result:
-                    return JsonResponse({"response": f"Erro: {result['error']}"})
+                    # Registrar o erro e retornar uma mensagem mais amigável
+                    logger.error(f"Erro ao buscar dados: {result['error']}")
+                    return JsonResponse({"response": f"Desculpe, encontrei um problema: {result['error']}"})
                 elif "message" in result and "alunos" in result:
                     # Handle multiple students found
                     alunos_list = [f"{aluno['nome']} (ID: {aluno['id']})" for aluno in result['alunos']]
@@ -242,6 +263,9 @@ def chatbot_response(request):
             return JsonResponse({"response": response.content})
 
         except Exception as e:
-            return JsonResponse({"response": f"Ocorreu um erro: {str(e)}"})
+            # Registrar detalhes da exceção para depuração
+            import traceback
+            logger.error(f"Erro no chatbot_response: {str(e)}\n{traceback.format_exc()}")
+            return JsonResponse({"response": f"Ocorreu um erro ao processar sua solicitação: {str(e)}\nPor favor, contate o administrador do sistema."})
 
     return JsonResponse({"response": "Método não permitido"}, status=405)

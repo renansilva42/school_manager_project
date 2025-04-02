@@ -306,7 +306,7 @@ function addMessage(message, isUser = false) {
                 
                 const now = new Date();
                 const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                                  now.getMinutes().toString().padStart(2, '0');
+                               now.getMinutes().toString().padStart(2, '0');
                 
                 messageElement.innerHTML = `
                     ${data.response}
@@ -319,14 +319,14 @@ function addMessage(message, isUser = false) {
                 addMessage(data.response);
             }
         } else {
-            addMessage('Desculpe, não consegui processar sua solicitação. Por favor, tente novamente.');
+            addMessage('A resposta do servidor está vazia. Por favor, verifique os logs do sistema.');
         }
         chatMessages.scrollTop = chatMessages.scrollHeight;
     })
     .catch(error => {
         console.error('Erro:', error);
         removeTypingIndicator();
-        addMessage('Desculpe, ocorreu um erro ao processar sua solicitação. Por favor, tente novamente mais tarde.');
+        addMessage(`Erro ao comunicar com o servidor: ${error.message}. Verifique a conexão com o banco de dados e os logs do sistema.`);
     });
 }
         
