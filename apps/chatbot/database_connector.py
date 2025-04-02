@@ -28,56 +28,82 @@ class ChatbotDatabaseConnector:
             
             # Se a matrícula for informada, buscar diretamente por ela
             if matricula:
-                aluno = Aluno.objects.filter(matricula=matricula).first()
+                try:
+                    # Garantir que a matrícula seja tratada corretamente
+                    aluno = Aluno.objects.filter(matricula=str(matricula)).first()
+                except Exception as e:
+                    logger.error(f"Erro ao buscar por matrícula {matricula}: {str(e)}")
+                    return {"error": f"Erro ao buscar por matrícula: {str(e)}"}
+                    
                 if not aluno:
+                    logger.warning(f"Aluno não encontrado com matrícula: {matricula}")
                     return {"error": "Aluno não encontrado com a matrícula informada"}
             
             # Caso seja informado um student_id, fazer busca por ID
             elif student_id:
-                aluno = Aluno.objects.filter(id=student_id).first()
+                try:
+                    aluno = Aluno.objects.filter(id=student_id).first()
+                except Exception as e:
+                    logger.error(f"Erro ao buscar por ID {student_id}: {str(e)}")
+                    return {"error": f"Erro ao buscar por ID: {str(e)}"}
+                    
                 if not aluno:
+                    logger.warning(f"Aluno não encontrado com ID: {student_id}")
                     return {"error": "Aluno não encontrado pelo ID"}
             
             # Se for informado o nome, realizar busca aproximada
             elif name:
                 # Prepara o nome para busca - remove caracteres especiais e normaliza
-                import unicodedata
-                from django.db.models import Q
-                
-                # Normaliza o nome removendo acentos 
-                def normalizar_nome(nome):
-                    nome = unicodedata.normalize('NFKD', nome)
-                    nome = ''.join([c for c in nome if not unicodedata.combining(c)])
-                    return nome.upper()
-                
-                nome_normalizado = normalizar_nome(name)
-                logger.info(f"Buscando aluno com nome normalizado: {nome_normalizado}")
-                
-                # Busca direta pelo nome
-                alunos = Aluno.objects.filter(nome__icontains=name)
-                
-                # Se não encontrou, tenta busca com nome normalizado
-                if alunos.count() == 0:
-                    # Busca por palavras individuais do nome
-                    termos = nome_normalizado.split()
-                    query = Q()
-                    for termo in termos:
-                        if len(termo) > 2:  # Ignorar termos muito curtos
-                            query |= Q(nome__icontains=termo)
+                try:
+                    import unicodedata
+                    from django.db.models import Q
                     
-                    alunos = Aluno.objects.filter(query)
-                
-                if alunos.count() == 0:
-                    return {"error": "Aluno não encontrado com o nome informado"}
-                elif alunos.count() > 1:
-                    return {
-                        "message": f"Encontrados {alunos.count()} alunos com esse nome",
-                        "alunos": [{"id": a.id, "nome": a.nome, "matricula": a.matricula} for a in alunos]
-                    }
-                aluno = alunos.first()
+                    # Normaliza o nome removendo acentos 
+                    def normalizar_nome(nome):
+                        nome = unicodedata.normalize('NFKD', nome)
+                        nome = ''.join([c for c in nome if not unicodedata.combining(c)])
+                        return nome.upper()
+                    
+                    nome_normalizado = normalizar_nome(name)
+                    logger.info(f"Buscando aluno com nome normalizado: {nome_normalizado}")
+                    
+                    # Busca direta pelo nome
+                    alunos = Aluno.objects.filter(nome__icontains=name)
+                    
+                    # Se não encontrou, tenta busca com nome normalizado
+                    if alunos.count() == 0:
+                        # Busca por palavras individuais do nome
+                        termos = nome_normalizado.split()
+                        query = Q()
+                        for termo in termos:
+                            if len(termo) > 2:  # Ignorar termos muito curtos
+                                query |= Q(nome__icontains=termo)
+                        
+                        alunos = Aluno.objects.filter(query)
+                    
+                    if alunos.count() == 0:
+                        return {"error": "Aluno não encontrado com o nome informado"}
+                    elif alunos.count() > 1:
+                        return {
+                            "message": f"Encontrados {alunos.count()} alunos com esse nome",
+                            "alunos": [{"id": a.id, "nome": a.nome, "matricula": a.matricula} for a in alunos]
+                        }
+                    aluno = alunos.first()
+                except Exception as e:
+                    logger.error(f"Erro ao buscar por nome {name}: {str(e)}")
+                    return {"error": f"Erro ao buscar por nome: {str(e)}"}
             
             else:
                 return {"error": "É necessário fornecer matrícula, ID ou nome do aluno"}
+            
+            # Verificação adicional para garantir que aluno não seja None ou um tipo não esperado
+            if not aluno:
+                logger.error("Aluno não foi identificado corretamente após as buscas")
+                return {"error": "Aluno não encontrado após buscas"}
+                
+            if not isinstance(aluno, Aluno):
+                logger.error(f"Objeto aluno é do tipo inesperado: {type(aluno)}")
+                return {"error": f"Erro interno: o objeto aluno é do tipo {type(aluno)}, não do tipo Aluno"}
             
             # Construir resposta completa com todos os dados disponíveis do aluno
             idade = aluno.get_idade() if hasattr(aluno, 'get_idade') else None
@@ -86,17 +112,20 @@ class ChatbotDatabaseConnector:
             # Obter o display de campos com choices
             try:
                 nivel_display = aluno.get_nivel_display()
-            except:
+            except Exception as e:
+                logger.debug(f"Erro ao obter nivel_display: {str(e)}")
                 nivel_display = aluno.nivel
                 
             try:
                 turno_display = aluno.get_turno_display()
-            except:
+            except Exception as e:
+                logger.debug(f"Erro ao obter turno_display: {str(e)}")
                 turno_display = aluno.turno
                 
             try:
                 ano_display = aluno.get_ano_display()
-            except:
+            except Exception as e:
+                logger.debug(f"Erro ao obter ano_display: {str(e)}")
                 ano_display = aluno.ano
             
             # Estruturar resposta em categorias para facilitar a interpretação
@@ -129,8 +158,8 @@ class ChatbotDatabaseConnector:
                     "nivel": nivel_display,
                     "turno": turno_display,
                     "ano": ano_display,
-                    "turma": aluno.turma.nome if aluno.turma else None,
-                    "data_matricula": aluno.data_matricula.strftime('%d/%m/%Y') if aluno.data_matricula else None
+                    "turma": aluno.turma.nome if hasattr(aluno, 'turma') and aluno.turma else None,
+                    "data_matricula": aluno.data_matricula.strftime('%d/%m/%Y') if hasattr(aluno, 'data_matricula') and aluno.data_matricula else None
                 },
                 
                 "responsaveis": [
@@ -144,12 +173,12 @@ class ChatbotDatabaseConnector:
                     "observacoes": aluno.observacoes,
                     "dados_json": aluno.dados_adicionais,
                     "versao_cadastro": aluno.version,
-                    "data_criacao": aluno.created_at.strftime('%d/%m/%Y %H:%M:%S') if hasattr(aluno, 'created_at') else None
+                    "data_criacao": aluno.created_at.strftime('%d/%m/%Y %H:%M:%S') if hasattr(aluno, 'created_at') and aluno.created_at else None
                 }
             }
             
             # Adicionar segundo responsável se existir
-            if aluno.nome_responsavel2:
+            if hasattr(aluno, 'nome_responsavel2') and aluno.nome_responsavel2:
                 resposta["responsaveis"].append({
                     "nome": aluno.nome_responsavel2,
                     "telefone": aluno.telefone_responsavel2
