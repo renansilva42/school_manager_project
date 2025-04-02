@@ -7,6 +7,77 @@ from apps.chatbot.database_connector import ChatbotDatabaseConnector
 import json
 import logging
 
+def format_dict_response(data, indent=0):
+    """Formata um dicionário de forma recursiva para exibição amigável"""
+    
+    if not isinstance(data, dict):
+        return str(data)
+    
+    result = ""
+    prefix = "  " * indent
+    
+    # Tratamento especial para tipos específicos de resposta
+    if "aluno" in data and "notas" in data:
+        # Formatação para notas de alunos
+        result += f"**Informações do Aluno {data['aluno'].get('nome', '')}**\n\n"
+        
+        if "message" in data:
+            result += f"{data['message']}\n\n"
+            return result
+            
+        result += "<table>\n<tr><th>Disciplina</th><th>Valor</th><th>Data</th></tr>\n"
+        
+        for nota in data["notas"]:
+            if isinstance(nota, dict):
+                disciplina = nota.get("disciplina", "N/A")
+                valor = nota.get("valor", "N/A")
+                data_nota = nota.get("data", "N/A")
+                result += f"<tr><td>{disciplina}</td><td>{valor}</td><td>{data_nota}</td></tr>\n"
+            
+        result += "</table>\n\n"
+        
+        if "media_geral" in data:
+            result += f"**Média Geral:** {data['media_geral']}"
+            
+        return result
+    
+    # Para análise de desempenho
+    if "media_geral" in data and "situacao_geral" in data and "disciplinas" in data:
+        result += f"**Análise de Desempenho de {data.get('aluno', {}).get('nome', '')}**\n\n"
+        result += f"Média Geral: {data['media_geral']}\n"
+        result += f"Situação: {data['situacao_geral']}\n\n"
+        
+        result += "<table>\n<tr><th>Disciplina</th><th>Média</th><th>Situação</th></tr>\n"
+        
+        for disc in data["disciplinas"]:
+            result += f"<tr><td>{disc['disciplina']}</td><td>{disc['media']}</td><td>{disc['situacao']}</td></tr>\n"
+            
+        result += "</table>\n"
+        return result
+    
+    # Formato geral para outros tipos de dicionários
+    for key, value in data.items():
+        if key in ["error", "message"]:
+            result += f"{value}\n"
+        elif isinstance(value, dict):
+            result += f"{prefix}**{key.replace('_', ' ').title()}**:\n"
+            result += format_dict_response(value, indent + 1)
+        elif isinstance(value, list) and value and isinstance(value[0], dict):
+            result += f"{prefix}**{key.replace('_', ' ').title()}**:\n"
+            for item in value:
+                result += f"{prefix}  - "
+                if "nome" in item:
+                    result += f"{item['nome']}"
+                    if "id" in item:
+                        result += f" (ID: {item['id']})"
+                    result += "\n"
+                else:
+                    result += format_dict_response(item, indent + 2)
+        else:
+            result += f"{prefix}**{key.replace('_', ' ').title()}**: {value}\n"
+    
+    return result
+
 # Configurar o logger
 logger = logging.getLogger(__name__)
 
@@ -124,7 +195,48 @@ def chatbot_response(request):
                     })
                 else:
                     # Format successful response
-                    return JsonResponse({"response": json.dumps(result, ensure_ascii=False)})
+                    # Formatar a resposta de uma maneira amigável para o usuário
+                    if "foto_url" in result or (isinstance(result, dict) and "dados_pessoais" in result and "foto_url" in result["dados_pessoais"]):
+                        # Se tiver uma foto, formatamos especificamente para usar o componente de imagem
+                        foto_url = result.get("foto_url") or result.get("dados_pessoais", {}).get("foto_url")
+                        nome = result.get("nome") or result.get("dados_pessoais", {}).get("nome")
+                        
+                        # Montar texto descritivo baseado nos dados
+                        info_texto = f"Aqui estão as informações do aluno {nome}:\n\n"
+                        
+                        # Formatação em texto legível dos dados do aluno
+                        if "dados_pessoais" in result:
+                            # Formatação para o novo formato de resposta
+                            info_texto += "**Dados Pessoais**\n"
+                            for k, v in result["dados_pessoais"].items():
+                                if k != "foto_url" and v:
+                                    info_texto += f"- {k.replace('_', ' ').title()}: {v}\n"
+                            
+                            # Adicionar outras categorias
+                            for categoria in ["contato", "endereco", "dados_academicos"]:
+                                if categoria in result:
+                                    info_texto += f"\n**{categoria.replace('_', ' ').title()}**\n"
+                                    for k, v in result[categoria].items():
+                                        if v:
+                                            info_texto += f"- {k.replace('_', ' ').title()}: {v}\n"
+                        else:
+                            # Formatação para o formato antigo de resposta
+                            for k, v in result.items():
+                                if k not in ["foto_url", "id"] and v:
+                                    info_texto += f"- {k.replace('_', ' ').title()}: {v}\n"
+                        
+                        # Usar marcação markdown para a imagem
+                        resposta_markdown = f"{info_texto}\n\n![Foto do aluno]({foto_url})"
+                        return JsonResponse({"response": resposta_markdown})
+                    else:
+                        # Para outros tipos de respostas, formatar como texto legível
+                        if isinstance(result, dict):
+                            # Converter o resultado em texto formatado
+                            resposta_formatada = format_dict_response(result)
+                            return JsonResponse({"response": resposta_formatada})
+                        else:
+                            # Caso seja outro tipo de dados
+                            return JsonResponse({"response": str(result)})
             
             # If no function call, return the direct response
             return JsonResponse({"response": response.content})
