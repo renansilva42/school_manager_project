@@ -67,6 +67,11 @@ class ChatbotDatabaseConnector:
                     nome_normalizado = normalizar_nome(name)
                     logger.info(f"Buscando aluno com nome normalizado: {nome_normalizado}")
                     
+                    # Verificar se o nome é válido
+                    if not name or not isinstance(name, str):
+                        logger.error(f"Nome inválido fornecido para busca: {name}")
+                        return {"error": "Nome inválido fornecido para busca"}
+                    
                     # Busca direta pelo nome
                     alunos = Aluno.objects.filter(nome__icontains=name)
                     
@@ -88,7 +93,16 @@ class ChatbotDatabaseConnector:
                             "message": f"Encontrados {alunos.count()} alunos com esse nome",
                             "alunos": [{"id": a.id, "nome": a.nome, "matricula": a.matricula} for a in alunos]
                         }
-                    aluno = alunos.first()
+                    # Verificar se encontrou algum aluno
+                    if alunos.count() > 0:
+                        aluno = alunos.first()
+                        # Verificar se o objeto aluno é válido
+                        if not isinstance(aluno, Aluno):
+                            logger.error(f"Objeto retornado não é um Aluno: {type(aluno)}")
+                            return {"error": f"Erro interno: objeto retornado não é um Aluno"}
+                    else:
+                        logger.warning(f"Nenhum aluno encontrado com o nome: {name}")
+                        return {"error": f"Nenhum aluno encontrado com o nome: {name}"}
                 except Exception as e:
                     logger.error(f"Erro ao buscar por nome {name}: {str(e)}")
                     return {"error": f"Erro ao buscar por nome: {str(e)}"}
@@ -101,7 +115,10 @@ class ChatbotDatabaseConnector:
                 logger.error("Aluno não foi identificado corretamente após as buscas")
                 return {"error": "Aluno não encontrado após buscas"}
                 
-            if not isinstance(aluno, Aluno):
+            if isinstance(aluno, str):
+                logger.error(f"Objeto aluno é uma string: {aluno}")
+                return {"error": f"Erro interno: o objeto aluno é uma string, não um objeto Aluno"}
+            elif not isinstance(aluno, Aluno):
                 logger.error(f"Objeto aluno é do tipo inesperado: {type(aluno)}")
                 return {"error": f"Erro interno: o objeto aluno é do tipo {type(aluno)}, não do tipo Aluno"}
             

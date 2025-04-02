@@ -126,7 +126,12 @@ def chatbot_response(request):
                     
                     # Verificar o aluno diretamente antes de chamar a API
                     db_connector = ChatbotDatabaseConnector()
-                    result = db_connector.get_student_info(name=aluno_name)
+                    # Garantir que o nome do aluno seja uma string válida
+                    if isinstance(aluno_name, str) and aluno_name.strip():
+                        result = db_connector.get_student_info(name=aluno_name)
+                    else:
+                        logger.warning(f"Nome do aluno inválido: {aluno_name}")
+                        return JsonResponse({"response": "Não consegui identificar o nome do aluno na sua pergunta. Por favor, especifique o nome completo do aluno."})
                     
                     if "error" in result:
                         logger.warning(f"Aluno não encontrado na verificação prévia: {aluno_name}")
@@ -183,6 +188,14 @@ def chatbot_response(request):
                 # Execute the appropriate function based on the name
                 if function_name == "get_student_info":
                     logger.info(f"Buscando informações do aluno com: {function_args}")
+                    
+                    # Validar os argumentos antes de chamar a função
+                    if 'name' in function_args and isinstance(function_args['name'], str):
+                        # Garantir que o nome não seja vazio
+                        function_args['name'] = function_args['name'].strip()
+                        if not function_args['name']:
+                            return JsonResponse({"response": "O nome do aluno não pode estar vazio. Por favor, forneça um nome válido."})
+                    
                     result = db_connector.get_student_info(**function_args)
                 elif function_name == "get_student_grades":
                     result = db_connector.get_student_grades(**function_args)
