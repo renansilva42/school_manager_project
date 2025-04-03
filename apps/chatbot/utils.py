@@ -71,6 +71,11 @@ def format_dict_response(data, indent=0):
     """
     if not data:
         return "Sem dados disponíveis."
+    
+    # Log para depuração
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"format_dict_response recebeu: {str(data)[:500]}...")
         
     result = ""
     prefix = "  " * indent
@@ -108,19 +113,7 @@ def format_dict_response(data, indent=0):
         return result
     
     # Formato específico para responsáveis quando é uma pergunta direta
-    if "responsaveis" in data and isinstance(data["responsaveis"], list) and len(data["responsaveis"]) > 0:
-        nome_aluno = data.get("dados_pessoais", {}).get("nome", data.get("nome", ""))
-        if nome_aluno:
-            result += f"**Responsáveis do Aluno {nome_aluno}**\n\n"
-            
-            for idx, resp in enumerate(data["responsaveis"], 1):
-                result += f"**Responsável {idx}**\n"
-                for k, v in resp.items():
-                    if v:
-                        result += f"- {k.replace('_', ' ').title()}: {v}\n"
-                result += "\n"
-            
-            return result
+    # Removido para evitar conflito com o formato específico para informações do aluno
     
     # Formato específico para informações do aluno (novo formato visualmente atraente)
     if "dados_pessoais" in data and isinstance(data["dados_pessoais"], dict):

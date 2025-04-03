@@ -116,55 +116,9 @@ def chatbot_response(request):
                 logger.error(f"Erro de conexão com o banco de dados: {str(db_error)}")
                 return JsonResponse({"response": f"Não foi possível conectar ao banco de dados: {str(db_error)}"})
             
-            # Extrair nome do aluno em caso de pergunta sobre responsável
-            if "responsável" in message.lower() or "responsavel" in message.lower():
-                import re
-                aluno_match = re.search(r'aluno\s+([A-Za-zÀ-ÖØ-öø-ÿ\s]+)(\?|$|\.|,)', message, re.IGNORECASE)
-                if aluno_match:
-                    try:
-                        aluno_name = aluno_match.group(1).strip().upper()
-                        logger.info(f"Nome do aluno extraído da mensagem: {aluno_name}")
-                        
-                        # Verificar se o nome do aluno é válido
-                        if not aluno_name or len(aluno_name) < 2:
-                            logger.warning(f"Nome do aluno muito curto ou vazio: '{aluno_name}'")
-                            return JsonResponse({"response": "Não consegui identificar o nome do aluno na sua pergunta. Por favor, especifique o nome completo do aluno."})
-                        
-                        # Verificar o aluno diretamente antes de chamar a API
-                        db_connector = ChatbotDatabaseConnector()
-                        result = db_connector.get_student_info(name=aluno_name)
-                        
-                        if "error" in result:
-                            logger.warning(f"Aluno não encontrado na verificação prévia: {aluno_name}")
-                            return JsonResponse({"response": f"Não encontrei um aluno com o nome {aluno_name} no sistema. Por favor, verifique se o nome está correto."})
-                        
-                        # Se encontramos múltiplos alunos, informar ao usuário
-                        if "message" in result and "alunos" in result:
-                            alunos_list = [f"{aluno['nome']} (ID: {aluno['id']})" for aluno in result['alunos']]
-                            response_text = f"{result['message']}\nEncontrei os seguintes alunos:\n" + "\n".join(alunos_list) + "\n\nPor favor, especifique de qual aluno você precisa informações."
-                            return JsonResponse({"response": response_text})
-                        
-                        # Se chegamos aqui, temos um único aluno - vamos formatar a resposta sobre os responsáveis
-                        if "responsaveis" in result and result["responsaveis"]:
-                            nome_aluno = result.get("dados_pessoais", {}).get("nome", result.get("nome", aluno_name))
-                            resp_text = f"Os responsáveis pelo aluno {nome_aluno} são:\n\n"
-                            
-                            for idx, resp in enumerate(result["responsaveis"], 1):
-                                resp_text += f"**Responsável {idx}**\n"
-                                for k, v in resp.items():
-                                    if v:
-                                        resp_text += f"- {k.replace('_', ' ').title()}: {v}\n"
-                                resp_text += "\n"
-                            
-                            return JsonResponse({"response": resp_text})
-                        else:
-                            return JsonResponse({"response": f"O aluno {aluno_name} está cadastrado no sistema, mas não possui responsáveis registrados."})
-                    except Exception as e:
-                        logger.error(f"Erro ao extrair ou processar nome do aluno: {str(e)}")
-                        return JsonResponse({"response": "Ocorreu um erro ao processar o nome do aluno. Por favor, tente novamente com o nome completo."})
-                else:
-                    logger.warning("Não foi possível extrair o nome do aluno da mensagem")
-                    return JsonResponse({"response": "Não consegui identificar o nome do aluno na sua pergunta. Por favor, especifique o nome completo do aluno."})
+            # Não vamos mais tratar perguntas sobre responsáveis de forma especial
+            # Todas as perguntas sobre alunos serão tratadas da mesma forma,
+            # usando a API OpenAI para determinar a intenção e chamar a função apropriada
             
             # Determine if the message is asking about student information
             is_student_info_request = any(keyword in message.lower() for keyword in [
@@ -294,7 +248,7 @@ def chatbot_response(request):
                     
                     # Formatar a resposta usando a função format_dict_response
                     resposta_formatada = format_dict_response(result)
-                    logger.info(f"Resposta formatada: {resposta_formatada[:200]}...")
+                    logger.info(f"Resposta formatada completa: {resposta_formatada}")
                     
                     # Se tiver uma foto, adicionar ao final da resposta formatada
                     if "foto_url" in result or (isinstance(result, dict) and "dados_pessoais" in result and "foto_url" in result["dados_pessoais"]):
