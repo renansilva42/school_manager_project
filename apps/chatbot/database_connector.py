@@ -16,11 +16,20 @@ class ChatbotDatabaseConnector:
     
     # Dentro do método get_student_info, atualize a busca por nome para ser mais flexível
 
-    def get_student_info(self, student_id=None, name=None, matricula=None):
+    def get_student_info(self, student_id=None, name=None, matricula=None, fields=None):
         """
-        Busca informações completas de um aluno pelo ID, nome ou matrícula
-        Retorna todos os dados disponíveis no modelo Aluno para que o chatbot
-        possa responder perguntas específicas sobre qualquer informação do aluno.
+        Busca informações de um aluno pelo ID, nome ou matrícula
+        Retorna todos os dados disponíveis no modelo Aluno ou apenas os campos especificados
+        para que o chatbot possa responder perguntas específicas sobre o aluno.
+        
+        Args:
+            student_id: ID do aluno
+            name: Nome do aluno
+            matricula: Matrícula do aluno
+            fields: Lista de campos a serem retornados. Se None, retorna todos os campos.
+                   Pode conter categorias como 'dados_pessoais', 'contato', 'endereco',
+                   'dados_academicos', 'responsaveis', 'informacoes_adicionais',
+                   ou campos específicos como 'nome', 'email', etc.
         """
         try:
             # Identificar o aluno
@@ -180,7 +189,7 @@ class ChatbotDatabaseConnector:
                 ano_display = aluno.ano
             
             # Estruturar resposta em categorias para facilitar a interpretação
-            resposta = {
+            resposta_completa = {
                 "id": aluno.id,
                 "status": "Ativo" if aluno.ativo else "Inativo",
                 
@@ -230,12 +239,69 @@ class ChatbotDatabaseConnector:
             
             # Adicionar segundo responsável se existir
             if hasattr(aluno, 'nome_responsavel2') and aluno.nome_responsavel2:
-                resposta["responsaveis"].append({
+                resposta_completa["responsaveis"].append({
                     "nome": aluno.nome_responsavel2,
                     "telefone": aluno.telefone_responsavel2
                 })
             
-            return resposta
+            # Se não foram especificados campos, retornar todos os dados
+            if not fields:
+                return resposta_completa
+            
+            # Caso contrário, filtrar os campos solicitados
+            resposta_filtrada = {"id": aluno.id}
+            
+            # Mapeamento de campos específicos para suas categorias
+            campo_para_categoria = {
+                "nome": "dados_pessoais",
+                "matricula": "dados_pessoais",
+                "cpf": "dados_pessoais",
+                "rg": "dados_pessoais",
+                "data_nascimento": "dados_pessoais",
+                "idade": "dados_pessoais",
+                "foto_url": "dados_pessoais",
+                "email": "contato",
+                "telefone": "contato",
+                "logradouro": "endereco",
+                "cidade": "endereco",
+                "uf": "endereco",
+                "nivel": "dados_academicos",
+                "turno": "dados_academicos",
+                "ano": "dados_academicos",
+                "turma": "dados_academicos",
+                "data_matricula": "dados_academicos",
+                "observacoes": "informacoes_adicionais",
+                "dados_json": "informacoes_adicionais",
+                "versao_cadastro": "informacoes_adicionais",
+                "data_criacao": "informacoes_adicionais"
+            }
+            
+            # Processar cada campo solicitado
+            for field in fields:
+                # Se o campo é uma categoria principal, incluir toda a categoria
+                if field in resposta_completa:
+                    resposta_filtrada[field] = resposta_completa[field]
+                # Se o campo é um campo específico, incluir apenas esse campo
+                elif field in campo_para_categoria:
+                    categoria = campo_para_categoria[field]
+                    if categoria not in resposta_filtrada:
+                        resposta_filtrada[categoria] = {}
+                    resposta_filtrada[categoria][field] = resposta_completa[categoria][field]
+                # Caso especial para responsáveis
+                elif field == "responsavel" or field == "responsaveis":
+                    resposta_filtrada["responsaveis"] = resposta_completa["responsaveis"]
+            
+            # Garantir que pelo menos o nome do aluno esteja sempre incluído
+            if "dados_pessoais" not in resposta_filtrada:
+                resposta_filtrada["dados_pessoais"] = {"nome": aluno.nome}
+            elif "nome" not in resposta_filtrada["dados_pessoais"]:
+                resposta_filtrada["dados_pessoais"]["nome"] = aluno.nome
+                
+            # Incluir status se não estiver incluído
+            if "status" not in resposta_filtrada:
+                resposta_filtrada["status"] = resposta_completa["status"]
+                
+            return resposta_filtrada
         except Exception as e:
             logger.error(f"Erro ao buscar informações do aluno: {str(e)}")
             return {"error": f"Erro ao buscar informações: {str(e)}"}
@@ -500,3 +566,209 @@ class ChatbotDatabaseConnector:
         except Exception as e:
             logger.error(f"Erro ao analisar desempenho do aluno: {str(e)}")
             return {"error": f"Erro ao analisar desempenho: {str(e)}"}
+    
+    def cross_reference_data(self, query_type, params=None):
+        """
+        Realiza consultas complexas que exigem cruzamento de dados de alunos.
+        
+        Args:
+            query_type: Tipo de consulta a ser realizada (ex: 'alunos_por_turma', 'comparacao_desempenho', etc.)
+            params: Parâmetros adicionais para a consulta (ex: turma, ano, etc.)
+            
+        Returns:
+            Dicionário com os resultados da consulta
+        """
+        try:
+            if not params:
+                params = {}
+                
+            logger.info(f"Realizando consulta complexa do tipo: {query_type} com parâmetros: {params}")
+            
+            # Consulta de alunos por turma
+            if query_type == "alunos_por_turma":
+                turma = params.get("turma")
+                if not turma:
+                    return {"error": "É necessário informar a turma para esta consulta"}
+                
+                alunos = Aluno.objects.filter(turma=turma, ativo=True)
+                if not alunos.exists():
+                    return {"error": f"Não foram encontrados alunos na turma {turma}"}
+                
+                alunos_list = []
+                for aluno in alunos:
+                    alunos_list.append({
+                        "id": aluno.id,
+                        "nome": aluno.nome,
+                        "matricula": aluno.matricula
+                    })
+                
+                return {
+                    "turma": turma,
+                    "total_alunos": len(alunos_list),
+                    "alunos": alunos_list
+                }
+            
+            # Comparação de desempenho entre alunos
+            elif query_type == "comparacao_desempenho":
+                aluno1_id = params.get("aluno1_id")
+                aluno2_id = params.get("aluno2_id")
+                
+                if not aluno1_id or not aluno2_id:
+                    return {"error": "É necessário informar os IDs dos dois alunos para comparação"}
+                
+                # Obter dados do primeiro aluno
+                aluno1 = Aluno.objects.filter(id=aluno1_id).first()
+                if not aluno1:
+                    return {"error": f"Aluno com ID {aluno1_id} não encontrado"}
+                
+                # Obter dados do segundo aluno
+                aluno2 = Aluno.objects.filter(id=aluno2_id).first()
+                if not aluno2:
+                    return {"error": f"Aluno com ID {aluno2_id} não encontrado"}
+                
+                # Obter notas dos alunos
+                notas_aluno1 = Nota.objects.filter(aluno=aluno1)
+                notas_aluno2 = Nota.objects.filter(aluno=aluno2)
+                
+                # Calcular médias
+                media_aluno1 = notas_aluno1.aggregate(media=Avg('valor'))['media'] or 0
+                media_aluno2 = notas_aluno2.aggregate(media=Avg('valor'))['media'] or 0
+                
+                # Formatar resultado
+                return {
+                    "comparacao": {
+                        "aluno1": {
+                            "id": aluno1.id,
+                            "nome": aluno1.nome,
+                            "media": round(media_aluno1, 2)
+                        },
+                        "aluno2": {
+                            "id": aluno2.id,
+                            "nome": aluno2.nome,
+                            "media": round(media_aluno2, 2)
+                        },
+                        "diferenca": round(abs(media_aluno1 - media_aluno2), 2),
+                        "melhor_desempenho": aluno1.nome if media_aluno1 > media_aluno2 else 
+                                            aluno2.nome if media_aluno2 > media_aluno1 else "Empate"
+                    }
+                }
+            
+            # Ranking de alunos por média
+            elif query_type == "ranking_alunos":
+                turma = params.get("turma")
+                limite = params.get("limite", 10)  # Padrão: top 10
+                
+                # Filtro base
+                query = {}
+                if turma:
+                    query["aluno__turma"] = turma
+                
+                # Obter notas e calcular médias por aluno
+                alunos_medias = {}
+                notas = Nota.objects.filter(**query)
+                
+                for nota in notas:
+                    aluno_id = nota.aluno.id
+                    if aluno_id not in alunos_medias:
+                        alunos_medias[aluno_id] = {
+                            "nome": nota.aluno.nome,
+                            "notas": [],
+                            "total": 0,
+                            "count": 0
+                        }
+                    
+                    alunos_medias[aluno_id]["notas"].append(nota.valor)
+                    alunos_medias[aluno_id]["total"] += nota.valor
+                    alunos_medias[aluno_id]["count"] += 1
+                
+                # Calcular médias e criar ranking
+                ranking = []
+                for aluno_id, dados in alunos_medias.items():
+                    if dados["count"] > 0:
+                        media = dados["total"] / dados["count"]
+                        ranking.append({
+                            "id": aluno_id,
+                            "nome": dados["nome"],
+                            "media": round(media, 2)
+                        })
+                
+                # Ordenar por média (decrescente)
+                ranking.sort(key=lambda x: x["media"], reverse=True)
+                
+                # Limitar ao número solicitado
+                ranking = ranking[:limite]
+                
+                return {
+                    "ranking": ranking,
+                    "total_alunos": len(ranking),
+                    "turma": turma if turma else "Todas as turmas"
+                }
+            
+            # Estatísticas gerais da turma
+            elif query_type == "estatisticas_turma":
+                turma = params.get("turma")
+                if not turma:
+                    return {"error": "É necessário informar a turma para esta consulta"}
+                
+                # Contar alunos na turma
+                total_alunos = Aluno.objects.filter(turma=turma, ativo=True).count()
+                
+                # Obter estatísticas de notas
+                notas_query = Nota.objects.filter(aluno__turma=turma)
+                estatisticas_notas = notas_query.aggregate(
+                    media=Avg('valor'),
+                    maxima=Max('valor'),
+                    minima=Min('valor')
+                )
+                
+                # Calcular distribuição por faixas
+                notas_list = list(notas_query.values_list('valor', flat=True))
+                
+                faixas = {
+                    "0-2.9": 0,
+                    "3-4.9": 0,
+                    "5-6.9": 0,
+                    "7-8.9": 0,
+                    "9-10": 0
+                }
+                
+                for nota in notas_list:
+                    if nota < 3:
+                        faixas["0-2.9"] += 1
+                    elif nota < 5:
+                        faixas["3-4.9"] += 1
+                    elif nota < 7:
+                        faixas["5-6.9"] += 1
+                    elif nota < 9:
+                        faixas["7-8.9"] += 1
+                    else:
+                        faixas["9-10"] += 1
+                
+                # Calcular percentuais
+                total_notas = len(notas_list)
+                distribuicao = {}
+                if total_notas > 0:
+                    for faixa, quantidade in faixas.items():
+                        distribuicao[faixa] = {
+                            "quantidade": quantidade,
+                            "percentual": round((quantidade / total_notas) * 100, 2)
+                        }
+                
+                return {
+                    "turma": turma,
+                    "total_alunos": total_alunos,
+                    "estatisticas_notas": {
+                        "media": round(estatisticas_notas["media"] or 0, 2),
+                        "maxima": estatisticas_notas["maxima"] or 0,
+                        "minima": estatisticas_notas["minima"] or 0,
+                        "total_notas": total_notas
+                    },
+                    "distribuicao_notas": distribuicao
+                }
+            
+            else:
+                return {"error": f"Tipo de consulta não suportado: {query_type}"}
+                
+        except Exception as e:
+            logger.error(f"Erro ao realizar consulta complexa: {str(e)}")
+            return {"error": f"Erro ao realizar consulta: {str(e)}"}
