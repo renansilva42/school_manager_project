@@ -26,6 +26,10 @@ def get_openai_response(messages, tools=None, tool_choice="auto"):
     Obtém resposta da API OpenAI com suporte a function calling e tool calling.
     """
     try:
+        logger.info(f"Chamando OpenAI API com tool_choice: {tool_choice}")
+        logger.info(f"Mensagens: {messages}")
+        logger.info(f"Tools: {tools}")
+        
         if use_legacy_api:
             openai.api_key = settings.OPENAI_API_KEY
             response = openai.ChatCompletion.create(
@@ -137,57 +141,65 @@ def format_dict_response(data, indent=0):
         # Dados Pessoais
         result += "## 👤 Dados Pessoais\n\n"
         for k, v in data["dados_pessoais"].items():
-            if v and k != "nome":  # Nome já está no cabeçalho
+            if k != "nome" and k != "foto_url":  # Nome já está no cabeçalho, foto_url será tratada separadamente
                 label = k.replace('_', ' ').title()
-                if k == "matricula":
-                    result += f"📝 **{label}:** {v}\n"
-                elif k == "data_nascimento":
-                    result += f"🎂 **{label}:** {v}\n"
-                elif k == "idade":
-                    result += f"🔢 **{label}:** {v} anos\n"
-                elif k == "cpf":
-                    result += f"📄 **{label}:** {v}\n"
-                elif k == "rg":
-                    result += f"📄 **{label}:** {v}\n"
+                if v:
+                    if k == "matricula":
+                        result += f"📝 **{label}:** {v}\n"
+                    elif k == "data_nascimento":
+                        result += f"🎂 **{label}:** {v}\n"
+                    elif k == "idade":
+                        result += f"🔢 **{label}:** {v} anos\n"
+                    elif k == "cpf":
+                        result += f"📄 **{label}:** {v}\n"
+                    elif k == "rg":
+                        result += f"📄 **{label}:** {v}\n"
+                    else:
+                        result += f"ℹ️ **{label}:** {v}\n"
                 else:
-                    result += f"ℹ️ **{label}:** {v}\n"
+                    result += f"ℹ️ **{label}:** Não Informado\n"
         result += "\n"
         
         # Contato
-        if "contato" in data and any(data["contato"].values()):
-            result += "## 📞 Contato\n\n"
+        result += "## 📞 Contato\n\n"
+        if "contato" in data and isinstance(data["contato"], dict):
             for k, v in data["contato"].items():
+                label = k.replace('_', ' ').title()
                 if v:
-                    label = k.replace('_', ' ').title()
                     if k == "email":
                         result += f"📧 **{label}:** {v}\n"
                     elif k == "telefone":
                         result += f"📱 **{label}:** {v}\n"
                     else:
                         result += f"ℹ️ **{label}:** {v}\n"
-            result += "\n"
+                else:
+                    result += f"ℹ️ **{label}:** Não Informado\n"
+        else:
+            result += "ℹ️ **Informações de Contato:** Não Informadas\n"
+        result += "\n"
         
         # Endereço
-        if "endereco" in data and any(data["endereco"].values()):
-            result += "## 🏠 Endereço\n\n"
+        result += "## 🏠 Endereço\n\n"
+        if "endereco" in data and isinstance(data["endereco"], dict):
             for k, v in data["endereco"].items():
+                label = k.replace('_', ' ').title()
                 if v:
-                    label = k.replace('_', ' ').title()
                     result += f"📍 **{label}:** {v}\n"
                 else:
-                    label = k.replace('_', ' ').title()
                     result += f"📍 **{label}:** Não Informado\n"
-            result += "\n"
+        else:
+            result += "📍 **Endereço:** Não Informado\n"
+        result += "\n"
         
         # Separador
         result += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         
         # Dados Acadêmicos
-        if "dados_academicos" in data and any(data["dados_academicos"].values()):
-            result += "## 🎓 Dados Acadêmicos\n\n"
+        result += "## 🎓 Dados Acadêmicos\n\n"
+        if "dados_academicos" in data and isinstance(data["dados_academicos"], dict):
             for k, v in data["dados_academicos"].items():
+                label = k.replace('_', ' ').title()
                 if v:
-                    label = k.replace('_', ' ').title()
                     if k == "nivel":
                         result += f"📚 **{label}:** {v}\n"
                     elif k == "turno":
@@ -201,14 +213,18 @@ def format_dict_response(data, indent=0):
                         result += f"📆 **{label}:** {v}\n"
                     else:
                         result += f"ℹ️ **{label}:** {v}\n"
-            result += "\n"
+                else:
+                    result += f"ℹ️ **{label}:** Não Informado\n"
+        else:
+            result += "ℹ️ **Dados Acadêmicos:** Não Informados\n"
+        result += "\n"
         
         # Separador
         result += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         
         # Responsáveis
+        result += "## 👪 Responsáveis\n\n"
         if "responsaveis" in data and isinstance(data["responsaveis"], list) and len(data["responsaveis"]) > 0:
-            result += "## 👪 Responsáveis\n\n"
             for idx, resp in enumerate(data["responsaveis"], 1):
                 result += f"### Responsável {idx}\n\n"
                 if resp.get("nome"):
@@ -221,14 +237,18 @@ def format_dict_response(data, indent=0):
                 else:
                     result += f"📱 **Telefone:** Não Informado\n"
                 result += "\n"
+        else:
+            result += "ℹ️ **Responsáveis:** Não Informados\n\n"
         
         # Informações Adicionais (se existirem)
-        if "informacoes_adicionais" in data and any(data["informacoes_adicionais"].values()):
+        if "informacoes_adicionais" in data and isinstance(data["informacoes_adicionais"], dict) and any(data["informacoes_adicionais"].values()):
             result += "## ℹ️ Informações Adicionais\n\n"
             for k, v in data["informacoes_adicionais"].items():
+                label = k.replace('_', ' ').title()
                 if v:
-                    label = k.replace('_', ' ').title()
                     result += f"📋 **{label}:** {v}\n"
+                else:
+                    result += f"📋 **{label}:** Não Informado\n"
             result += "\n"
         
         return result

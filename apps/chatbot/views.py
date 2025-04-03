@@ -187,8 +187,37 @@ def chatbot_response(request):
             # Check if the response includes a function call
             if hasattr(response, 'function_call') and response.function_call:
                 function_name = response.function_call.name
-                logger.info(f"Função a ser chamada: {function_name}")
-                # Resto do código para function_call
+                logger.info(f"Função a ser chamada via function_call: {function_name}")
+                
+                # Parse function arguments safely
+                try:
+                    function_args = json.loads(response.function_call.arguments)
+                    logger.info(f"Argumentos da função via function_call: {function_args}")
+                except json.JSONDecodeError as e:
+                    logger.error(f"Erro ao decodificar argumentos JSON via function_call: {str(e)}, argumentos: {response.function_call.arguments}")
+                    return JsonResponse({"response": "Erro ao processar argumentos da função."})
+                
+                # Initialize database connector
+                db_connector = ChatbotDatabaseConnector()
+                
+                # Execute the appropriate function based on the name
+                if function_name == "get_student_info":
+                    logger.info(f"Buscando informações do aluno via function_call com: {function_args}")
+                    
+                    # Validar os argumentos antes de chamar a função
+                    if 'name' in function_args and isinstance(function_args['name'], str):
+                        # Garantir que o nome não seja vazio
+                        function_args['name'] = function_args['name'].strip()
+                        if not function_args['name']:
+                            return JsonResponse({"response": "O nome do aluno não pode estar vazio. Por favor, forneça um nome válido."})
+                    
+                    # Chamar a função e registrar o resultado completo
+                    result = db_connector.get_student_info(**function_args)
+                    logger.info(f"Resultado completo da função get_student_info via function_call: {result}")
+                else:
+                    logger.error(f"Função desconhecida solicitada via function_call: {function_name}")
+                    return JsonResponse({"response": f"Não sei como executar a função {function_name}."})
+                
             elif hasattr(response, 'tool_calls') and response.tool_calls:
                 tool_call = response.tool_calls[0]
                 function_name = tool_call.function.name
@@ -216,7 +245,15 @@ def chatbot_response(request):
                         if not function_args['name']:
                             return JsonResponse({"response": "O nome do aluno não pode estar vazio. Por favor, forneça um nome válido."})
                     
+                    # Chamar a função e registrar o resultado completo
                     result = db_connector.get_student_info(**function_args)
+                    logger.info(f"Resultado completo da função get_student_info: {result}")
+                    
+                    # Verificar se o resultado é um dicionário válido com as informações do aluno
+                    if isinstance(result, dict) and "dados_pessoais" in result:
+                        logger.info("Resultado contém dados_pessoais, formatando resposta...")
+                    else:
+                        logger.warning(f"Resultado não contém dados_pessoais: {result}")
                 elif function_name == "get_student_grades":
                     result = db_connector.get_student_grades(**function_args)
                 elif function_name == "analyze_student_performance":
@@ -239,34 +276,38 @@ def chatbot_response(request):
                         "response": f"{result['message']}\nAlunos encontrados:\n" + "\n".join(alunos_list)
                     })
                 else:
-                    # Format successful response
-                    # Verificar se estamos buscando por responsáveis
-                    if "responsável" in message.lower() or "responsavel" in message.lower():
-                        # Formatação específica para perguntas sobre responsáveis
-                        if "responsaveis" in result and result["responsaveis"]:
-                            nome_aluno = result.get("dados_pessoais", {}).get("nome", "")
-                            resp_text = f"Os responsáveis pelo aluno {nome_aluno} são:\n\n"
-                            
-                            for idx, resp in enumerate(result["responsaveis"], 1):
-                                resp_text += f"**Responsável {idx}**\n"
-                                for k, v in resp.items():
-                                    if v:
-                                        resp_text += f"- {k.replace('_', ' ').title()}: {v}\n"
-                                resp_text += "\n"
-                            
-                            return JsonResponse({"response": resp_text})
-                        else:
-                            nome_aluno = result.get("dados_pessoais", {}).get("nome", "")
-                            return JsonResponse({"response": f"O aluno {nome_aluno} está cadastrado no sistema, mas não possui responsáveis registrados."})
+                    # Sempre usar a função format_dict_response para formatar os dados do aluno
+                    # independentemente do tipo de pergunta
+                    logger.info(f"Formatando dados do aluno com format_dict_response. Dados: {str(result)[:200]}...")
                     
-                    # Usar a função format_dict_response para formatar os dados do aluno em todos os casos
+                    # Garantir que estamos trabalhando com um dicionário válido
+                    if not isinstance(result, dict):
+                        logger.error(f"Resultado não é um dicionário: {type(result)}")
+                        return JsonResponse({"response": "Erro interno: o resultado não é um dicionário válido."})
+                    
+                    # Verificar se o resultado contém as informações esperadas
+                    if "dados_pessoais" not in result:
+                        logger.warning(f"Resultado não contém dados_pessoais: {result}")
+                        # Se não tiver dados_pessoais, mas tiver error, retornar a mensagem de erro
+                        if "error" in result:
+                            return JsonResponse({"response": f"Erro ao buscar informações: {result['error']}"})
+                    
+                    # Formatar a resposta usando a função format_dict_response
                     resposta_formatada = format_dict_response(result)
+                    logger.info(f"Resposta formatada: {resposta_formatada[:200]}...")
                     
                     # Se tiver uma foto, adicionar ao final da resposta formatada
                     if "foto_url" in result or (isinstance(result, dict) and "dados_pessoais" in result and "foto_url" in result["dados_pessoais"]):
                         foto_url = result.get("foto_url") or result.get("dados_pessoais", {}).get("foto_url")
                         resposta_formatada += f"\n\n![Foto do aluno]({foto_url})"
                     
+                    # Verificar se a resposta formatada não está vazia
+                    if not resposta_formatada.strip():
+                        logger.error("Resposta formatada está vazia")
+                        return JsonResponse({"response": "Erro interno: a resposta formatada está vazia."})
+                    
+                    # Enviar a resposta formatada para o cliente
+                    logger.info(f"Enviando resposta formatada para o cliente: {resposta_formatada[:200]}...")
                     return JsonResponse({"response": resposta_formatada})
             elif hasattr(response, 'content') and response.content:
                 # If no function call, return the direct response
