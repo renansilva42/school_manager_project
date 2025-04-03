@@ -250,48 +250,11 @@ def chatbot_response(request):
                     if "foto_url" in result or (isinstance(result, dict) and "dados_pessoais" in result and "foto_url" in result["dados_pessoais"]):
                         # Se tiver uma foto, formatamos especificamente para usar o componente de imagem
                         foto_url = result.get("foto_url") or result.get("dados_pessoais", {}).get("foto_url")
-                        nome = result.get("nome") or result.get("dados_pessoais", {}).get("nome")
                         
-                        # Montar texto descritivo baseado nos dados
-                        info_texto = f"Aqui estão as informações do aluno {nome}:\n\n"
+                        # Usar a função format_dict_response para formatar os dados do aluno
+                        info_texto = format_dict_response(result)
                         
-                        # Formatação em texto legível dos dados do aluno
-                        if "dados_pessoais" in result:
-                            # Formatação para o novo formato de resposta
-                            info_texto += "**Dados Pessoais**\n"
-                            for k, v in result["dados_pessoais"].items():
-                                if k != "foto_url" and v:
-                                    info_texto += f"- {k.replace('_', ' ').title()}: {v}\n"
-                            
-                            # Adicionar outras categorias
-                            for categoria in ["contato", "endereco", "dados_academicos", "responsaveis"]:
-                                if categoria in result and result[categoria]:
-                                    info_texto += f"\n**{categoria.replace('_', ' ').title()}**\n"
-                                    if categoria == "responsaveis" and isinstance(result[categoria], list):
-                                        for idx, resp in enumerate(result[categoria], 1):
-                                            info_texto += f"- Responsável {idx}: {resp.get('nome', 'N/A')}"
-                                            if resp.get('telefone'):
-                                                info_texto += f" (Tel: {resp.get('telefone')})"
-                                            info_texto += "\n"
-                                    else:
-                                        for k, v in result[categoria].items():
-                                            if v:
-                                                info_texto += f"- {k.replace('_', ' ').title()}: {v}\n"
-                        else:
-                            # Formatação para o formato antigo de resposta
-                            for k, v in result.items():
-                                if k not in ["foto_url", "id"] and v:
-                                    if k == "responsaveis" and isinstance(v, list):
-                                        info_texto += f"- Responsáveis:\n"
-                                        for resp in v:
-                                            info_texto += f"  - {resp.get('nome', 'N/A')}"
-                                            if resp.get('telefone'):
-                                                info_texto += f" (Tel: {resp.get('telefone')})"
-                                            info_texto += "\n"
-                                    else:
-                                        info_texto += f"- {k.replace('_', ' ').title()}: {v}\n"
-                        
-                        # Usar marcação markdown para a imagem
+                        # Adicionar a foto ao final da resposta formatada
                         resposta_markdown = f"{info_texto}\n\n![Foto do aluno]({foto_url})"
                         return JsonResponse({"response": resposta_markdown})
                     else:

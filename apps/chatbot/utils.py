@@ -118,6 +118,121 @@ def format_dict_response(data, indent=0):
             
             return result
     
+    # Formato específico para informações do aluno (novo formato visualmente atraente)
+    if "dados_pessoais" in data and isinstance(data["dados_pessoais"], dict):
+        nome_aluno = data.get("dados_pessoais", {}).get("nome", "")
+        
+        # Cabeçalho com nome do aluno
+        result += f"# 📚 Ficha do Aluno: {nome_aluno} 📚\n\n"
+        
+        # Status do aluno (ativo/inativo)
+        status = data.get("status", "")
+        if status:
+            status_emoji = "✅" if status == "Ativo" else "❌"
+            result += f"{status_emoji} **Status:** {status}\n\n"
+        
+        # Separador
+        result += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        
+        # Dados Pessoais
+        result += "## 👤 Dados Pessoais\n\n"
+        for k, v in data["dados_pessoais"].items():
+            if v and k != "nome":  # Nome já está no cabeçalho
+                label = k.replace('_', ' ').title()
+                if k == "matricula":
+                    result += f"📝 **{label}:** {v}\n"
+                elif k == "data_nascimento":
+                    result += f"🎂 **{label}:** {v}\n"
+                elif k == "idade":
+                    result += f"🔢 **{label}:** {v} anos\n"
+                elif k == "cpf":
+                    result += f"📄 **{label}:** {v}\n"
+                elif k == "rg":
+                    result += f"📄 **{label}:** {v}\n"
+                else:
+                    result += f"ℹ️ **{label}:** {v}\n"
+        result += "\n"
+        
+        # Contato
+        if "contato" in data and any(data["contato"].values()):
+            result += "## 📞 Contato\n\n"
+            for k, v in data["contato"].items():
+                if v:
+                    label = k.replace('_', ' ').title()
+                    if k == "email":
+                        result += f"📧 **{label}:** {v}\n"
+                    elif k == "telefone":
+                        result += f"📱 **{label}:** {v}\n"
+                    else:
+                        result += f"ℹ️ **{label}:** {v}\n"
+            result += "\n"
+        
+        # Endereço
+        if "endereco" in data and any(data["endereco"].values()):
+            result += "## 🏠 Endereço\n\n"
+            for k, v in data["endereco"].items():
+                if v:
+                    label = k.replace('_', ' ').title()
+                    result += f"📍 **{label}:** {v}\n"
+                else:
+                    label = k.replace('_', ' ').title()
+                    result += f"📍 **{label}:** Não Informado\n"
+            result += "\n"
+        
+        # Separador
+        result += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        
+        # Dados Acadêmicos
+        if "dados_academicos" in data and any(data["dados_academicos"].values()):
+            result += "## 🎓 Dados Acadêmicos\n\n"
+            for k, v in data["dados_academicos"].items():
+                if v:
+                    label = k.replace('_', ' ').title()
+                    if k == "nivel":
+                        result += f"📚 **{label}:** {v}\n"
+                    elif k == "turno":
+                        emoji = "🌞" if v == "Manhã" else "🌙" if v == "Noite" else "🌆"
+                        result += f"{emoji} **{label}:** {v}\n"
+                    elif k == "ano":
+                        result += f"📅 **{label}:** {v}\n"
+                    elif k == "turma":
+                        result += f"👨‍👩‍👧‍👦 **{label}:** {v}\n"
+                    elif k == "data_matricula":
+                        result += f"📆 **{label}:** {v}\n"
+                    else:
+                        result += f"ℹ️ **{label}:** {v}\n"
+            result += "\n"
+        
+        # Separador
+        result += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        
+        # Responsáveis
+        if "responsaveis" in data and isinstance(data["responsaveis"], list) and len(data["responsaveis"]) > 0:
+            result += "## 👪 Responsáveis\n\n"
+            for idx, resp in enumerate(data["responsaveis"], 1):
+                result += f"### Responsável {idx}\n\n"
+                if resp.get("nome"):
+                    result += f"👤 **Nome:** {resp['nome']}\n"
+                else:
+                    result += f"👤 **Nome:** Não Informado\n"
+                    
+                if resp.get("telefone"):
+                    result += f"📱 **Telefone:** {resp['telefone']}\n"
+                else:
+                    result += f"📱 **Telefone:** Não Informado\n"
+                result += "\n"
+        
+        # Informações Adicionais (se existirem)
+        if "informacoes_adicionais" in data and any(data["informacoes_adicionais"].values()):
+            result += "## ℹ️ Informações Adicionais\n\n"
+            for k, v in data["informacoes_adicionais"].items():
+                if v:
+                    label = k.replace('_', ' ').title()
+                    result += f"📋 **{label}:** {v}\n"
+            result += "\n"
+        
+        return result
+    
     # Formato geral para outros tipos de dicionários
     for key, value in data.items():
         if key in ["error", "message"]:
