@@ -101,7 +101,7 @@ def chatbot_response(request):
 
         # Prepare messages for the API
         messages = [
-            {"role": "system", "content": "Você é um assistente virtual do sistema School Manager, especializado em fornecer informações sobre alunos. Quando perguntarem sobre responsáveis de um aluno, você DEVE usar a função get_student_info para obter todas as informações do aluno, incluindo seus responsáveis cadastrados. Utilize o parâmetro name com o nome do aluno para fazer a consulta."},
+            {"role": "system", "content": "Você é um assistente virtual do sistema School Manager, especializado em fornecer informações sobre alunos. Quando perguntarem sobre informações de um aluno ou sobre responsáveis de um aluno, você DEVE usar a função get_student_info para obter todas as informações do aluno. Utilize o parâmetro name com o nome do aluno para fazer a consulta. Sempre que o usuário pedir informações sobre um aluno, mesmo que não mencione especificamente 'responsáveis', você deve usar get_student_info para mostrar TODAS as informações disponíveis do aluno."},
             {"role": "user", "content": message}
         ]
 
@@ -166,9 +166,22 @@ def chatbot_response(request):
                     logger.warning("Não foi possível extrair o nome do aluno da mensagem")
                     return JsonResponse({"response": "Não consegui identificar o nome do aluno na sua pergunta. Por favor, especifique o nome completo do aluno."})
             
+            # Determine if the message is asking about student information
+            is_student_info_request = any(keyword in message.lower() for keyword in [
+                "informações", "informacoes", "dados", "aluno", "estudante", 
+                "matricula", "matrícula", "cadastro", "ficha", "registro"
+            ])
+            
+            # Set tool_choice based on the message content
+            tool_choice = {
+                "type": "function",
+                "function": {"name": "get_student_info"}
+            } if is_student_info_request else "auto"
+            
             # Get response from OpenAI
             logger.info("Enviando requisição para OpenAI")
-            response = get_openai_response(messages=messages, tools=tools)
+            logger.info(f"Usando tool_choice: {tool_choice}")
+            response = get_openai_response(messages=messages, tools=tools, tool_choice=tool_choice)
             logger.info(f"Resposta recebida da OpenAI: {str(response)}")
             
             # Check if the response includes a function call
@@ -246,26 +259,15 @@ def chatbot_response(request):
                             nome_aluno = result.get("dados_pessoais", {}).get("nome", "")
                             return JsonResponse({"response": f"O aluno {nome_aluno} está cadastrado no sistema, mas não possui responsáveis registrados."})
                     
-                    # Processamento padrão para outros tipos de informações
+                    # Usar a função format_dict_response para formatar os dados do aluno em todos os casos
+                    resposta_formatada = format_dict_response(result)
+                    
+                    # Se tiver uma foto, adicionar ao final da resposta formatada
                     if "foto_url" in result or (isinstance(result, dict) and "dados_pessoais" in result and "foto_url" in result["dados_pessoais"]):
-                        # Se tiver uma foto, formatamos especificamente para usar o componente de imagem
                         foto_url = result.get("foto_url") or result.get("dados_pessoais", {}).get("foto_url")
-                        
-                        # Usar a função format_dict_response para formatar os dados do aluno
-                        info_texto = format_dict_response(result)
-                        
-                        # Adicionar a foto ao final da resposta formatada
-                        resposta_markdown = f"{info_texto}\n\n![Foto do aluno]({foto_url})"
-                        return JsonResponse({"response": resposta_markdown})
-                    else:
-                        # Para outros tipos de respostas, formatar como texto legível
-                        if isinstance(result, dict):
-                            # Converter o resultado em texto formatado
-                            resposta_formatada = format_dict_response(result)
-                            return JsonResponse({"response": resposta_formatada})
-                        else:
-                            # Caso seja outro tipo de dados
-                            return JsonResponse({"response": str(result)})
+                        resposta_formatada += f"\n\n![Foto do aluno]({foto_url})"
+                    
+                    return JsonResponse({"response": resposta_formatada})
             elif hasattr(response, 'content') and response.content:
                 # If no function call, return the direct response
                 logger.info(f"Retornando resposta direta da OpenAI: {response.content}")
