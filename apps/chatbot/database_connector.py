@@ -1,4 +1,4 @@
-from django.db.models import Q, Avg
+from django.db.models import Q, Avg, Max, Min
 from apps.alunos.models import Aluno, Nota
 import logging
 
