@@ -172,6 +172,33 @@
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
+/* Botões com maior contraste */
+.btn-outline-secondary {
+    border-color: #545b62;
+    color: #2d3338; /* Texto mais escuro */
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary.active {
+    background-color: #545b62;
+    color: #ffffff;
+    border-color: #4a4f54;
+}
+
+/* Melhoria do botão de filtro para maior contraste */
+.btn-info {
+    background-color: #0092c8; /* Azul mais escuro que o padrão Bootstrap */
+    border-color: #007ba5;
+    color: #ffffff; /* Texto branco para contraste */
+}
+
+.btn-info:hover,
+.btn-info:focus {
+    background-color: #007ba5; /* Escurecer ainda mais ao passar o mouse */
+    border-color: #006a8e;
+    color: #ffffff;
+}
+
 .aluno-card .card {
     width: 100%;
     height: 100%;
@@ -186,11 +213,16 @@
 
 /* Cabeçalho do card otimizado */
 .aluno-card .card-header {
-    background-color: #f0f2f5;
+    background-color: #e3e6ea; /* Ligeiramente mais escuro que o original */
     border-bottom: 1px solid rgba(0,0,0,.125);
     padding: 0.75rem 1rem;
     display: flex;
     align-items: center;
+}
+
+.card-header h6.font-weight-bold {
+    color: #004085; /* Azul escuro com melhor contraste */
+    font-weight: 700 !important; /* Fonte mais grossa */
 }
 
 .aluno-card .card-title {
@@ -534,9 +566,22 @@
 .col-12.text-center.py-5 {
     width: 100%;
     padding: 2rem 0;
-    background-color: rgba(0,0,0,0.03);
+    background-color: rgba(0,0,0,0.05); /* Fundo ligeiramente mais escuro */
     border-radius: 8px;
     margin: 1rem 0;
+}
+
+/* Ajustes para melhorar a acessibilidade */
+.text-muted {
+    color: #5a6268 !important; /* Texto muted com melhor contraste */
+}
+
+/* Melhorando a visualização do estado ativo nos botões */
+.btn-group .btn.active {
+    background-color: #495057;
+    color: #ffffff;
+    border-color: #343a40;
+    box-shadow: 0 0 0 0.2rem rgba(52, 58, 64, 0.5);
 }
 
 /* Melhorar espaço entre os cards em diferentes visualizações */
@@ -563,10 +608,15 @@
     margin-bottom: 0.5rem !important;
 }
 
-/* Estilo para o contador de resultados */
+/* Estilo para o contador de resultados - melhorando contraste */
 #count-display {
     font-weight: bold;
-    color: #007bff;
+    color: #0056b3; /* Azul mais escuro para maior contraste */
+    text-shadow: 0 0 1px rgba(255,255,255,0.5); /* Adiciona sutil borda clara ao texto */
+}
+
+.font-weight-bold.text-primary {
+    color: #004085 !important; /* Azul mais escuro com maior contraste */
 }
 
 /* Ajuste para o alinhamento dos ícones */
