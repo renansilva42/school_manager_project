@@ -6,7 +6,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string, get_template
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
-from django.db.models import Avg, Q
+from django.db.models import Avg, Q, Case, When
+from django.db import NotSupportedError, OperationalError
+from collections import OrderedDict
+from django.http import Http404
+from django.core.paginator import InvalidPage
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
@@ -193,14 +197,97 @@ class AlunoListView(BaseAlunoView, ListView):
             # Otimização: selecione apenas os campos necessários para a exibição na lista
             queryset = queryset.only('id', 'nome', 'matricula', 'nivel', 'turno', 'ano', 'foto')
             
-            # Garantir que não existam duplicatas usando distinct() por id
-            queryset = queryset.distinct('id')
+            # Garantir que não existam duplicatas usando uma solução que funcione em qualquer banco de dados
+            try:
+                # Tentar usar distinct com campo específico (funciona no PostgreSQL)
+                distinct_queryset = queryset.order_by('id').distinct('id')
                 
-            logger.debug(f"Queryset final count: {queryset.count()}")
-            return queryset.order_by('nome')
+                # Verificar se o método distinct realmente removeu duplicatas
+                # Um teste simples é comparar a contagem antes e depois
+                count_before = queryset.count()
+                count_after = distinct_queryset.count()
+                
+                if count_before != count_after:
+                    logger.debug(f"PostgreSQL distinct por ID aplicado com sucesso: {count_before} -> {count_after}")
+                    queryset = distinct_queryset
+                else:
+                    # Se a contagem não mudou, podemos precisar da abordagem alternativa
+                    raise NotSupportedError("Distinct não removeu duplicatas, usando abordagem alternativa")
+                
+            except (NotSupportedError, OperationalError) as e:
+                logger.debug(f"Distinct por ID não suportado: {str(e)}. Usando abordagem alternativa.")
+                
+                # Usar uma abordagem em memória para garantir resultados distintos sem perder a ordenação
+                # Obter IDs únicos, preservando a ordem original
+                id_list = list(queryset.values_list('id', flat=True))
+                unique_ids = list(OrderedDict.fromkeys(id_list))
+                
+                # Usar Case/When para preservar a ordem original dos IDs
+                preserved_order = Case(*[When(id=pk, then=pos) for pos, pk in enumerate(unique_ids)])
+                
+                # Aplicar o filtro e ordenação
+                queryset = queryset.filter(id__in=unique_ids).order_by(preserved_order)
+                
+                logger.debug(f"Deduplicated usando abordagem alternativa: {len(id_list)} -> {len(unique_ids)}")
+            
+            # Registrar a contagem final após todos os filtros e otimizações
+            final_count = queryset.count()
+            logger.debug(f"Queryset final count: {final_count}")
+            
+            return queryset
         except Exception as e:
-            logger.error(f"Error in get_queryset: {str(e)}")
+            logger.error(f"Error in get_queryset: {str(e)}", exc_info=True)
             return Aluno.objects.none()
+    
+    def paginate_queryset(self, queryset, page_size):
+        """
+        Sobrescrever método de paginação para adicionar log
+        e verificar duplicatas.
+        """
+        paginator = self.get_paginator(
+            queryset, page_size, orphans=self.get_paginate_orphans(),
+            allow_empty_first_page=self.get_allow_empty())
+        page_kwarg = self.page_kwarg
+        page = self.kwargs.get(page_kwarg) or self.request.GET.get(page_kwarg) or 1
+        try:
+            page_number = int(page)
+        except ValueError:
+            if page == 'last':
+                page_number = paginator.num_pages
+            else:
+                page_number = 1
+        try:
+            page = paginator.page(page_number)
+            
+            # Registro adicional para depuração da paginação
+            logger.debug(f"Página {page_number}: {len(page.object_list)} objetos")
+            
+            # Verificação extra para duplicatas no conjunto de resultados paginados
+            paginated_ids = [obj.id for obj in page.object_list]
+            unique_paginated_ids = set(paginated_ids)
+            
+            if len(paginated_ids) != len(unique_paginated_ids):
+                logger.warning(
+                    f"Duplicatas detectadas na página {page_number}: "
+                    f"{len(paginated_ids) - len(unique_paginated_ids)} duplicatas."
+                )
+                
+                # Se detectarmos duplicatas, vamos fazer uma deduplação final
+                seen_ids = set()
+                unique_objs = []
+                
+                for obj in page.object_list:
+                    if obj.id not in seen_ids:
+                        seen_ids.add(obj.id)
+                        unique_objs.append(obj)
+                
+                page.object_list = unique_objs
+                logger.debug(f"Objetos após deduplação final: {len(unique_objs)}")
+            
+            return (paginator, page, page.object_list, page.has_other_pages())
+        except InvalidPage as e:
+            logger.error(f"Página inválida ({page_number}): {str(e)}")
+            raise Http404("Página inválida.")
     
     def apply_filters(self, queryset, cleaned_data):
         """Apply filters to queryset based on form data"""
@@ -233,6 +320,13 @@ class AlunoListView(BaseAlunoView, ListView):
         # Verificar se estamos no modo de scroll infinito
         context['infinite_scroll'] = True  # Definir como padrão para melhorar experiência mobile
         
+        # Permitir que o JavaScript identifique que a página usa scroll infinito
+        context['has_infinite_scroll'] = True
+        
+        # Verificar e adicionar se há mais páginas
+        if 'page_obj' in context:
+            context['has_more'] = context['page_obj'].has_next()
+        
         # Detectar dispositivo móvel
         user_agent = self.request.META.get('HTTP_USER_AGENT', '').lower()
         is_mobile = 'mobile' in user_agent or 'android' in user_agent or 'iphone' in user_agent
@@ -250,6 +344,15 @@ class AlunoListView(BaseAlunoView, ListView):
         if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             current_page = context['page_obj'].number
             
+            # Extrair ID de todos os alunos nesta página para debugging
+            if logger.isEnabledFor(logging.DEBUG):
+                alunos_ids = [aluno.id for aluno in context['alunos']]
+                logger.debug(f"IDs dos alunos na resposta AJAX (página {current_page}): {alunos_ids}")
+                
+                # Verificar duplicatas
+                if len(alunos_ids) != len(set(alunos_ids)):
+                    logger.warning(f"AVISO: Duplicatas detectadas na resposta AJAX (página {current_page})")
+            
             # Renderizar os cards de alunos com otimizações para mobile
             html = render_to_string(
                 'alunos/partials/lista_alunos_partial.html',
@@ -259,7 +362,9 @@ class AlunoListView(BaseAlunoView, ListView):
                     'page_obj': context['page_obj'],
                     'is_paginated': context['is_paginated'],
                     'request': self.request,
-                    'is_mobile': context.get('is_mobile', False)
+                    'is_mobile': context.get('is_mobile', False),
+                    'has_more': context['page_obj'].has_next(),
+                    'infinite_scroll': True
                 },
                 request=self.request
             )
@@ -270,8 +375,9 @@ class AlunoListView(BaseAlunoView, ListView):
                 'total_alunos': context['paginator'].count,
                 'current_page': current_page,
                 'total_pages': context['paginator'].num_pages,
-                'has_more': current_page < context['paginator'].num_pages,
-                'mode': 'replace' if current_page == 1 else 'append'
+                'has_more': context['page_obj'].has_next(),
+                'mode': 'replace' if current_page == 1 else 'append',
+                'aluno_ids': [str(aluno.id) for aluno in context['page_obj']]  # Incluir IDs para verificação de duplicatas no frontend
             }
             
             return JsonResponse(response_data)
