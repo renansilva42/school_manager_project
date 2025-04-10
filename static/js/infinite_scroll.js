@@ -1,6 +1,6 @@
 /**
  * Script otimizado para rolagem infinita na lista de alunos
- * Com suporte aprimorado para dispositivos móveis e maior compatibilidade com filtros
+ * Melhorado para funcionar sem paginação e com layout fluido
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -8,8 +8,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const config = {
         contentContainer: '#content-container',
         loadingIndicator: '#loading-indicator',
-        loadThreshold: 200, // Carregar quando estiver a 200px do final
-        debounceDelay: 150  // Atraso para o debounce em ms
+        loadThreshold: 250, // Aumentado para carregar mais cedo
+        debounceDelay: 150,  // Atraso para o debounce em ms
+        loadingText: 'Carregando mais alunos...'
     };
     
     // Estado
@@ -19,7 +20,8 @@ document.addEventListener('DOMContentLoaded', function() {
         hasMore: true,
         touching: false,
         url: window.location.href,
-        viewMode: localStorage.getItem('alunosViewPreference') || 'grid'
+        viewMode: localStorage.getItem('alunosViewPreference') || 'grid',
+        lastScrollPosition: 0
     };
     
     // Elementos
@@ -87,9 +89,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 
+                // Salvar posição de scroll antes de adicionar conteúdo
+                state.lastScrollPosition = window.scrollY;
+                
                 // Adicionar conteúdo
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = data.html;
+                
+                // Remover elementos de paginação se presentes
+                const paginationElements = tempDiv.querySelectorAll('.pagination, .pagination-container');
+                paginationElements.forEach(el => el.remove());
                 
                 // Adicionar eventos a novos botões
                 setupCardEvents(tempDiv);
@@ -97,13 +106,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Anexar ao contêiner
                 if (data.mode === 'replace') {
                     contentContainer.innerHTML = '';
-                    Array.from(tempDiv.children).forEach(child => {
-                        contentContainer.appendChild(child);
-                    });
+                    // Adicionar nós filhos um a um para melhor performance
+                    while (tempDiv.firstChild) {
+                        contentContainer.appendChild(tempDiv.firstChild);
+                    }
                 } else {
-                    Array.from(tempDiv.children).forEach(child => {
-                        contentContainer.appendChild(child);
-                    });
+                    // Para append, adicionar cada elemento filho individualmente
+                    const fragment = document.createDocumentFragment();
+                    while (tempDiv.firstChild) {
+                        fragment.appendChild(tempDiv.firstChild);
+                    }
+                    contentContainer.appendChild(fragment);
                 }
                 
                 // Atualizar estado
@@ -113,10 +126,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Aplicar visualização atual (grid ou lista)
                 applyViewMode();
                 
-                // Se não houver mais páginas, remover o indicador de carregamento
-                if (!state.hasMore) {
-                    loadingIndicator?.classList.add('d-none');
+                // Restaurar posição de scroll para evitar pulos
+                if (data.mode === 'append') {
+                    window.scrollTo(0, state.lastScrollPosition);
                 }
+                
+                // Se não houver mais páginas, ocultar o indicador de carregamento
+                if (!state.hasMore && loadingIndicator) {
+                    loadingIndicator.remove();
+                    
+                    // Adicionar mensagem de fim da lista
+                    const endMessage = document.createElement('div');
+                    endMessage.className = 'text-center text-muted py-3';
+                    endMessage.innerHTML = 'Fim da lista de alunos';
+                    contentContainer.parentNode.appendChild(endMessage);
+                }
+            } else {
+                state.hasMore = false;
             }
         })
         .catch(error => {
@@ -136,6 +162,20 @@ document.addEventListener('DOMContentLoaded', function() {
         if (contentContainer) {
             contentContainer.classList.remove('grid-view', 'list-view');
             contentContainer.classList.add(`${state.viewMode}-view`);
+            
+            // Atualizar botões de visualização
+            const gridButton = document.getElementById('viewGrid');
+            const listButton = document.getElementById('viewList');
+            
+            if (gridButton && listButton) {
+                if (state.viewMode === 'grid') {
+                    gridButton.classList.add('active');
+                    listButton.classList.remove('active');
+                } else {
+                    listButton.classList.add('active');
+                    gridButton.classList.remove('active');
+                }
+            }
         }
     }
     
@@ -182,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cards.forEach(card => {
             // Melhorar comportamento em dispositivos móveis
             if (isMobile) {
-                // Prevenir comportamento fantasma (ghost clicks)
+                // Adicionar evento de toque para evitar o problema de "ghost clicks"
                 card.addEventListener('touchstart', function(e) {
                     state.touching = true;
                     state.touchStartX = e.touches[0].clientX;
@@ -225,6 +265,17 @@ document.addEventListener('DOMContentLoaded', function() {
             card.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
+                    const detailsLink = this.querySelector('.view-details');
+                    if (detailsLink && detailsLink.href) {
+                        window.location.href = detailsLink.href;
+                    }
+                }
+            });
+            
+            // Melhorar comportamento de clique
+            card.addEventListener('click', function(e) {
+                // Se o clique não foi em um botão ou link específico
+                if (!e.target.closest('.btn') && !e.target.closest('a')) {
                     const detailsLink = this.querySelector('.view-details');
                     if (detailsLink && detailsLink.href) {
                         window.location.href = detailsLink.href;
@@ -299,13 +350,23 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 state.viewMode = 'list';
             }
+            localStorage.setItem('alunosViewPreference', state.viewMode);
             applyViewMode();
         });
     });
     
+    // Remover elementos de paginação existentes ao carregar
+    document.querySelectorAll('.pagination, .pagination-container').forEach(el => {
+        el.remove();
+    });
+    
     // Configurar eventos
     window.addEventListener('scroll', debounce(checkEndOfPage, config.debounceDelay), { passive: true });
-    window.addEventListener('resize', debounce(checkEndOfPage, config.debounceDelay), { passive: true });
+    window.addEventListener('resize', debounce(() => {
+        // Reconfigurar layout em mudanças de tamanho
+        applyViewMode();
+        checkEndOfPage();
+    }, 150), { passive: true });
     
     // Configurar eventos para cards iniciais
     setupCardEvents(document);
@@ -323,7 +384,15 @@ document.addEventListener('DOMContentLoaded', function() {
             state.currentPage = 1;
             state.hasMore = true;
             state.loading = false;
+            contentContainer.innerHTML = '';
             loadMoreContent();
+        },
+        toggleView: function(mode) {
+            if (mode === 'grid' || mode === 'list') {
+                state.viewMode = mode;
+                localStorage.setItem('alunosViewPreference', mode);
+                applyViewMode();
+            }
         }
     };
 });
