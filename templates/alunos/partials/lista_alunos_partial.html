@@ -2,28 +2,28 @@
 
 <div class="alunos-container{% if is_mobile %} mobile-view{% endif %}">
     {% for aluno in alunos %}
-    <div class="aluno-card" data-aluno-id="{{ aluno.id }}">
-        <div class="card mb-3 h-100 shadow-sm">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0 text-truncate">{{ aluno.nome }}</h5>
+    <div class="aluno-card" data-aluno-id="{{ aluno.id }}" tabindex="0">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title">{{ aluno.nome }}</h5>
             </div>
-            <div class="card-body d-flex flex-column">
-                <div class="row mb-3">
-                    <div class="col-{% if is_mobile %}4{% else %}3{% endif %} text-center">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-{% if is_mobile %}4{% else %}3{% endif %} d-flex align-items-center justify-content-center">
                         <div class="foto-container">
-                            <img src="{{ aluno.get_foto_url }}" class="rounded-circle aluno-foto img-fluid" alt="Foto de {{ aluno.nome }}">
+                            <img src="{{ aluno.get_foto_url }}" class="aluno-foto" alt="Foto de {{ aluno.nome }}" loading="lazy">
                         </div>
                     </div>
                     <div class="col-{% if is_mobile %}8{% else %}9{% endif %}">
-                        <p class="card-text mb-1"><strong>Matrícula:</strong> {{ aluno.matricula }}</p>
-                        <p class="card-text mb-1"><strong>Nível:</strong> {{ aluno.get_nivel_display }}</p>
-                        <p class="card-text mb-1"><strong>Turno:</strong> {{ aluno.get_turno_display }}</p>
-                        <p class="card-text mb-1"><strong>Ano:</strong> {{ aluno.ano }}</p>
+                        <p class="card-text"><strong>Matrícula:</strong> {{ aluno.matricula }}</p>
+                        <p class="card-text"><strong>Nível:</strong> {{ aluno.get_nivel_display }}</p>
+                        <p class="card-text"><strong>Turno:</strong> {{ aluno.get_turno_display }}</p>
+                        <p class="card-text"><strong>Ano:</strong> {{ aluno.ano }}</p>
                     </div>
                 </div>
-                <div class="mt-auto d-flex justify-content-between">
-                    <a href="{% url 'alunos:detalhe' pk=aluno.id %}" class="btn btn-primary btn-sm view-details" role="button">
-                        Ver Detalhes
+                <div class="mt-auto">
+                    <a href="{% url 'alunos:detalhe' pk=aluno.id %}" class="btn btn-primary btn-sm view-details" role="button" aria-label="Ver detalhes de {{ aluno.nome }}">
+                        <i class="fas fa-eye me-1 d-none d-sm-inline"></i> Ver Detalhes
                     </a>
                 </div>
             </div>
