@@ -1,43 +1,68 @@
 {% load static %}
 
-<div class="alunos-container{% if is_mobile %} mobile-view{% endif %}">
-    {% for aluno in alunos %}
-    <div class="aluno-card" data-aluno-id="{{ aluno.id }}" tabindex="0">
-        <div class="card shadow-sm">
-            <div class="card-header">
-                <h5 class="card-title">{{ aluno.nome }}</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-{% if is_mobile %}4{% else %}3{% endif %} d-flex align-items-center justify-content-center">
-                        <div class="foto-container">
-                            <img src="{{ aluno.get_foto_url }}" class="aluno-foto" alt="Foto de {{ aluno.nome }}" loading="lazy">
+<div id="alunos-container" class="alunos-container{% if is_mobile %} mobile-view{% endif %} alunos-grid">
+    <div class="row g-3">
+        {% for aluno in alunos %}
+        <div class="col-md-4 col-sm-6 col-12 aluno-item" data-aluno-id="{{ aluno.id }}" tabindex="0">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="foto-container me-3">
+                            <img src="{{ aluno.get_foto_url }}" class="rounded-circle" alt="Foto de {{ aluno.nome }}" loading="lazy" style="width: 50px; height: 50px; object-fit: cover;">
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">{{ aluno.nome }}</h5>
+                            <small class="text-muted">Mat: {{ aluno.matricula }}</small>
                         </div>
                     </div>
-                    <div class="col-{% if is_mobile %}8{% else %}9{% endif %}">
-                        <p class="card-text"><strong>Matrícula:</strong> {{ aluno.matricula }}</p>
-                        <p class="card-text"><strong>Nível:</strong> {{ aluno.get_nivel_display }}</p>
-                        <p class="card-text"><strong>Turno:</strong> {{ aluno.get_turno_display }}</p>
-                        <p class="card-text"><strong>Ano:</strong> {{ aluno.ano }}</p>
+                    
+                    <div class="card-info mb-3">
+                        <p class="mb-1"><i class="fas fa-graduation-cap me-2"></i>
+                            {% if aluno.nivel == 'EFI' %}
+                                Ensino Fundamental I
+                            {% elif aluno.nivel == 'EFF' %}
+                                Ensino Fundamental II
+                            {% else %}
+                                {{ aluno.get_nivel_display }}
+                            {% endif %}
+                        </p>
+                        <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i>
+                            {{ aluno.ano }}º Ano
+                        </p>
+                        <p class="mb-1"><i class="fas fa-clock me-2"></i>
+                            {% if aluno.turno == 'M' %}
+                                Manhã
+                            {% elif aluno.turno == 'T' %}
+                                Tarde
+                            {% else %}
+                                {{ aluno.get_turno_display }}
+                            {% endif %}
+                        </p>
                     </div>
-                </div>
-                <div class="mt-auto">
-                    <a href="{% url 'alunos:detalhe' pk=aluno.id %}" class="btn btn-primary btn-sm view-details" role="button" aria-label="Ver detalhes de {{ aluno.nome }}">
-                        <i class="fas fa-eye me-1 d-none d-sm-inline"></i> Ver Detalhes
-                    </a>
+                    
+                    <div class="mt-auto">
+                        <a href="{% url 'alunos:detalhe' pk=aluno.id %}" class="btn btn-primary btn-sm view-details" role="button" aria-label="Ver detalhes de {{ aluno.nome }}">
+                            <i class="fas fa-eye me-1"></i> Ver Detalhes
+                        </a>
+                        {% if user.groups.all.0.name == 'Administradores' %}
+                            <a href="{% url 'alunos:editar' pk=aluno.id %}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-edit me-1"></i> Editar
+                            </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <p class="lead">Nenhum aluno encontrado</p>
+        </div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="col-12 text-center py-5">
-        <p class="lead">Nenhum aluno encontrado</p>
-    </div>
-    {% endfor %}
 </div>
 
 {% if is_paginated and not infinite_scroll %}
-<div class="pagination-container">
+<div class="pagination-container mt-4 d-flex justify-content-center">
     {% include "alunos/partials/pagination_partial.html" %}
 </div>
 {% endif %}
@@ -49,3 +74,73 @@
     </div>
 </div>
 {% endif %}
+
+<style>
+    /* Estilos para visualização em grid */
+    .alunos-grid .aluno-item {
+        margin-bottom: 15px;
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .alunos-grid .card {
+        height: 100%;
+        transition: box-shadow 0.2s ease-in-out;
+    }
+    
+    .alunos-grid .card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        transform: translateY(-3px);
+    }
+    
+    /* Estilos para visualização em lista */
+    .alunos-list .row {
+        flex-direction: column;
+    }
+    
+    .alunos-list .aluno-item {
+        width: 100%;
+        max-width: 100%;
+        flex: 0 0 100%;
+        margin-bottom: 10px;
+    }
+    
+    .alunos-list .card {
+        flex-direction: row;
+    }
+    
+    .alunos-list .card-body {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1.25rem;
+    }
+    
+    .alunos-list .card-info {
+        display: flex;
+        flex-wrap: wrap;
+        flex: 1;
+        margin-left: 15px;
+        margin-right: 15px;
+    }
+    
+    .alunos-list .card-info p {
+        margin-right: 15px;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Otimizações para mobile */
+    @media (max-width: 767.98px) {
+        .alunos-list .card-body {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .alunos-list .card-info {
+            margin-left: 0;
+            margin-right: 0;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+    }
+</style>

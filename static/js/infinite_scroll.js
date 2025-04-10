@@ -1,32 +1,11 @@
 /**
- * Script otimizado para rolagem infinita na lista de alunos
- * Melhorado para funcionar sem paginação e com layout fluido
+ * Script para gerenciar o scroll infinito na página de lista de alunos
  */
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Configurações
-    const config = {
-        contentContainer: '#content-container',
-        loadingIndicator: '#loading-indicator',
-        loadThreshold: 250, // Aumentado para carregar mais cedo
-        debounceDelay: 150,  // Atraso para o debounce em ms
-        loadingText: 'Carregando mais alunos...'
-    };
-    
-    // Estado
-    let state = {
-        loading: false,
-        currentPage: 1,
-        hasMore: true,
-        touching: false,
-        url: window.location.href,
-        viewMode: localStorage.getItem('alunosViewPreference') || 'grid',
-        lastScrollPosition: 0
-    };
-    
-    // Elementos
-    const contentContainer = document.querySelector(config.contentContainer);
-    const loadingIndicator = document.querySelector(config.loadingIndicator);
+    // Elementos DOM
+    const contentContainer = document.getElementById('content-container');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const countDisplay = document.getElementById('count-display');
     
     // Detectar dispositivo móvel
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -41,34 +20,81 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    /**
-     * Função para obter parâmetros da URL atual
-     */
-    function getUrlParameters() {
-        const url = new URL(state.url);
-        const params = new URLSearchParams(url.search);
+    // Variáveis de controle
+    let state = {
+        currentPage: 1,
+        isLoading: false,
+        hasMoreContent: true,
+        touching: false,
+        viewMode: localStorage.getItem('alunosViewPreference') || 'grid',
+        lastScrollPosition: 0
+    };
+    
+    // Obter parâmetros da URL atual
+    function getUrlParams() {
+        const urlSearchParams = new URLSearchParams(window.location.search);
+        const params = Object.fromEntries(urlSearchParams.entries());
         
         // Adicionar parâmetro de scroll infinito
-        params.set('infinite_scroll', 'true');
+        params.infinite_scroll = 'true';
+        
+        // Sempre solicitar a próxima página
+        params.page = state.currentPage + 1;
         
         return params;
     }
     
-    /**
-     * Função para carregar mais conteúdo
-     */
-    function loadMoreContent() {
-        if (state.loading || !state.hasMore) return;
+    // Converter objeto de parâmetros para string de consulta
+    function buildQueryString(params) {
+        return Object.keys(params)
+            .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+            .join('&');
+    }
+    
+    // Mostrar indicador de carregamento
+    function showLoading() {
+        if (loadingIndicator) {
+            loadingIndicator.classList.remove('d-none');
+        }
+    }
+    
+    // Ocultar indicador de carregamento
+    function hideLoading() {
+        if (loadingIndicator) {
+            loadingIndicator.classList.add('d-none');
+        }
+    }
+    
+    // Mostrar mensagem de erro
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger mt-3 mx-3';
+        errorDiv.textContent = message;
         
-        state.loading = true;
+        // Remover após 5 segundos
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 5000);
+        
+        if (contentContainer) {
+            contentContainer.parentNode.insertBefore(errorDiv, contentContainer.nextSibling);
+        }
+    }
+    
+    // Carregar mais conteúdo via AJAX
+    function loadMoreContent() {
+        if (state.isLoading || !state.hasMoreContent) return;
+        
+        state.isLoading = true;
         showLoading();
         
-        // Obter parâmetros da URL
-        const params = getUrlParameters();
-        params.set('page', state.currentPage + 1);
+        // Construir URL com parâmetros
+        const params = getUrlParams();
+        const queryString = buildQueryString(params);
+        const url = `${window.location.pathname}?${queryString}`;
         
-        // Fazer requisição AJAX
-        fetch(`${window.location.pathname}?${params.toString()}`, {
+        // Realizar a solicitação AJAX
+        fetch(url, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             }
@@ -80,19 +106,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
+            // Verificar se há mais conteúdo
+            state.hasMoreContent = data.has_more;
+            
+            // Atualizar contador de resultados
+            if (data.total_alunos !== undefined && countDisplay) {
+                countDisplay.textContent = data.total_alunos;
+            }
+            
             if (data.html) {
-                // Atualizar contagem de resultados se disponível
-                if (data.total_alunos !== undefined) {
-                    const countDisplay = document.getElementById('count-display');
-                    if (countDisplay) {
-                        countDisplay.textContent = data.total_alunos;
-                    }
-                }
-                
                 // Salvar posição de scroll antes de adicionar conteúdo
                 state.lastScrollPosition = window.scrollY;
                 
-                // Adicionar conteúdo
+                // Adicionar novo conteúdo
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = data.html;
                 
@@ -100,10 +126,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const paginationElements = tempDiv.querySelectorAll('.pagination, .pagination-container');
                 paginationElements.forEach(el => el.remove());
                 
-                // Adicionar eventos a novos botões
+                // Configurar eventos para novos cards
                 setupCardEvents(tempDiv);
                 
-                // Anexar ao contêiner
                 if (data.mode === 'replace') {
                     contentContainer.innerHTML = '';
                     // Adicionar nós filhos um a um para melhor performance
@@ -121,7 +146,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Atualizar estado
                 state.currentPage = data.current_page;
-                state.hasMore = data.has_more;
                 
                 // Aplicar visualização atual (grid ou lista)
                 applyViewMode();
@@ -131,8 +155,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.scrollTo(0, state.lastScrollPosition);
                 }
                 
-                // Se não houver mais páginas, ocultar o indicador de carregamento
-                if (!state.hasMore && loadingIndicator) {
+                // Se não houver mais páginas, mostrar mensagem de fim da lista
+                if (!state.hasMoreContent && loadingIndicator) {
                     loadingIndicator.remove();
                     
                     // Adicionar mensagem de fim da lista
@@ -142,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     contentContainer.parentNode.appendChild(endMessage);
                 }
             } else {
-                state.hasMore = false;
+                state.hasMoreContent = false;
             }
         })
         .catch(error => {
@@ -150,18 +174,18 @@ document.addEventListener('DOMContentLoaded', function() {
             showError('Houve um erro ao carregar mais alunos. Tente novamente.');
         })
         .finally(() => {
-            state.loading = false;
+            state.isLoading = false;
             hideLoading();
         });
     }
     
-    /**
-     * Aplicar modo de visualização atual (grid ou lista)
-     */
+    // Aplicar modo de visualização atual (grid ou lista)
     function applyViewMode() {
         if (contentContainer) {
-            contentContainer.classList.remove('grid-view', 'list-view');
-            contentContainer.classList.add(`${state.viewMode}-view`);
+            // Remover classes antigas
+            contentContainer.classList.remove('alunos-grid', 'alunos-list');
+            // Adicionar classe baseada na preferência
+            contentContainer.classList.add(`alunos-${state.viewMode}`);
             
             // Atualizar botões de visualização
             const gridButton = document.getElementById('viewGrid');
@@ -179,45 +203,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    /**
-     * Função para mostrar o indicador de carregamento
-     */
-    function showLoading() {
-        if (loadingIndicator) {
-            loadingIndicator.classList.remove('d-none');
-        }
-    }
-    
-    /**
-     * Função para esconder o indicador de carregamento
-     */
-    function hideLoading() {
-        if (loadingIndicator) {
-            loadingIndicator.classList.add('d-none');
-        }
-    }
-    
-    /**
-     * Função para mostrar mensagem de erro
-     */
-    function showError(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'alert alert-danger mt-3 mx-3';
-        errorDiv.textContent = message;
-        
-        // Remover após 5 segundos
-        setTimeout(() => {
-            errorDiv.remove();
-        }, 5000);
-        
-        contentContainer.parentNode.insertBefore(errorDiv, contentContainer.nextSibling);
-    }
-    
-    /**
-     * Função para configurar eventos nos cards de alunos
-     */
+    // Configurar eventos nos cards de alunos
     function setupCardEvents(container) {
-        const cards = container.querySelectorAll('.aluno-card');
+        const cards = container.querySelectorAll('.aluno-item');
         
         cards.forEach(card => {
             // Melhorar comportamento em dispositivos móveis
@@ -247,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 card.addEventListener('touchend', function(e) {
                     if (state.touching) {
                         // Encontrar o link de detalhes e navegar para ele
-                        const detailsLink = this.querySelector('.view-details');
+                        const detailsLink = this.querySelector('a[href*="detalhe"]');
                         if (detailsLink && detailsLink.href) {
                             e.preventDefault();
                             window.location.href = detailsLink.href;
@@ -265,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
             card.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    const detailsLink = this.querySelector('.view-details');
+                    const detailsLink = this.querySelector('a[href*="detalhe"]');
                     if (detailsLink && detailsLink.href) {
                         window.location.href = detailsLink.href;
                     }
@@ -276,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
             card.addEventListener('click', function(e) {
                 // Se o clique não foi em um botão ou link específico
                 if (!e.target.closest('.btn') && !e.target.closest('a')) {
-                    const detailsLink = this.querySelector('.view-details');
+                    const detailsLink = this.querySelector('a[href*="detalhe"]');
                     if (detailsLink && detailsLink.href) {
                         window.location.href = detailsLink.href;
                     }
@@ -285,9 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    /**
-     * Function de debounce para otimizar eventos de scroll
-     */
+    // Function de debounce para otimizar eventos de scroll
     function debounce(func, delay) {
         let timer;
         return function() {
@@ -298,11 +284,9 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    /**
-     * Verificar se chegou ao final da página
-     */
+    // Verificar se chegou ao final da página
     function checkEndOfPage() {
-        if (!state.hasMore || state.loading) return;
+        if (!state.hasMoreContent || state.isLoading) return;
         
         const scrollHeight = Math.max(
             document.body.scrollHeight,
@@ -313,86 +297,100 @@ document.addEventListener('DOMContentLoaded', function() {
         const clientHeight = window.innerHeight || document.documentElement.clientHeight;
         
         // Ajustar threshold para carregar mais cedo em dispositivos móveis
-        const threshold = isMobile ? config.loadThreshold * 1.5 : config.loadThreshold;
+        const threshold = isMobile ? 300 : 200;
         
         if (scrollHeight - scrollTop - clientHeight <= threshold) {
             loadMoreContent();
         }
     }
     
-    // Monitorar alterações nos dropdowns de filtro
-    const filterForm = document.getElementById('filter-form');
-    const searchForm = document.getElementById('search-form');
-    
-    if (filterForm) {
-        filterForm.addEventListener('submit', function(e) {
-            // Reiniciar estado ao aplicar filtros
-            state.currentPage = 1;
-            state.hasMore = true;
-            state.loading = false;
-        });
-    }
-    
-    if (searchForm) {
-        searchForm.addEventListener('submit', function(e) {
-            // Reiniciar estado ao aplicar busca
-            state.currentPage = 1;
-            state.hasMore = true;
-            state.loading = false;
-        });
-    }
-    
-    // Monitore mudanças na visualização (grid/list)
-    document.querySelectorAll('#viewGrid, #viewList').forEach(button => {
-        button.addEventListener('click', function() {
-            if (this.id === 'viewGrid') {
-                state.viewMode = 'grid';
-            } else {
-                state.viewMode = 'list';
+    // Inicializar scroll infinito
+    function initInfiniteScroll() {
+        try {
+            // Remover elementos de paginação existentes ao carregar
+            document.querySelectorAll('.pagination, .pagination-container').forEach(el => {
+                el.remove();
+            });
+            
+            // Monitorar alterações nos formulários de filtro e busca
+            const filterForm = document.getElementById('filter-form');
+            const searchForm = document.getElementById('search-form');
+            
+            if (filterForm) {
+                filterForm.addEventListener('submit', function() {
+                    // Reiniciar estado ao aplicar filtros
+                    state.currentPage = 1;
+                    state.hasMoreContent = true;
+                    state.isLoading = false;
+                });
             }
-            localStorage.setItem('alunosViewPreference', state.viewMode);
-            applyViewMode();
-        });
-    });
-    
-    // Remover elementos de paginação existentes ao carregar
-    document.querySelectorAll('.pagination, .pagination-container').forEach(el => {
-        el.remove();
-    });
-    
-    // Configurar eventos
-    window.addEventListener('scroll', debounce(checkEndOfPage, config.debounceDelay), { passive: true });
-    window.addEventListener('resize', debounce(() => {
-        // Reconfigurar layout em mudanças de tamanho
-        applyViewMode();
-        checkEndOfPage();
-    }, 150), { passive: true });
-    
-    // Configurar eventos para cards iniciais
-    setupCardEvents(document);
-    
-    // Aplicar modo de visualização inicial
-    applyViewMode();
-    
-    // Checar inicialmente se precisa carregar mais (para telas grandes)
-    setTimeout(checkEndOfPage, 500);
-    
-    // Expor funções para uso global, se necessário
-    window.infiniteScroll = {
-        loadMore: loadMoreContent,
-        refresh: function() {
-            state.currentPage = 1;
-            state.hasMore = true;
-            state.loading = false;
-            contentContainer.innerHTML = '';
-            loadMoreContent();
-        },
-        toggleView: function(mode) {
-            if (mode === 'grid' || mode === 'list') {
-                state.viewMode = mode;
-                localStorage.setItem('alunosViewPreference', mode);
+            
+            if (searchForm) {
+                searchForm.addEventListener('submit', function() {
+                    // Reiniciar estado ao aplicar busca
+                    state.currentPage = 1;
+                    state.hasMoreContent = true;
+                    state.isLoading = false;
+                });
+            }
+            
+            // Monitore mudanças na visualização (grid/list)
+            document.querySelectorAll('#viewGrid, #viewList').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (this.id === 'viewGrid') {
+                        state.viewMode = 'grid';
+                    } else {
+                        state.viewMode = 'list';
+                    }
+                    localStorage.setItem('alunosViewPreference', state.viewMode);
+                    applyViewMode();
+                });
+            });
+            
+            // Configurar eventos
+            window.addEventListener('scroll', debounce(checkEndOfPage, 150), { passive: true });
+            window.addEventListener('resize', debounce(() => {
+                // Reconfigurar layout em mudanças de tamanho
                 applyViewMode();
-            }
+                checkEndOfPage();
+            }, 150), { passive: true });
+            
+            // Configurar eventos para cards iniciais
+            setupCardEvents(document);
+            
+            // Aplicar modo de visualização inicial
+            applyViewMode();
+            
+            // Checar inicialmente se precisa carregar mais (para telas grandes)
+            setTimeout(checkEndOfPage, 500);
+        } catch (e) {
+            console.error('Erro ao inicializar scroll infinito:', e);
         }
-    };
+    }
+    
+    // Inicializar se o contêiner existir
+    if (contentContainer) {
+        initInfiniteScroll();
+        
+        // Expor funções para uso global, se necessário
+        window.infiniteScroll = {
+            loadMore: loadMoreContent,
+            refresh: function() {
+                state.currentPage = 1;
+                state.hasMoreContent = true;
+                state.isLoading = false;
+                if (contentContainer) {
+                    contentContainer.innerHTML = '';
+                }
+                loadMoreContent();
+            },
+            toggleView: function(mode) {
+                if (mode === 'grid' || mode === 'list') {
+                    state.viewMode = mode;
+                    localStorage.setItem('alunosViewPreference', mode);
+                    applyViewMode();
+                }
+            }
+        };
+    }
 });
