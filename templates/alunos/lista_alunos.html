@@ -113,7 +113,7 @@
                     <i class="fas fa-filter"></i> <span class="d-none d-md-inline">Filtros</span>
                 </button>
                 <div class="btn-group">
-                    <button class="btn btn-outline-secondary btn-sm active" id="viewGrid">
+                    <button class="btn btn-outline-secondary btn-sm" id="viewGrid">
                         <i class="fas fa-th-large"></i> <span class="d-none d-md-inline">Grid</span>
                     </button>
                     <button class="btn btn-outline-secondary btn-sm" id="viewList">
@@ -123,15 +123,20 @@
             </div>
         </div>
         <div class="card-body">
-            <div id="content-container">
-                {% include 'alunos/partials/lista_alunos_partial.html' %}
+            <div id="content-container" class="alunos-grid" data-infinite-scroll="true">
+                {% include 'alunos/partials/lista_alunos_partial.html' with infinite_scroll=True %}
             </div>
             
             <!-- Indicador de carregamento -->
-            <div id="loading-indicator" class="text-center py-3 d-none">
+            <div id="loading-indicator" class="text-center py-3 d-none" aria-live="polite">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Carregando mais alunos...</span>
                 </div>
+            </div>
+            
+            <!-- Indicador de fim da lista -->
+            <div id="end-of-list" class="text-center py-3 d-none">
+                <p class="text-muted mb-0">Fim da lista</p>
             </div>
         </div>
     </div>
@@ -219,16 +224,16 @@
         const contentContainer = document.getElementById('content-container');
         
         viewGrid.addEventListener('click', function() {
-            contentContainer.classList.remove('list-view');
-            contentContainer.classList.add('grid-view');
+            contentContainer.classList.remove('alunos-list');
+            contentContainer.classList.add('alunos-grid');
             viewGrid.classList.add('active');
             viewList.classList.remove('active');
             localStorage.setItem('alunosViewPreference', 'grid');
         });
         
         viewList.addEventListener('click', function() {
-            contentContainer.classList.remove('grid-view');
-            contentContainer.classList.add('list-view');
+            contentContainer.classList.remove('alunos-grid');
+            contentContainer.classList.add('alunos-list');
             viewList.classList.add('active');
             viewGrid.classList.remove('active');
             localStorage.setItem('alunosViewPreference', 'list');
@@ -239,7 +244,7 @@
         if (savedView === 'list') {
             viewList.click();
         } else {
-            viewGrid.click(); // Grid é o padrão
+            viewGrid.classList.add('active'); // Grid é o padrão
         }
     });
     </script>

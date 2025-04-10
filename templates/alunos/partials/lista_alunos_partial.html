@@ -1,68 +1,68 @@
 {% load static %}
 
-<div id="alunos-container" class="alunos-grid">
+<div class="row g-3" id="alunos-row">
     {% if alunos %}
-        <div class="row g-3">
-            {% for aluno in alunos %}
-                <div class="col-md-4 col-sm-6 col-12 aluno-item" data-aluno-id="{{ aluno.id }}" tabindex="0">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-body d-flex flex-column">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="foto-container me-3">
-                                    <img src="{{ aluno.get_foto_url }}" class="rounded-circle" alt="Foto de {{ aluno.nome }}" loading="lazy" style="width: 50px; height: 50px; object-fit: cover;">
-                                </div>
-                                <div>
-                                    <h5 class="card-title mb-0 text-truncate" style="max-width: 200px;">{{ aluno.nome }}</h5>
-                                    <small class="text-muted">Mat: {{ aluno.matricula }}</small>
-                                </div>
+        {% for aluno in alunos %}
+            <div class="col-md-4 col-sm-6 col-12 aluno-item" data-aluno-id="{{ aluno.id }}" tabindex="0">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="foto-container me-3">
+                                <img src="{{ aluno.get_foto_url }}" class="rounded-circle" alt="Foto de {{ aluno.nome }}" loading="lazy" width="50" height="50" style="object-fit: cover;">
                             </div>
-                            
-                            <div class="card-info mb-3">
-                                <p class="mb-1"><i class="fas fa-graduation-cap me-2"></i>
-                                    {% if aluno.nivel == 'EFI' %}
-                                        Ensino Fundamental I
-                                    {% elif aluno.nivel == 'EFF' %}
-                                        Ensino Fundamental II
-                                    {% else %}
-                                        {{ aluno.get_nivel_display }}
-                                    {% endif %}
-                                </p>
-                                <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i>
-                                    {{ aluno.ano }}º Ano
-                                </p>
-                                <p class="mb-1"><i class="fas fa-clock me-2"></i>
-                                    {% if aluno.turno == 'M' %}
-                                        Manhã
-                                    {% elif aluno.turno == 'T' %}
-                                        Tarde
-                                    {% else %}
-                                        {{ aluno.get_turno_display }}
-                                    {% endif %}
-                                </p>
+                            <div>
+                                <h5 class="card-title mb-0 text-truncate" style="max-width: 200px;">{{ aluno.nome }}</h5>
+                                <small class="text-muted">Mat: {{ aluno.matricula }}</small>
                             </div>
-                            
-                            <div class="mt-auto">
-                                <a href="{% url 'alunos:detalhe' pk=aluno.id %}" class="btn btn-primary btn-sm view-details" role="button" aria-label="Ver detalhes de {{ aluno.nome }}">
-                                    <i class="fas fa-eye me-1"></i> Ver Detalhes
-                                </a>
-                                {% if user.groups.all.0.name == 'Administradores' %}
-                                    <a href="{% url 'alunos:editar' pk=aluno.id %}" class="btn btn-secondary btn-sm">
-                                        <i class="fas fa-edit me-1"></i> Editar
-                                    </a>
+                        </div>
+                        
+                        <div class="card-info mb-3">
+                            <p class="mb-1"><i class="fas fa-graduation-cap me-2"></i>
+                                {% if aluno.nivel == 'EFI' %}
+                                    Ensino Fundamental I
+                                {% elif aluno.nivel == 'EFF' %}
+                                    Ensino Fundamental II
+                                {% else %}
+                                    {{ aluno.get_nivel_display }}
                                 {% endif %}
-                            </div>
+                            </p>
+                            <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i>
+                                {{ aluno.ano }}º Ano
+                            </p>
+                            <p class="mb-1"><i class="fas fa-clock me-2"></i>
+                                {% if aluno.turno == 'M' %}
+                                    Manhã
+                                {% elif aluno.turno == 'T' %}
+                                    Tarde
+                                {% else %}
+                                    {{ aluno.get_turno_display }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        
+                        <div class="mt-auto">
+                            <a href="{% url 'alunos:detalhe' pk=aluno.id %}" class="btn btn-primary btn-sm view-details" role="button" aria-label="Ver detalhes de {{ aluno.nome }}">
+                                <i class="fas fa-eye me-1"></i> Ver Detalhes
+                            </a>
+                            {% if user.groups.all.0.name == 'Administradores' %}
+                                <a href="{% url 'alunos:editar' pk=aluno.id %}" class="btn btn-secondary btn-sm edit-aluno" role="button" aria-label="Editar {{ aluno.nome }}">
+                                    <i class="fas fa-edit me-1"></i> Editar
+                                </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
-            {% empty %}
-                <div class="col-12 text-center py-5">
-                    <p class="lead">Nenhum aluno encontrado</p>
-                </div>
-            {% endfor %}
-        </div>
+            </div>
+        {% empty %}
+            <div class="col-12 text-center py-5">
+                <p class="lead">Nenhum aluno encontrado</p>
+            </div>
+        {% endfor %}
     {% else %}
-        <div class="alert alert-info" role="alert">
-            <i class="fas fa-info-circle me-2"></i> Nenhum aluno encontrado com os critérios de busca definidos.
+        <div class="col-12">
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle me-2"></i> Nenhum aluno encontrado com os critérios de busca definidos.
+            </div>
         </div>
     {% endif %}
 </div>
@@ -74,7 +74,7 @@
 {% endif %}
 
 {% if has_more and infinite_scroll %}
-<div id="loading-indicator" class="text-center py-3 d-none">
+<div id="loading-indicator" class="text-center py-3 d-none" aria-live="polite">
     <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Carregando mais alunos...</span>
     </div>
@@ -100,39 +100,39 @@
     
     /* Estilos para visualização em lista */
     .alunos-list .row {
-        flex-direction: column;
+        flex-direction: column !important;
     }
     
     .alunos-list .aluno-item {
-        width: 100%;
-        max-width: 100%;
-        flex: 0 0 100%;
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
         margin-bottom: 10px;
     }
     
     .alunos-list .card {
-        flex-direction: row;
+        flex-direction: row !important;
     }
     
     .alunos-list .card-body {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.75rem 1.25rem;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 0.75rem 1.25rem !important;
     }
     
     .alunos-list .card-info {
-        display: flex;
-        flex-wrap: wrap;
-        flex: 1;
-        margin-left: 15px;
-        margin-right: 15px;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        flex: 1 !important;
+        margin-left: 15px !important;
+        margin-right: 15px !important;
     }
     
     .alunos-list .card-info p {
-        margin-right: 15px;
-        margin-bottom: 0.5rem;
+        margin-right: 15px !important;
+        margin-bottom: 0.5rem !important;
     }
     
     /* Limitar texto do nome para não quebrar o layout */
@@ -143,18 +143,47 @@
         max-width: 100%;
     }
     
+    /* Container para foto */
+    .foto-container {
+        width: 50px;
+        height: 50px;
+        overflow: hidden;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    
     /* Otimizações para mobile */
     @media (max-width: 767.98px) {
         .alunos-list .card-body {
-            flex-direction: column;
-            align-items: flex-start;
+            flex-direction: column !important;
+            align-items: flex-start !important;
         }
         
         .alunos-list .card-info {
-            margin-left: 0;
-            margin-right: 0;
-            width: 100%;
-            margin-bottom: 15px;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: 100% !important;
+            margin-bottom: 15px !important;
         }
     }
 </style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar e remover qualquer duplicata que possa existir
+    const cards = document.querySelectorAll('.aluno-item');
+    const seenIds = new Set();
+    
+    cards.forEach(card => {
+        const id = card.getAttribute('data-aluno-id');
+        if (id) {
+            if (seenIds.has(id)) {
+                // Remover duplicata
+                card.remove();
+                console.log('Card duplicado removido: ' + id);
+            } else {
+                seenIds.add(id);
+            }
+        }
+    });
+});
+</script>
