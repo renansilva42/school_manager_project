@@ -1,23 +1,85 @@
-/* Estilos para a lista de alunos */
-.alunos-container {
+/* Estilos para a lista de alunos com melhorias de navegabilidade */
+
+/* Estilos básicos para o contêiner principal */
+#content-container {
+    position: relative;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+/* Grid View */
+#content-container.grid-view {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1rem;
+}
+
+/* List View */
+#content-container.list-view .aluno-card {
     width: 100%;
+    margin-bottom: 0.75rem;
 }
 
-.alunos-container.mobile-view {
-    grid-template-columns: 1fr;
+#content-container.list-view .card {
+    flex-direction: row;
 }
 
+#content-container.list-view .card-header {
+    width: 200px;
+    display: flex;
+    align-items: center;
+    border-bottom: 0;
+    border-right: 1px solid rgba(0,0,0,.125);
+}
+
+#content-container.list-view .card-body {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+}
+
+#content-container.list-view .foto-container {
+    width: 50px;
+    height: 50px;
+    margin-right: 1rem;
+}
+
+#content-container.list-view .card-text {
+    margin-right: 1rem;
+}
+
+/* Estilos para cards de alunos */
 .aluno-card {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    height: 100%;
+    margin-bottom: 15px;
+    cursor: pointer;
 }
 
 .aluno-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.aluno-card .card {
+    height: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.aluno-card .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0,0,0,.125);
+    padding: 0.75rem 1rem;
+}
+
+.aluno-card .card-title {
+    font-size: 1.1rem;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .foto-container {
@@ -25,6 +87,8 @@
     height: 80px;
     overflow: hidden;
     margin: 0 auto;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 .aluno-foto {
@@ -33,56 +97,296 @@
     object-fit: cover;
 }
 
-/* Melhorias para mobile */
+.card-text {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Estilos para botões e interações */
+.btn {
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+}
+
+.btn-group .btn {
+    border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+
+.btn-group .btn:last-child {
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+/* Estilos para modal e formulários */
+.modal-content {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    border-bottom: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.form-select,
+.form-control {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    padding: 0.5rem 0.75rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-select:focus,
+.form-control:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Melhorias para dispositivos móveis */
 @media (max-width: 768px) {
-    .alunos-container {
+    /* Layout para visualização em grade */
+    #content-container.grid-view {
         grid-template-columns: 1fr;
     }
     
-    .aluno-card {
-        margin-bottom: 10px;
+    /* Ajustes para visualização em lista */
+    #content-container.list-view .card {
+        flex-direction: column;
     }
     
+    #content-container.list-view .card-header {
+        width: 100%;
+        border-right: 0;
+        border-bottom: 1px solid rgba(0,0,0,.125);
+    }
+    
+    #content-container.list-view .card-body {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    /* Tamanho da foto e container */
     .foto-container {
         width: 60px;
         height: 60px;
     }
     
+    /* Padding e espaçamento */
     .card-body {
-        padding: 0.75rem;
+        padding: 1rem;
     }
     
+    .card-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    /* Aumentar áreas de toque */
+    .btn, 
+    .card-header, 
+    select, 
+    .form-control,
+    .form-select {
+        min-height: 44px;
+    }
+    
+    /* Ajustes para botões */
     .btn {
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
-        min-height: 38px;
-        min-width: 80px;
-        margin: 5px 0;
-    }
-    
-    /* Aumentar área de toque para botões em dispositivos móveis */
-    .btn-sm {
         padding: 0.5rem 0.75rem;
         font-size: 1rem;
+        margin-bottom: 5px;
+    }
+    
+    /* Ajustes para modais */
+    .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    /* Corrigir rolagem em modais */
+    .modal-open .modal {
+        overflow-y: auto !important;
+    }
+    
+    /* Espaçamento para labels e selects */
+    .form-label {
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    /* Espaçamento consistente */
+    .mb-3 {
+        margin-bottom: 1rem !important;
+    }
+    
+    /* Melhorar visibilidade dos botões */
+    .btn-primary,
+    .btn-info {
+        font-weight: 500;
+    }
+    
+    /* Evitar deslocamento de conteúdo durante o carregamento */
+    #content-container {
+        min-height: 200px;
     }
 }
 
-/* Loading indicator */
+/* Para dispositivos muito pequenos */
+@media (max-width: 576px) {
+    /* Ajustes de tamanho de fonte */
+    .card-title {
+        font-size: 1rem;
+    }
+    
+    .card-text {
+        font-size: 0.85rem;
+    }
+    
+    /* Empilhar botões no footer do modal */
+    .modal-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+        margin: 0.25rem 0;
+    }
+    
+    /* Melhorar alvos de toque */
+    .btn,
+    .form-select,
+    .form-control {
+        min-height: 44px;
+        font-size: 16px; /* Evitar zoom em iOS */
+    }
+    
+    /* Ajustes para a barra de pesquisa */
+    #search-form .input-group {
+        flex-wrap: nowrap;
+    }
+    
+    /* Melhorar visualização da contagem de resultados */
+    .card-header h6 {
+        font-size: 0.9rem;
+    }
+}
+
+/* Indicador de carregamento */
 #loading-indicator {
-    padding: 20px;
+    padding: 15px;
     clear: both;
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+#loading-indicator .spinner-border {
+    width: 2rem;
+    height: 2rem;
 }
 
 /* Melhorias na paginação */
 .pagination {
     justify-content: center;
     flex-wrap: wrap;
+    margin-top: 1rem;
 }
 
 .pagination .page-item .page-link {
-    min-width: 38px;
-    min-height: 38px;
+    min-width: 44px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Correção para estados de hover em dispositivos touch */
+@media (hover: none) {
+    .aluno-card:hover {
+        transform: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .btn:hover {
+        transform: none;
+    }
+}
+
+/* Feedback visual ao tocar nos cards */
+.aluno-card:active {
+    transform: translateY(1px);
+    transition: transform 0.1s;
+}
+
+/* Acessibilidade: foco visual para navegação por teclado */
+.aluno-card:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* Evitar que textos muito longos quebrem o layout */
+.text-truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Classes auxiliares para espaçamento */
+.pt-2 {
+    padding-top: 0.5rem !important;
+}
+
+.my-2 {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Garantir que os filtros sejam facilmente acionáveis */
+button[data-bs-toggle="modal"] {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+}
+
+/* Estilos para notificações e feedbacks */
+.alert {
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+/* Cores contrastantes para melhorar visibilidade */
+.text-primary {
+    color: #0d6efd !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Correção para campos de pesquisa em dispositivos móveis */
+@media (max-width: 576px) {
+    .row.g-2 {
+        margin-left: -0.25rem;
+        margin-right: -0.25rem;
+    }
+    
+    .col-8, .col-4 {
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+    }
 }

@@ -1,6 +1,6 @@
 /**
  * Script otimizado para rolagem infinita na lista de alunos
- * Com suporte aprimorado para dispositivos móveis
+ * Com suporte aprimorado para dispositivos móveis e maior compatibilidade com filtros
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
         contentContainer: '#content-container',
         loadingIndicator: '#loading-indicator',
         loadThreshold: 200, // Carregar quando estiver a 200px do final
-        debounceDelay: 100  // Atraso para o debounce em ms
+        debounceDelay: 150  // Atraso para o debounce em ms
     };
     
     // Estado
@@ -18,12 +18,26 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPage: 1,
         hasMore: true,
         touching: false,
-        url: window.location.href
+        url: window.location.href,
+        viewMode: localStorage.getItem('alunosViewPreference') || 'grid'
     };
     
     // Elementos
     const contentContainer = document.querySelector(config.contentContainer);
     const loadingIndicator = document.querySelector(config.loadingIndicator);
+    
+    // Detectar dispositivo móvel
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Aplicar classes específicas para mobile
+    if (isMobile) {
+        document.body.classList.add('mobile-device');
+        
+        // Aumentar área de toque para elementos interativos
+        document.querySelectorAll('.btn, .card-header, select, a').forEach(el => {
+            el.classList.add('mobile-touch-target');
+        });
+    }
     
     /**
      * Função para obter parâmetros da URL atual
@@ -57,9 +71,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.html) {
+                // Atualizar contagem de resultados se disponível
+                if (data.total_alunos !== undefined) {
+                    const countDisplay = document.getElementById('count-display');
+                    if (countDisplay) {
+                        countDisplay.textContent = data.total_alunos;
+                    }
+                }
+                
                 // Adicionar conteúdo
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = data.html;
@@ -69,18 +96,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Anexar ao contêiner
                 if (data.mode === 'replace') {
-                    contentContainer.innerHTML = tempDiv.innerHTML;
+                    contentContainer.innerHTML = '';
+                    Array.from(tempDiv.children).forEach(child => {
+                        contentContainer.appendChild(child);
+                    });
                 } else {
-                    contentContainer.appendChild(tempDiv);
+                    Array.from(tempDiv.children).forEach(child => {
+                        contentContainer.appendChild(child);
+                    });
                 }
                 
                 // Atualizar estado
                 state.currentPage = data.current_page;
                 state.hasMore = data.has_more;
                 
+                // Aplicar visualização atual (grid ou lista)
+                applyViewMode();
+                
                 // Se não houver mais páginas, remover o indicador de carregamento
                 if (!state.hasMore) {
-                    loadingIndicator?.remove();
+                    loadingIndicator?.classList.add('d-none');
                 }
             }
         })
@@ -92,6 +127,16 @@ document.addEventListener('DOMContentLoaded', function() {
             state.loading = false;
             hideLoading();
         });
+    }
+    
+    /**
+     * Aplicar modo de visualização atual (grid ou lista)
+     */
+    function applyViewMode() {
+        if (contentContainer) {
+            contentContainer.classList.remove('grid-view', 'list-view');
+            contentContainer.classList.add(`${state.viewMode}-view`);
+        }
     }
     
     /**
@@ -117,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function showError(message) {
         const errorDiv = document.createElement('div');
-        errorDiv.className = 'alert alert-danger mt-3';
+        errorDiv.className = 'alert alert-danger mt-3 mx-3';
         errorDiv.textContent = message;
         
         // Remover após 5 segundos
@@ -135,24 +180,57 @@ document.addEventListener('DOMContentLoaded', function() {
         const cards = container.querySelectorAll('.aluno-card');
         
         cards.forEach(card => {
-            // Melhor maneira de lidar com eventos de toque em dispositivos móveis
-            card.addEventListener('touchstart', function() {
-                state.touching = true;
-            }, { passive: true });
-            
-            card.addEventListener('touchend', function(e) {
-                if (state.touching) {
-                    // Prevenir propagação para evitar comportamentos inesperados
-                    e.stopPropagation();
+            // Melhorar comportamento em dispositivos móveis
+            if (isMobile) {
+                // Prevenir comportamento fantasma (ghost clicks)
+                card.addEventListener('touchstart', function(e) {
+                    state.touching = true;
+                    state.touchStartX = e.touches[0].clientX;
+                    state.touchStartY = e.touches[0].clientY;
+                }, { passive: true });
+                
+                card.addEventListener('touchmove', function(e) {
+                    if (!state.touching) return;
                     
-                    // Encontrar o link de detalhes e navegar para ele
+                    // Calcular a distância do movimento
+                    const touchX = e.touches[0].clientX;
+                    const touchY = e.touches[0].clientY;
+                    const diffX = Math.abs(touchX - state.touchStartX);
+                    const diffY = Math.abs(touchY - state.touchStartY);
+                    
+                    // Se moveu mais de 10px, considerar como scroll e não como toque
+                    if (diffX > 10 || diffY > 10) {
+                        state.touching = false;
+                    }
+                }, { passive: true });
+                
+                card.addEventListener('touchend', function(e) {
+                    if (state.touching) {
+                        // Encontrar o link de detalhes e navegar para ele
+                        const detailsLink = this.querySelector('.view-details');
+                        if (detailsLink && detailsLink.href) {
+                            e.preventDefault();
+                            window.location.href = detailsLink.href;
+                        }
+                    }
+                    state.touching = false;
+                });
+            }
+            
+            // Melhorar acessibilidade
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('role', 'button');
+            
+            // Adicionar navegação por teclado
+            card.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
                     const detailsLink = this.querySelector('.view-details');
-                    if (detailsLink) {
+                    if (detailsLink && detailsLink.href) {
                         window.location.href = detailsLink.href;
                     }
                 }
-                state.touching = false;
-            }, { passive: false });
+            });
         });
     }
     
@@ -183,10 +261,47 @@ document.addEventListener('DOMContentLoaded', function() {
         const scrollTop = window.scrollY || document.documentElement.scrollTop;
         const clientHeight = window.innerHeight || document.documentElement.clientHeight;
         
-        if (scrollHeight - scrollTop - clientHeight <= config.loadThreshold) {
+        // Ajustar threshold para carregar mais cedo em dispositivos móveis
+        const threshold = isMobile ? config.loadThreshold * 1.5 : config.loadThreshold;
+        
+        if (scrollHeight - scrollTop - clientHeight <= threshold) {
             loadMoreContent();
         }
     }
+    
+    // Monitorar alterações nos dropdowns de filtro
+    const filterForm = document.getElementById('filter-form');
+    const searchForm = document.getElementById('search-form');
+    
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            // Reiniciar estado ao aplicar filtros
+            state.currentPage = 1;
+            state.hasMore = true;
+            state.loading = false;
+        });
+    }
+    
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            // Reiniciar estado ao aplicar busca
+            state.currentPage = 1;
+            state.hasMore = true;
+            state.loading = false;
+        });
+    }
+    
+    // Monitore mudanças na visualização (grid/list)
+    document.querySelectorAll('#viewGrid, #viewList').forEach(button => {
+        button.addEventListener('click', function() {
+            if (this.id === 'viewGrid') {
+                state.viewMode = 'grid';
+            } else {
+                state.viewMode = 'list';
+            }
+            applyViewMode();
+        });
+    });
     
     // Configurar eventos
     window.addEventListener('scroll', debounce(checkEndOfPage, config.debounceDelay), { passive: true });
@@ -194,6 +309,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Configurar eventos para cards iniciais
     setupCardEvents(document);
+    
+    // Aplicar modo de visualização inicial
+    applyViewMode();
     
     // Checar inicialmente se precisa carregar mais (para telas grandes)
     setTimeout(checkEndOfPage, 500);
