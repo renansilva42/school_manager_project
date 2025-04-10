@@ -1,64 +1,70 @@
 {% load static %}
 
-<div id="alunos-container" class="alunos-container{% if is_mobile %} mobile-view{% endif %} alunos-grid">
-    <div class="row g-3">
-        {% for aluno in alunos %}
-        <div class="col-md-4 col-sm-6 col-12 aluno-item" data-aluno-id="{{ aluno.id }}" tabindex="0">
-            <div class="card shadow-sm h-100">
-                <div class="card-body d-flex flex-column">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="foto-container me-3">
-                            <img src="{{ aluno.get_foto_url }}" class="rounded-circle" alt="Foto de {{ aluno.nome }}" loading="lazy" style="width: 50px; height: 50px; object-fit: cover;">
+<div id="alunos-container" class="alunos-grid">
+    {% if alunos %}
+        <div class="row g-3">
+            {% for aluno in alunos %}
+                <div class="col-md-4 col-sm-6 col-12 aluno-item" data-aluno-id="{{ aluno.id }}" tabindex="0">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="foto-container me-3">
+                                    <img src="{{ aluno.get_foto_url }}" class="rounded-circle" alt="Foto de {{ aluno.nome }}" loading="lazy" style="width: 50px; height: 50px; object-fit: cover;">
+                                </div>
+                                <div>
+                                    <h5 class="card-title mb-0 text-truncate" style="max-width: 200px;">{{ aluno.nome }}</h5>
+                                    <small class="text-muted">Mat: {{ aluno.matricula }}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="card-info mb-3">
+                                <p class="mb-1"><i class="fas fa-graduation-cap me-2"></i>
+                                    {% if aluno.nivel == 'EFI' %}
+                                        Ensino Fundamental I
+                                    {% elif aluno.nivel == 'EFF' %}
+                                        Ensino Fundamental II
+                                    {% else %}
+                                        {{ aluno.get_nivel_display }}
+                                    {% endif %}
+                                </p>
+                                <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i>
+                                    {{ aluno.ano }}º Ano
+                                </p>
+                                <p class="mb-1"><i class="fas fa-clock me-2"></i>
+                                    {% if aluno.turno == 'M' %}
+                                        Manhã
+                                    {% elif aluno.turno == 'T' %}
+                                        Tarde
+                                    {% else %}
+                                        {{ aluno.get_turno_display }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                            
+                            <div class="mt-auto">
+                                <a href="{% url 'alunos:detalhe' pk=aluno.id %}" class="btn btn-primary btn-sm view-details" role="button" aria-label="Ver detalhes de {{ aluno.nome }}">
+                                    <i class="fas fa-eye me-1"></i> Ver Detalhes
+                                </a>
+                                {% if user.groups.all.0.name == 'Administradores' %}
+                                    <a href="{% url 'alunos:editar' pk=aluno.id %}" class="btn btn-secondary btn-sm">
+                                        <i class="fas fa-edit me-1"></i> Editar
+                                    </a>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div>
-                            <h5 class="card-title mb-0">{{ aluno.nome }}</h5>
-                            <small class="text-muted">Mat: {{ aluno.matricula }}</small>
-                        </div>
-                    </div>
-                    
-                    <div class="card-info mb-3">
-                        <p class="mb-1"><i class="fas fa-graduation-cap me-2"></i>
-                            {% if aluno.nivel == 'EFI' %}
-                                Ensino Fundamental I
-                            {% elif aluno.nivel == 'EFF' %}
-                                Ensino Fundamental II
-                            {% else %}
-                                {{ aluno.get_nivel_display }}
-                            {% endif %}
-                        </p>
-                        <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i>
-                            {{ aluno.ano }}º Ano
-                        </p>
-                        <p class="mb-1"><i class="fas fa-clock me-2"></i>
-                            {% if aluno.turno == 'M' %}
-                                Manhã
-                            {% elif aluno.turno == 'T' %}
-                                Tarde
-                            {% else %}
-                                {{ aluno.get_turno_display }}
-                            {% endif %}
-                        </p>
-                    </div>
-                    
-                    <div class="mt-auto">
-                        <a href="{% url 'alunos:detalhe' pk=aluno.id %}" class="btn btn-primary btn-sm view-details" role="button" aria-label="Ver detalhes de {{ aluno.nome }}">
-                            <i class="fas fa-eye me-1"></i> Ver Detalhes
-                        </a>
-                        {% if user.groups.all.0.name == 'Administradores' %}
-                            <a href="{% url 'alunos:editar' pk=aluno.id %}" class="btn btn-secondary btn-sm">
-                                <i class="fas fa-edit me-1"></i> Editar
-                            </a>
-                        {% endif %}
                     </div>
                 </div>
-            </div>
+            {% empty %}
+                <div class="col-12 text-center py-5">
+                    <p class="lead">Nenhum aluno encontrado</p>
+                </div>
+            {% endfor %}
         </div>
-        {% empty %}
-        <div class="col-12 text-center py-5">
-            <p class="lead">Nenhum aluno encontrado</p>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            <i class="fas fa-info-circle me-2"></i> Nenhum aluno encontrado com os critérios de busca definidos.
         </div>
-        {% endfor %}
-    </div>
+    {% endif %}
 </div>
 
 {% if is_paginated and not infinite_scroll %}
@@ -127,6 +133,14 @@
     .alunos-list .card-info p {
         margin-right: 15px;
         margin-bottom: 0.5rem;
+    }
+    
+    /* Limitar texto do nome para não quebrar o layout */
+    .card-title.text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
     }
     
     /* Otimizações para mobile */

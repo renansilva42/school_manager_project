@@ -192,6 +192,9 @@ class AlunoListView(BaseAlunoView, ListView):
             
             # Otimização: selecione apenas os campos necessários para a exibição na lista
             queryset = queryset.only('id', 'nome', 'matricula', 'nivel', 'turno', 'ano', 'foto')
+            
+            # Garantir que não existam duplicatas usando distinct() por id
+            queryset = queryset.distinct('id')
                 
             logger.debug(f"Queryset final count: {queryset.count()}")
             return queryset.order_by('nome')
