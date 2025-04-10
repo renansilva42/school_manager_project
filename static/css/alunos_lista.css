@@ -213,7 +213,7 @@
 
 /* Cabeçalho do card otimizado */
 .aluno-card .card-header {
-    background-color: #e3e6ea; /* Ligeiramente mais escuro que o original */
+    background-color: #343a40; /* Fundo escuro para o cabeçalho */
     border-bottom: 1px solid rgba(0,0,0,.125);
     padding: 0.75rem 1rem;
     display: flex;
@@ -221,8 +221,13 @@
 }
 
 .card-header h6.font-weight-bold {
-    color: #004085; /* Azul escuro com melhor contraste */
+    color: #ffffff; /* Texto branco para o cabeçalho */
     font-weight: 700 !important; /* Fonte mais grossa */
+}
+
+/* Reforçar o contraste para o contador em fundo escuro */
+.card-header h6.font-weight-bold span {
+    color: #64B5F6 !important; /* Azul claro para garantir contraste com fundo escuro */
 }
 
 .aluno-card .card-title {
@@ -611,12 +616,12 @@
 /* Estilo para o contador de resultados - melhorando contraste */
 #count-display {
     font-weight: bold;
-    color: #0056b3; /* Azul mais escuro para maior contraste */
-    text-shadow: 0 0 1px rgba(255,255,255,0.5); /* Adiciona sutil borda clara ao texto */
+    color: #64B5F6; /* Azul mais claro e vibrante para contraste */
+    text-shadow: 0 0 1px rgba(0,0,0,0.2); /* Sombra sutil para melhorar a legibilidade */
 }
 
 .font-weight-bold.text-primary {
-    color: #004085 !important; /* Azul mais escuro com maior contraste */
+    color: #0D47A1 !important; /* Azul escuro para o título "Resultados:" */
 }
 
 /* Ajuste para o alinhamento dos ícones */
