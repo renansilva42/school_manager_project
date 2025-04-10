@@ -1,25 +1,26 @@
 /**
- * Script para gerenciar o scroll infinito na página de lista de alunos
- * Versão final com controle rigoroso de duplicatas
+ * Script otimizado para gerenciar o scroll infinito na página de lista de alunos
+ * com suporte a diferentes modos de visualização e eliminação de duplicatas
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Elementos DOM
+    // Elementos DOM principais
     const contentContainer = document.getElementById('content-container');
-    const alunosContainer = document.querySelector('#content-container .row');
     const loadingIndicator = document.getElementById('loading-indicator');
     const endOfListIndicator = document.getElementById('end-of-list');
     const countDisplay = document.getElementById('count-display');
+    const viewGrid = document.getElementById('viewGrid');
+    const viewList = document.getElementById('viewList');
     
-    // Inicialização apenas se o container existir
+    // Sair se o contêiner principal não existir
     if (!contentContainer) {
-        console.warn('Contêiner de conteúdo não encontrado');
+        console.warn('Container principal não encontrado. Abortando inicialização do scroll infinito.');
         return;
     }
     
-    // Conjunto para rastrear IDs dos alunos já renderizados
+    // Conjunto para rastrear IDs dos alunos já carregados
     const loadedIds = new Set();
     
-    // Inicializar loadedIds com os IDs já presentes na página
+    // Inicializar conjunto de IDs com alunos já presentes na página
     function initializeLoadedIds() {
         document.querySelectorAll('.aluno-item').forEach(item => {
             const alunoId = item.getAttribute('data-aluno-id');
@@ -27,7 +28,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadedIds.add(alunoId);
             }
         });
-        console.log(`IDs inicializados: ${loadedIds.size}`);
+        console.log(`IDs inicializados: ${loadedIds.size} alunos`);
+        
+        // Verificar duplicatas iniciais
+        removeDuplicates();
     }
     
     // Estado do scroll infinito
@@ -35,26 +39,12 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPage: 1,
         isLoading: false,
         hasMoreContent: true,
-        duplicatesDetected: 0,
-        totalLoaded: 0
+        viewMode: localStorage.getItem('alunosViewPreference') || 'grid',
+        totalLoaded: document.querySelectorAll('.aluno-item').length
     };
     
     // Detectar dispositivo móvel para ajustes de UI
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    // Verificar se o atributo infinite_scroll existe
-    const hasInfiniteScroll = contentContainer.hasAttribute('data-infinite-scroll') || 
-                             window.location.search.includes('infinite_scroll=true');
-    
-    if (!hasInfiniteScroll) {
-        console.log('Scroll infinito não ativado nesta página');
-        return;
-    }
-    
-    // Aplicar classes específicas para mobile
-    if (isMobile) {
-        document.body.classList.add('mobile-device');
-    }
     
     /**
      * Obter parâmetros da URL atual para a próxima requisição
@@ -100,12 +90,46 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * Mostrar indicador de fim da lista
+     * Mostrar mensagem de fim da lista
      */
     function showEndOfList() {
         if (endOfListIndicator) {
             endOfListIndicator.classList.remove('d-none');
         }
+        
+        if (loadingIndicator) {
+            loadingIndicator.classList.add('d-none');
+        }
+    }
+    
+    /**
+     * Remover duplicatas da lista atual
+     */
+    function removeDuplicates() {
+        const alunosContainer = contentContainer.querySelector('.row') || contentContainer;
+        if (!alunosContainer) return 0;
+        
+        const seen = new Set();
+        let removed = 0;
+        
+        alunosContainer.querySelectorAll('.aluno-item').forEach(item => {
+            const id = item.getAttribute('data-aluno-id');
+            if (!id) return;
+            
+            if (seen.has(id)) {
+                // Duplicata encontrada, remover
+                item.remove();
+                removed++;
+            } else {
+                seen.add(id);
+            }
+        });
+        
+        if (removed > 0) {
+            console.log(`Removidas ${removed} duplicatas`);
+        }
+        
+        return removed;
     }
     
     /**
@@ -138,35 +162,65 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * Extrair e processar elementos de alunos do HTML recebido
+     * Aplicar modo de visualização (grid ou lista)
      */
-    function processAlunosHtml(html) {
+    function applyViewMode(mode) {
+        // Validar o modo
+        if (mode !== 'grid' && mode !== 'list') {
+            mode = 'grid'; // Padrão grid
+        }
+        
+        // Atualizar estado
+        state.viewMode = mode;
+        
+        // Aplicar classes ao container
+        contentContainer.classList.remove('alunos-grid', 'alunos-list');
+        contentContainer.classList.add(`alunos-${mode}`);
+        
+        // Atualizar botões
+        if (viewGrid && viewList) {
+            if (mode === 'grid') {
+                viewGrid.classList.add('active');
+                viewList.classList.remove('active');
+            } else {
+                viewList.classList.add('active');
+                viewGrid.classList.remove('active');
+            }
+        }
+        
+        // Salvar preferência
+        localStorage.setItem('alunosViewPreference', mode);
+    }
+    
+    /**
+     * Processar HTML recebido do servidor 
+     */
+    function processHtml(html) {
         // Criar elemento temporário para analisar o HTML
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         
-        // Remover elementos de paginação se presentes
+        // Remover elementos de paginação
         tempDiv.querySelectorAll('.pagination, .pagination-container').forEach(el => el.remove());
         
-        // Obter todos os elementos de alunos
-        const alunoElements = tempDiv.querySelectorAll('.aluno-item');
+        // Encontrar o container dos alunos no HTML recebido
+        let rowContainer = tempDiv.querySelector('.row');
+        if (!rowContainer) {
+            // Se não houver container de linha, usar o container principal
+            rowContainer = tempDiv;
+        }
+        
+        const alunoElements = rowContainer.querySelectorAll('.aluno-item');
         const fragment = document.createDocumentFragment();
         let newItems = 0;
         let duplicates = 0;
         
-        // Array para armazenar IDs para verificação de duplicatas no console
-        const idList = [];
-        
+        // Processar cada elemento de aluno
         alunoElements.forEach(element => {
             const alunoId = element.getAttribute('data-aluno-id');
             
-            // Registrar todos os IDs para debug
-            if (alunoId) {
-                idList.push(alunoId);
-            }
-            
             if (!alunoId) {
-                console.warn('Elemento de aluno sem ID detectado:', element);
+                console.warn('Elemento de aluno sem ID detectado');
                 return;
             }
             
@@ -178,18 +232,8 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 // Este é um aluno duplicado, ignorar
                 duplicates++;
-                console.log(`Aluno duplicado ignorado (ID: ${alunoId})`);
             }
         });
-        
-        // Verificar duplicatas no lote recebido
-        const uniqueIds = new Set(idList);
-        if (idList.length !== uniqueIds.size) {
-            console.warn(`Aviso: ${idList.length - uniqueIds.size} duplicatas encontradas no HTML recebido.`);
-        }
-        
-        state.duplicatesDetected += duplicates;
-        state.totalLoaded += newItems;
         
         return { fragment, newItems, duplicates };
     }
@@ -226,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function() {
             hideLoading();
             
             // Verificar se há mais conteúdo
-            state.hasMoreContent = data.has_more;
+            state.hasMoreContent = data.has_more === true;
             
             // Atualizar contador de resultados
             if (data.total_alunos !== undefined && countDisplay) {
@@ -234,47 +278,47 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (data.html) {
-                // Se for para substituir, limpar conteúdo e IDs carregados
+                // Se for modo replace, limpar conteúdo e IDs
                 if (data.mode === 'replace') {
-                    if (alunosContainer) {
-                        alunosContainer.innerHTML = '';
-                    } else if (contentContainer) {
-                        // Encontrar o container de linha ou criar um
-                        let rowContainer = contentContainer.querySelector('.row');
-                        if (!rowContainer) {
-                            rowContainer = document.createElement('div');
-                            rowContainer.className = 'row g-3';
-                            contentContainer.appendChild(rowContainer);
-                        }
+                    // Encontrar o container onde adicionar o conteúdo
+                    const rowContainer = contentContainer.querySelector('.row');
+                    if (rowContainer) {
                         rowContainer.innerHTML = '';
+                    } else {
+                        contentContainer.innerHTML = '';
                     }
+                    
+                    // Limpar IDs carregados
                     loadedIds.clear();
+                    state.totalLoaded = 0;
                 }
                 
                 // Processar o HTML recebido
-                const { fragment, newItems, duplicates } = processAlunosHtml(data.html);
+                const { fragment, newItems, duplicates } = processHtml(data.html);
                 
-                // Adicionar novos elementos ao contêiner
-                const targetContainer = alunosContainer || contentContainer.querySelector('.row');
-                
-                if (targetContainer) {
-                    targetContainer.appendChild(fragment);
-                    
-                    // Log de status
-                    console.log(`Página ${data.current_page}: ${newItems} novos alunos adicionados, ${duplicates} duplicatas ignoradas.`);
-                    
-                    // Se adicionamos itens, então atualizar o comportamento dos elementos
-                    if (newItems > 0) {
-                        // Aqui você pode adicionar comportamentos específicos para os novos elementos
-                    }
+                // Adicionar novos elementos ao container
+                const rowContainer = contentContainer.querySelector('.row');
+                if (rowContainer) {
+                    rowContainer.appendChild(fragment);
                 } else {
-                    console.error('Container para alunos não encontrado');
+                    contentContainer.appendChild(fragment);
                 }
+                
+                // Log de status
+                console.log(`Página ${data.current_page}: ${newItems} novos alunos adicionados, ${duplicates} duplicatas evitadas`);
+                
+                // Atualizar total carregado
+                state.totalLoaded += newItems;
+                
+                // Atualizar estado
+                state.currentPage = data.current_page;
+                
+                // Reajustar visualização conforme preferência salva
+                applyViewMode(state.viewMode);
                 
                 // Se não adicionamos nenhum item novo, mas ainda há mais páginas,
                 // tentar carregar a próxima página automaticamente
                 if (newItems === 0 && state.hasMoreContent) {
-                    state.currentPage++;
                     setTimeout(() => {
                         state.isLoading = false;
                         loadMoreContent();
@@ -282,22 +326,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                // Atualizar estado
-                state.currentPage = data.current_page;
-            } else {
-                state.hasMoreContent = false;
-            }
-            
-            // Verificar se terminamos todo o conteúdo
-            if (!state.hasMoreContent) {
-                showEndOfList();
-                
-                // Se detectamos duplicatas durante o carregamento, mostrar aviso no console
-                if (state.duplicatesDetected > 0) {
-                    console.warn(`Total de ${state.duplicatesDetected} cards duplicados foram ignorados durante o carregamento.`);
+                // Se não há mais conteúdo, mostrar indicador de fim da lista
+                if (!state.hasMoreContent) {
+                    showEndOfList();
+                    console.log(`Carregamento completo: ${state.totalLoaded} alunos carregados no total`);
                 }
-                
-                console.log(`Carregamento completo: ${state.totalLoaded} alunos carregados no total.`);
+            } else {
+                // Sem HTML recebido
+                state.hasMoreContent = false;
+                showEndOfList();
             }
         })
         .catch(error => {
@@ -311,48 +348,50 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * Alternar entre visualizações de grid e lista
+     * Configurar alternância entre visualizações grid e lista
      */
     function setupViewToggle() {
-        const gridButton = document.getElementById('viewGrid');
-        const listButton = document.getElementById('viewList');
+        if (!viewGrid || !viewList) return;
         
-        if (!gridButton || !listButton) return;
+        // Adicionar listeners aos botões
+        viewGrid.addEventListener('click', function() {
+            applyViewMode('grid');
+        });
         
-        // Obter preferência salva ou usar grid como padrão
-        const savedView = localStorage.getItem('alunosViewPreference') || 'grid';
+        viewList.addEventListener('click', function() {
+            applyViewMode('list');
+        });
         
-        // Função para aplicar a visualização
-        function applyView(view) {
-            if (contentContainer) {
-                contentContainer.classList.remove('alunos-grid', 'alunos-list');
-                contentContainer.classList.add(`alunos-${view}`);
-                
-                // Atualizar estado dos botões
-                if (view === 'grid') {
-                    gridButton.classList.add('active');
-                    listButton.classList.remove('active');
-                } else {
-                    listButton.classList.add('active');
-                    gridButton.classList.remove('active');
-                }
-                
-                // Salvar preferência
-                localStorage.setItem('alunosViewPreference', view);
+        // Aplicar modo inicial
+        applyViewMode(state.viewMode);
+    }
+    
+    /**
+     * Configurar listeners para formulários de busca e filtro
+     */
+    function setupForms() {
+        const searchForm = document.getElementById('search-form');
+        const filterForm = document.getElementById('filter-form');
+        
+        function resetState() {
+            state.currentPage = 1;
+            state.hasMoreContent = true;
+            state.isLoading = false;
+            state.totalLoaded = 0;
+            loadedIds.clear();
+            
+            if (endOfListIndicator) {
+                endOfListIndicator.classList.add('d-none');
             }
         }
         
-        // Aplicar visualização inicial
-        applyView(savedView);
+        if (searchForm) {
+            searchForm.addEventListener('submit', resetState);
+        }
         
-        // Adicionar event listeners
-        gridButton.addEventListener('click', () => applyView('grid'));
-        listButton.addEventListener('click', () => applyView('list'));
-    }
-    
-    // Referência para compatibilidade com código existente
-    function applyViewMode() {
-        setupViewToggle();
+        if (filterForm) {
+            filterForm.addEventListener('submit', resetState);
+        }
     }
     
     /**
@@ -390,86 +429,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * Limpar duplicatas que possam ter escapado do backend
-     */
-    function cleanupDuplicates() {
-        const container = alunosContainer || contentContainer.querySelector('.row');
-        if (!container) return;
-        
-        const idSet = new Set();
-        let removed = 0;
-        
-        container.querySelectorAll('.aluno-item').forEach(el => {
-            const id = el.getAttribute('data-aluno-id');
-            if (!id) return;
-            
-            if (idSet.has(id)) {
-                // É uma duplicata
-                el.remove();
-                removed++;
-            } else {
-                idSet.add(id);
-            }
-        });
-        
-        if (removed > 0) {
-            console.warn(`Limpeza final: ${removed} duplicatas removidas do DOM`);
-        }
-    }
-    
-    /**
      * Inicializar scroll infinito
      */
     function init() {
         try {
-            // Inicializar conjunto de IDs já carregados
+            // Inicializar IDs já carregados
             initializeLoadedIds();
             
-            // Configurar alternância de visualização (grid/list)
+            // Configurar alternância de visualização
             setupViewToggle();
             
-            // Remover elementos de paginação existentes
-            document.querySelectorAll('.pagination, .pagination-container').forEach(el => {
-                el.remove();
-            });
-            
-            // Garantir que não haja duplicatas no DOM inicial
-            cleanupDuplicates();
-            
-            // Monitorar formulários de filtro e busca
-            const filterForm = document.getElementById('filter-form');
-            const searchForm = document.getElementById('search-form');
-            
-            function resetState() {
-                state.currentPage = 1;
-                state.hasMoreContent = true;
-                state.isLoading = false;
-                state.duplicatesDetected = 0;
-                state.totalLoaded = 0;
-                loadedIds.clear();
-            }
-            
-            if (filterForm) {
-                filterForm.addEventListener('submit', resetState);
-            }
-            
-            if (searchForm) {
-                searchForm.addEventListener('submit', resetState);
-            }
+            // Configurar formulários
+            setupForms();
             
             // Adicionar listener de scroll
-            window.addEventListener('scroll', debounce(checkEndOfPage, 100), { passive: true });
+            window.addEventListener('scroll', debounce(checkEndOfPage, 150), { passive: true });
             
-            // Verificar inicialmente se precisamos carregar mais conteúdo
-            window.addEventListener('load', () => {
-                // Verificar após o carregamento completo da página
-                setTimeout(checkEndOfPage, 500);
-            });
-            
-            // Adicionar listener de redimensionamento
-            window.addEventListener('resize', debounce(() => {
-                checkEndOfPage();
-            }, 200), { passive: true });
+            // Verificar inicialmente se já deve carregar mais conteúdo
+            setTimeout(checkEndOfPage, 500);
             
             console.log('Scroll infinito inicializado com sucesso');
         } catch (e) {
@@ -480,20 +457,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar
     init();
     
-    // Expor API pública
+    // Expor API pública para uso externo
     window.infiniteScroll = {
         loadMore: loadMoreContent,
         reset: function() {
-            resetState();
+            state.currentPage = 1;
+            state.hasMoreContent = true;
+            state.isLoading = false;
+            state.totalLoaded = 0;
+            loadedIds.clear();
             
-            if (alunosContainer) {
-                alunosContainer.innerHTML = '';
+            const container = contentContainer.querySelector('.row');
+            if (container) {
+                container.innerHTML = '';
             }
             
             loadMoreContent();
         },
-        getLoadedIds: () => [...loadedIds],
         getState: () => ({...state}),
-        cleanup: cleanupDuplicates
+        getLoadedIds: () => [...loadedIds],
+        setViewMode: applyViewMode,
+        removeDuplicates: removeDuplicates
     };
 });
