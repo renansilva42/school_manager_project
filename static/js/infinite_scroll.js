@@ -22,6 +22,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar conjunto de IDs com alunos já presentes na página
     function initializeLoadedIds() {
+        // Limpar IDs anteriores para evitar problemas com mudanças de turma
+        loadedIds.clear();
+        
+        // Adicionar IDs da página atual
         document.querySelectorAll('.aluno-item').forEach(item => {
             const alunoId = item.getAttribute('data-aluno-id');
             if (alunoId) {
@@ -40,11 +44,45 @@ document.addEventListener('DOMContentLoaded', function() {
         isLoading: false,
         hasMoreContent: true,
         viewMode: localStorage.getItem('alunosViewPreference') || 'grid',
-        totalLoaded: document.querySelectorAll('.aluno-item').length
+        totalLoaded: document.querySelectorAll('.aluno-item').length,
+        lastUrl: window.location.href, // Guardar a última URL para detectar mudanças de filtro
+        lastFilterHash: calculateFilterHash() // Hash dos filtros atuais
     };
     
     // Detectar dispositivo móvel para ajustes de UI
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    /**
+     * Calcular hash dos filtros atuais para detectar mudanças
+     */
+    function calculateFilterHash() {
+        const urlParams = new URLSearchParams(window.location.search);
+        // Obter apenas os parâmetros de filtro relevantes
+        const filterParams = {
+            nivel: urlParams.get('nivel') || '',
+            turno: urlParams.get('turno') || '',
+            ano: urlParams.get('ano') || '',
+            search: urlParams.get('search') || ''
+        };
+        
+        // Criar uma string composta dos valores para usar como hash
+        return Object.values(filterParams).join('_');
+    }
+    
+    /**
+     * Verificar se os filtros mudaram desde o último carregamento
+     */
+    function haveFiltersChanged() {
+        const currentHash = calculateFilterHash();
+        const changed = currentHash !== state.lastFilterHash;
+        
+        if (changed) {
+            console.log('Filtros mudaram, atualizando hash');
+            state.lastFilterHash = currentHash;
+        }
+        
+        return changed;
+    }
     
     /**
      * Obter parâmetros da URL atual para a próxima requisição
@@ -100,6 +138,32 @@ document.addEventListener('DOMContentLoaded', function() {
         if (loadingIndicator) {
             loadingIndicator.classList.add('d-none');
         }
+    }
+    
+    /**
+     * Esconder mensagem de fim da lista
+     */
+    function hideEndOfList() {
+        if (endOfListIndicator) {
+            endOfListIndicator.classList.add('d-none');
+        }
+    }
+    
+    /**
+     * Verificar se a URL mudou (indica mudança de filtros)
+     */
+    function urlHasChanged() {
+        const currentUrl = window.location.href;
+        const urlChanged = currentUrl !== state.lastUrl;
+        
+        if (urlChanged) {
+            console.log('URL mudou, atualizando estado do scroll infinito');
+            state.lastUrl = currentUrl;
+            // Também atualizar o hash dos filtros
+            state.lastFilterHash = calculateFilterHash();
+        }
+        
+        return urlChanged;
     }
     
     /**
@@ -242,6 +306,15 @@ document.addEventListener('DOMContentLoaded', function() {
      * Carregar mais conteúdo via AJAX
      */
     function loadMoreContent() {
+        // Verificar se a URL mudou desde o último carregamento
+        // Isso significa que mudamos de página ou aplicamos filtros diferentes
+        if (urlHasChanged() || haveFiltersChanged()) {
+            console.log('URL ou filtros mudaram, reiniciando estado do scroll infinito');
+            resetState();
+            // Não carregar conteúdo agora - AlunosManager já deve ter carregado o conteúdo inicial
+            return;
+        }
+        
         if (state.isLoading || !state.hasMoreContent) return;
         
         state.isLoading = true;
@@ -373,25 +446,56 @@ document.addEventListener('DOMContentLoaded', function() {
         const searchForm = document.getElementById('search-form');
         const filterForm = document.getElementById('filter-form');
         
-        function resetState() {
-            state.currentPage = 1;
-            state.hasMoreContent = true;
-            state.isLoading = false;
-            state.totalLoaded = 0;
-            loadedIds.clear();
-            
-            if (endOfListIndicator) {
-                endOfListIndicator.classList.add('d-none');
-            }
+        // Redefinir o estado do scroll infinito quando há uma mudança de filtro
+        function resetFormState() {
+            console.log('Form submit detectado, resetando estado do scroll infinito');
+            resetState();
         }
         
         if (searchForm) {
-            searchForm.addEventListener('submit', resetState);
+            searchForm.addEventListener('submit', resetFormState);
         }
         
         if (filterForm) {
-            filterForm.addEventListener('submit', resetState);
+            filterForm.addEventListener('submit', resetFormState);
         }
+        
+        // Também monitorar alterações em selects de turmas e anos
+        const nivelSelect = document.getElementById('nivel');
+        const turnoSelect = document.getElementById('turno');
+        const anoSelect = document.getElementById('ano');
+        
+        // Quando qualquer um desses selects mudar, preparamos para uma atualização
+        [nivelSelect, turnoSelect, anoSelect].forEach(select => {
+            if (select) {
+                select.addEventListener('change', function() {
+                    console.log('Select de filtro alterado, preparando para resetar scroll infinito');
+                    // Não resetamos imediatamente, pois o AlunosManager fará isso ao carregar novos dados
+                });
+            }
+        });
+    }
+    
+    /**
+     * Resetar completamente o estado do scroll infinito
+     */
+    function resetState() {
+        console.log('Resetando estado do scroll infinito');
+        state.currentPage = 1;
+        state.hasMoreContent = true;
+        state.isLoading = false;
+        state.totalLoaded = 0;
+        loadedIds.clear();
+        
+        // Atualizar URL atual e hash de filtros
+        state.lastUrl = window.location.href;
+        state.lastFilterHash = calculateFilterHash();
+        
+        // Esconder indicador de fim da lista
+        hideEndOfList();
+        
+        // Reinicializar IDs carregados
+        initializeLoadedIds();
     }
     
     /**
@@ -410,6 +514,12 @@ document.addEventListener('DOMContentLoaded', function() {
      * Verificar se chegou ao final da página
      */
     function checkEndOfPage() {
+        // Verificar se houve mudança de filtros antes de tentar carregar mais
+        if (urlHasChanged() || haveFiltersChanged()) {
+            console.log('URL ou filtros mudaram, não vamos carregar mais conteúdo automaticamente');
+            return;
+        }
+        
         if (!state.hasMoreContent || state.isLoading) return;
         
         const scrollHeight = Math.max(
@@ -429,6 +539,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
+     * Limpa o container de alunos e os IDs carregados
+     */
+    function clearContainer() {
+        const rowContainer = contentContainer.querySelector('.row');
+        if (rowContainer) {
+            rowContainer.innerHTML = '';
+        } else {
+            contentContainer.innerHTML = '';
+        }
+        
+        loadedIds.clear();
+        state.totalLoaded = 0;
+        hideEndOfList();
+    }
+    
+    /**
      * Inicializar scroll infinito
      */
     function init() {
@@ -445,6 +571,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Adicionar listener de scroll
             window.addEventListener('scroll', debounce(checkEndOfPage, 150), { passive: true });
             
+            // Monitorar mudanças na URL (navegação do histórico)
+            window.addEventListener('popstate', function() {
+                console.log('Navegação do histórico detectada, resetando estado');
+                resetState();
+            });
+            
             // Verificar inicialmente se já deve carregar mais conteúdo
             setTimeout(checkEndOfPage, 500);
             
@@ -457,26 +589,38 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar
     init();
     
-    // Expor API pública para uso externo
+    // Expor API pública para uso externo (para integração com AlunosManager)
     window.infiniteScroll = {
         loadMore: loadMoreContent,
+        
         reset: function() {
-            state.currentPage = 1;
-            state.hasMoreContent = true;
-            state.isLoading = false;
-            state.totalLoaded = 0;
-            loadedIds.clear();
-            
-            const container = contentContainer.querySelector('.row');
-            if (container) {
-                container.innerHTML = '';
-            }
-            
+            resetState();
+            // Não carregar automaticamente, deixar o AlunosManager controlar isso
+        },
+        
+        fullReset: function() {
+            resetState();
+            clearContainer();
             loadMoreContent();
         },
+        
+        clearCache: function() {
+            loadedIds.clear();
+            console.log('Cache de IDs de alunos limpo');
+        },
+        
         getState: () => ({...state}),
+        
         getLoadedIds: () => [...loadedIds],
+        
         setViewMode: applyViewMode,
-        removeDuplicates: removeDuplicates
+        
+        removeDuplicates: removeDuplicates,
+        
+        // Método para o AlunosManager registrar novos IDs após uma carga de dados
+        registerLoadedIds: function() {
+            initializeLoadedIds();
+            console.log('IDs recarregados após atualização de dados');
+        }
     };
 });

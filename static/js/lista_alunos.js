@@ -75,7 +75,14 @@ class AlunosManager {
             // Flag para skip da primeira requisição AJAX
             skipInitialAjaxRequest: hasInitialData,
             // Flag para indicar se a requisição foi iniciada pelo usuário
-            userInitiatedRequest: false
+            userInitiatedRequest: false,
+            // Registra o último filtro aplicado para detectar mudanças
+            lastAppliedFilter: {
+                nivel: urlParams.get('nivel') || '',
+                turno: urlParams.get('turno') || '',
+                ano: urlParams.get('ano') || '',
+                search: urlParams.get('search') || ''
+            }
         };
         
         console.log('AlunosManager state initialized:', {
@@ -290,6 +297,44 @@ class AlunosManager {
         });
     }
     
+    // Método para verificar se os filtros mudaram
+    filtersChanged(params) {
+        const currentFilter = {
+            nivel: params.nivel || '',
+            turno: params.turno || '',
+            ano: params.ano || '',
+            search: params.search || ''
+        };
+        
+        // Comparar com o último filtro aplicado
+        const lastFilter = this.state.lastAppliedFilter;
+        
+        const changed = (
+            currentFilter.nivel !== lastFilter.nivel ||
+            currentFilter.turno !== lastFilter.turno ||
+            currentFilter.ano !== lastFilter.ano ||
+            currentFilter.search !== lastFilter.search
+        );
+        
+        // Atualizar último filtro aplicado
+        if (changed) {
+            this.state.lastAppliedFilter = {...currentFilter};
+        }
+        
+        return changed;
+    }
+    
+    // Método para reiniciar o sistema de scroll infinito
+    resetInfiniteScroll() {
+        // Verificar se existe a API do scroll infinito
+        if (window.infiniteScroll) {
+            // Chamar o método de reset do scroll infinito
+            window.infiniteScroll.reset();
+            console.log('Infinite scroll reset devido a mudança de filtros');
+        } else {
+            console.warn('Infinite scroll API não disponível para reset');
+        }
+    }
 
     toggleView(view) {
         const {alunosContainer, viewGrid, viewList} = this.elements;
@@ -330,6 +375,9 @@ class AlunosManager {
             return;
         }
         
+        // Verificar se os filtros mudaram para determinar se precisamos resetar o scroll infinito
+        const filtersChanged = this.filtersChanged(params);
+        
         try {
             this.state.isLoading = true;
             this.state.requestInProgress = true;
@@ -357,7 +405,18 @@ class AlunosManager {
                 throw new Error('Formato de resposta inválido');
             }
             
-            this.elements.alunosContainer.innerHTML = data.html;
+            // Resetar o scroll infinito se os filtros mudaram
+            if (filtersChanged) {
+                console.log('Filtros foram alterados, resetando a visualização');
+                // Limpar o container de alunos para evitar duplicatas
+                this.elements.alunosContainer.innerHTML = data.html;
+                
+                // Resetar também o sistema de scroll infinito
+                this.resetInfiniteScroll();
+            } else {
+                // Se não houve mudança de filtros, apenas atualizar o conteúdo normalmente
+                this.elements.alunosContainer.innerHTML = data.html;
+            }
             
             if (data.total_alunos !== undefined) {
                 this.elements.totalResults.textContent = data.total_alunos;
@@ -703,9 +762,13 @@ class AlunosManager {
     }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    new AlunosManager();
+// Inicializar o gerenciador quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+    const alunosManager = new AlunosManager();
+    
+    // Expor globalmente para debugging
+    window.alunosManager = alunosManager;
+    
     // Marcar que o carregamento inicial está completo
     initialPageLoadComplete = true;
 });
