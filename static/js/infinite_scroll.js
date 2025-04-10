@@ -46,14 +46,28 @@ document.addEventListener('DOMContentLoaded', function() {
         viewMode: localStorage.getItem('alunosViewPreference') || 'grid',
         totalLoaded: document.querySelectorAll('.aluno-item').length,
         lastUrl: window.location.href, // Guardar a última URL para detectar mudanças de filtro
-        lastFilterHash: calculateFilterHash() // Hash dos filtros atuais
+        filterHash: getFilterHashFromDOM() || calculateFilterHash(), // Hash dos filtros atuais
+        lastRequestTime: 0, // Timestamp da última requisição para evitar requisições simultâneas
+        turmaAtual: getCurrentTurmaFromUrl() // Identificador da turma atual baseado na URL
     };
     
     // Detectar dispositivo móvel para ajustes de UI
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     /**
-     * Calcular hash dos filtros atuais para detectar mudanças
+     * Obter identificador da turma atual baseado nos parâmetros da URL
+     */
+    function getCurrentTurmaFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const nivel = urlParams.get('nivel') || '';
+        const turno = urlParams.get('turno') || '';
+        const ano = urlParams.get('ano') || '';
+        
+        return `${nivel}-${turno}-${ano}`;
+    }
+    
+    /**
+     * Obter hash de filtros atual a partir dos parâmetros da URL
      */
     function calculateFilterHash() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -70,18 +84,44 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
+     * Obter hash de filtros armazenado no DOM pelo template
+     */
+    function getFilterHashFromDOM() {
+        const alunosRow = document.getElementById('alunos-row');
+        return alunosRow ? (alunosRow.getAttribute('data-filter-hash') || '') : '';
+    }
+    
+    /**
      * Verificar se os filtros mudaram desde o último carregamento
      */
     function haveFiltersChanged() {
-        const currentHash = calculateFilterHash();
-        const changed = currentHash !== state.lastFilterHash;
-        
-        if (changed) {
-            console.log('Filtros mudaram, atualizando hash');
-            state.lastFilterHash = currentHash;
+        // Verificar mudança de turma
+        const currentTurma = getCurrentTurmaFromUrl();
+        if (currentTurma !== state.turmaAtual) {
+            console.log('Turma mudou:', state.turmaAtual, '=>', currentTurma);
+            state.turmaAtual = currentTurma;
+            return true;
         }
         
-        return changed;
+        // Obter hash atual dos filtros
+        const currentHashFromUrl = calculateFilterHash();
+        const currentHashFromDOM = getFilterHashFromDOM();
+        
+        // Verificar primeiro hash do DOM (mais preciso pois vem do backend)
+        if (currentHashFromDOM && currentHashFromDOM !== state.filterHash) {
+            console.log('Filtros mudaram (baseado no DOM):', state.filterHash, '=>', currentHashFromDOM);
+            state.filterHash = currentHashFromDOM;
+            return true;
+        }
+        
+        // Verificar hash da URL como fallback
+        if (currentHashFromUrl !== state.filterHash) {
+            console.log('Filtros mudaram (baseado na URL):', state.filterHash, '=>', currentHashFromUrl);
+            state.filterHash = currentHashFromUrl;
+            return true;
+        }
+        
+        return false;
     }
     
     /**
@@ -154,16 +194,51 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function urlHasChanged() {
         const currentUrl = window.location.href;
-        const urlChanged = currentUrl !== state.lastUrl;
-        
-        if (urlChanged) {
-            console.log('URL mudou, atualizando estado do scroll infinito');
+        if (currentUrl !== state.lastUrl) {
+            console.log('URL mudou:', state.lastUrl, '=>', currentUrl);
             state.lastUrl = currentUrl;
-            // Também atualizar o hash dos filtros
-            state.lastFilterHash = calculateFilterHash();
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Verificar se os cards pertencem à turma selecionada
+     */
+    function checkTurmaConsistency() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedNivel = urlParams.get('nivel') || '';
+        const selectedTurno = urlParams.get('turno') || '';
+        const selectedAno = urlParams.get('ano') || '';
+        
+        // Se não temos filtros específicos, não precisamos verificar
+        if (!selectedNivel && !selectedTurno && !selectedAno) return true;
+        
+        // Verificar se todos os cards correspondem aos filtros selecionados
+        const cards = document.querySelectorAll('.aluno-item');
+        let inconsistentCards = 0;
+        
+        cards.forEach(card => {
+            const cardTurma = card.getAttribute('data-aluno-turma') || '';
+            const [cardNivel, cardTurno, cardAno] = cardTurma.split('-');
+            
+            // Verificar se o card corresponde aos filtros
+            const nivelMatch = !selectedNivel || cardNivel === selectedNivel;
+            const turnoMatch = !selectedTurno || cardTurno === selectedTurno;
+            const anoMatch = !selectedAno || cardAno === selectedAno;
+            
+            if (!(nivelMatch && turnoMatch && anoMatch)) {
+                inconsistentCards++;
+            }
+        });
+        
+        // Reportar inconsistências
+        if (inconsistentCards > 0) {
+            console.warn(`Encontrados ${inconsistentCards} alunos inconsistentes com os filtros aplicados`);
+            return false;
         }
         
-        return urlChanged;
+        return true;
     }
     
     /**
@@ -267,17 +342,27 @@ document.addEventListener('DOMContentLoaded', function() {
         // Remover elementos de paginação
         tempDiv.querySelectorAll('.pagination, .pagination-container').forEach(el => el.remove());
         
-        // Encontrar o container dos alunos no HTML recebido
-        let rowContainer = tempDiv.querySelector('.row');
+        // Encontrar o container dos alunos no HTML recebido (pode estar em diferentes estruturas)
+        let rowContainer = tempDiv.querySelector('#alunos-row') || tempDiv.querySelector('.row');
         if (!rowContainer) {
             // Se não houver container de linha, usar o container principal
             rowContainer = tempDiv;
+        }
+        
+        // Atualizar hash de filtros do DOM se estiver presente no HTML recebido
+        const newFilterHash = rowContainer.getAttribute('data-filter-hash');
+        if (newFilterHash) {
+            state.filterHash = newFilterHash;
+            console.log('Atualizado hash de filtro de carregamento dinâmico:', newFilterHash);
         }
         
         const alunoElements = rowContainer.querySelectorAll('.aluno-item');
         const fragment = document.createDocumentFragment();
         let newItems = 0;
         let duplicates = 0;
+        
+        // Verificar se precisamos validar a turma dos alunos
+        const needsTurmaValidation = state.turmaAtual.indexOf('-') > 0; // Tem pelo menos um filtro
         
         // Processar cada elemento de aluno
         alunoElements.forEach(element => {
@@ -286,6 +371,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!alunoId) {
                 console.warn('Elemento de aluno sem ID detectado');
                 return;
+            }
+            
+            // Verificar turma se necessário
+            if (needsTurmaValidation) {
+                const alunoTurma = element.getAttribute('data-aluno-turma') || '';
+                if (alunoTurma && state.turmaAtual !== '--' && !alunoCombinaTurma(alunoTurma, state.turmaAtual)) {
+                    console.warn(`Aluno ${alunoId} com turma ${alunoTurma} não corresponde à turma atual ${state.turmaAtual}. Ignorando.`);
+                    duplicates++;
+                    return;
+                }
             }
             
             if (!loadedIds.has(alunoId)) {
@@ -303,19 +398,53 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
+     * Verificar se o aluno combina com a turma atual
+     */
+    function alunoCombinaTurma(alunoTurma, turmaSelecionada) {
+        // Se não há filtro de turma, aceitar qualquer aluno
+        if (!turmaSelecionada || turmaSelecionada === '--') return true;
+        
+        // Separar os componentes das turmas
+        const [alunoNivel, alunoTurno, alunoAno] = alunoTurma.split('-');
+        const [filterNivel, filterTurno, filterAno] = turmaSelecionada.split('-');
+        
+        // Verificar se o aluno corresponde aos filtros
+        const nivelMatch = !filterNivel || alunoNivel === filterNivel;
+        const turnoMatch = !filterTurno || alunoTurno === filterTurno;
+        const anoMatch = !filterAno || alunoAno === filterAno;
+        
+        return nivelMatch && turnoMatch && anoMatch;
+    }
+    
+    /**
      * Carregar mais conteúdo via AJAX
      */
     function loadMoreContent() {
-        // Verificar se a URL mudou desde o último carregamento
-        // Isso significa que mudamos de página ou aplicamos filtros diferentes
+        // Verificar se houve mudança de filtros ou URL
         if (urlHasChanged() || haveFiltersChanged()) {
-            console.log('URL ou filtros mudaram, reiniciando estado do scroll infinito');
+            console.log('Filtros ou URL mudaram, reiniciando estado do scroll infinito');
             resetState();
-            // Não carregar conteúdo agora - AlunosManager já deve ter carregado o conteúdo inicial
+            // Não executar o carregamento, pois o AlunosManager já deve ter carregado o conteúdo inicial
             return;
         }
         
+        // Verificar se temos consistência de turma nos cards existentes
+        if (!checkTurmaConsistency()) {
+            console.warn('Inconsistência de turma detectada, reiniciando estado');
+            resetState();
+            return;
+        }
+        
+        // Evitar carregamentos durante carregamento ou sem mais conteúdo
         if (state.isLoading || !state.hasMoreContent) return;
+        
+        // Evitar requisições muito próximas (menos de 500ms)
+        const now = Date.now();
+        if (now - state.lastRequestTime < 500) {
+            console.log('Requisição bloqueada por throttling');
+            return;
+        }
+        state.lastRequestTime = now;
         
         state.isLoading = true;
         showLoading();
@@ -370,7 +499,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const { fragment, newItems, duplicates } = processHtml(data.html);
                 
                 // Adicionar novos elementos ao container
-                const rowContainer = contentContainer.querySelector('.row');
+                const rowContainer = contentContainer.querySelector('#alunos-row') || 
+                                    contentContainer.querySelector('.row') || 
+                                    contentContainer;
+                                    
                 if (rowContainer) {
                     rowContainer.appendChild(fragment);
                 } else {
@@ -485,11 +617,14 @@ document.addEventListener('DOMContentLoaded', function() {
         state.hasMoreContent = true;
         state.isLoading = false;
         state.totalLoaded = 0;
+        state.turmaAtual = getCurrentTurmaFromUrl();
+        
+        // Limpar IDs carregados
         loadedIds.clear();
         
         // Atualizar URL atual e hash de filtros
         state.lastUrl = window.location.href;
-        state.lastFilterHash = calculateFilterHash();
+        state.filterHash = getFilterHashFromDOM() || calculateFilterHash();
         
         // Esconder indicador de fim da lista
         hideEndOfList();
@@ -517,6 +652,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Verificar se houve mudança de filtros antes de tentar carregar mais
         if (urlHasChanged() || haveFiltersChanged()) {
             console.log('URL ou filtros mudaram, não vamos carregar mais conteúdo automaticamente');
+            resetState();
             return;
         }
         
@@ -580,10 +716,64 @@ document.addEventListener('DOMContentLoaded', function() {
             // Verificar inicialmente se já deve carregar mais conteúdo
             setTimeout(checkEndOfPage, 500);
             
+            // Observer para detectar mudanças no DOM que podem indicar mudança de turma
+            setupMutationObserver();
+            
             console.log('Scroll infinito inicializado com sucesso');
         } catch (e) {
             console.error('Erro ao inicializar scroll infinito:', e);
         }
+    }
+    
+    /**
+     * Configurar observer para detectar mudanças no conteúdo que possam indicar mudança de turma
+     */
+    function setupMutationObserver() {
+        // Verificar suporte a MutationObserver
+        if (!window.MutationObserver) return;
+        
+        // Encontrar o container dos alunos
+        const alunosContainer = contentContainer.querySelector('#alunos-row') || 
+                               contentContainer.querySelector('.row') || 
+                               contentContainer;
+        if (!alunosContainer) return;
+        
+        // Criar observer
+        const observer = new MutationObserver(function(mutations) {
+            let shouldUpdateIds = false;
+            
+            mutations.forEach(function(mutation) {
+                // Se alunos foram adicionados ou removidos, pode indicar mudança de turma
+                if (mutation.type === 'childList' && 
+                    (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)) {
+                    shouldUpdateIds = true;
+                }
+                
+                // Se algum atributo do container mudou (como data-filter-hash)
+                if (mutation.type === 'attributes' && 
+                    mutation.attributeName === 'data-filter-hash') {
+                    shouldUpdateIds = true;
+                    // Atualizar o hash de filtro no estado
+                    state.filterHash = alunosContainer.getAttribute('data-filter-hash') || '';
+                }
+            });
+            
+            if (shouldUpdateIds) {
+                console.log('Detectada alteração no conteúdo, atualizando IDs e verificando duplicatas');
+                initializeLoadedIds();
+            }
+        });
+        
+        // Iniciar observação
+        observer.observe(alunosContainer, { 
+            childList: true, 
+            attributes: true,
+            attributeFilter: ['data-filter-hash'],
+            subtree: false
+        });
+        
+        // Armazenar o observer para referência
+        state.observer = observer;
     }
     
     // Inicializar
@@ -620,6 +810,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Método para o AlunosManager registrar novos IDs após uma carga de dados
         registerLoadedIds: function() {
             initializeLoadedIds();
+            // Atualizar também a turma atual e o hash de filtros
+            state.turmaAtual = getCurrentTurmaFromUrl();
+            state.filterHash = getFilterHashFromDOM() || calculateFilterHash();
             console.log('IDs recarregados após atualização de dados');
         }
     };

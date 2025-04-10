@@ -1,9 +1,13 @@
 {% load static %}
 
-<div class="row g-3" id="alunos-row">
+<div class="row g-3" id="alunos-row" data-filter-hash="{{ filter_hash|default:'' }}">
     {% if alunos %}
         {% for aluno in alunos %}
-            <div class="col-md-4 col-sm-6 col-12 aluno-item" data-aluno-id="{{ aluno.id }}" tabindex="0">
+            <div class="col-md-4 col-sm-6 col-12 aluno-item" 
+                 data-aluno-id="{{ aluno.id }}" 
+                 data-aluno-turma="{{ aluno.nivel }}-{{ aluno.turno }}-{{ aluno.ano }}"
+                 data-page="{{ page_obj.number|default:'1' }}"
+                 tabindex="0">
                 <div class="card shadow-sm h-100">
                     <div class="card-body d-flex flex-column">
                         <div class="d-flex align-items-center mb-3">
@@ -74,7 +78,7 @@
 {% endif %}
 
 {% if has_more and infinite_scroll %}
-<div id="loading-indicator" class="text-center py-3 d-none" aria-live="polite">
+<div id="partial-loading-indicator" class="text-center py-3 d-none" aria-live="polite">
     <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Carregando mais alunos...</span>
     </div>
@@ -169,6 +173,24 @@
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Calculando e armazenando um hash dos filtros atuais no DOM
+    const urlParams = new URLSearchParams(window.location.search);
+    const filterParams = {
+        nivel: urlParams.get('nivel') || '',
+        turno: urlParams.get('turno') || '',
+        ano: urlParams.get('ano') || '',
+        search: urlParams.get('search') || ''
+    };
+    
+    // Criando um identificador único para esse conjunto de filtros
+    const filterHash = Object.values(filterParams).join('_');
+    
+    // Armazenando no elemento do DOM para referência pelo script de infinite scroll
+    const alunosRow = document.getElementById('alunos-row');
+    if (alunosRow) {
+        alunosRow.setAttribute('data-filter-hash', filterHash);
+    }
+    
     // Verificar e remover qualquer duplicata que possa existir
     const cards = document.querySelectorAll('.aluno-item');
     const seenIds = new Set();
@@ -185,5 +207,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    
+    // Informar ao script de infinite scroll que um novo conjunto de alunos foi carregado
+    if (window.infiniteScroll && window.infiniteScroll.registerLoadedIds) {
+        window.infiniteScroll.registerLoadedIds();
+        console.log('Novos IDs de alunos registrados no infinite scroll');
+    }
 });
 </script>
