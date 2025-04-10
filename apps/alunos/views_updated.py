@@ -163,7 +163,7 @@ class AlunoListView(BaseAlunoView, ListView):
     """View for listing students with filtering and search capabilities"""
     template_name = 'alunos/lista_alunos.html'
     context_object_name = 'alunos'
-    paginate_by = 9
+    paginate_by = 20  # Aumentado para otimizar a experiência de scroll
     
     def get_queryset(self):
         logger.debug("Starting get_queryset")
@@ -189,9 +189,12 @@ class AlunoListView(BaseAlunoView, ListView):
                     Q(matricula__icontains=search) |
                     Q(cpf__icontains=search) & ~Q(cpf__isnull=True) & ~Q(cpf='')  # Only search non-empty CPFs
                 )
+            
+            # Otimização: selecione apenas os campos necessários para a exibição na lista
+            queryset = queryset.only('id', 'nome', 'matricula', 'nivel', 'turno', 'ano', 'foto')
                 
             logger.debug(f"Queryset final count: {queryset.count()}")
-            return queryset
+            return queryset.order_by('nome')
         except Exception as e:
             logger.error(f"Error in get_queryset: {str(e)}")
             return Aluno.objects.none()
@@ -223,10 +226,28 @@ class AlunoListView(BaseAlunoView, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['filter_form'] = AlunoFilterForm(self.request.GET)
+        
+        # Verificar se estamos no modo de scroll infinito
+        context['infinite_scroll'] = True  # Definir como padrão para melhorar experiência mobile
+        
+        # Detectar dispositivo móvel
+        user_agent = self.request.META.get('HTTP_USER_AGENT', '').lower()
+        is_mobile = 'mobile' in user_agent or 'android' in user_agent or 'iphone' in user_agent
+        context['is_mobile'] = is_mobile
+        
+        # Ajustar layout com base no dispositivo
+        if is_mobile:
+            context['card_columns'] = 1
+        else:
+            context['card_columns'] = 3
+            
         return context
 
     def render_to_response(self, context, **response_kwargs):
         if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            current_page = context['page_obj'].number
+            
+            # Renderizar os cards de alunos com otimizações para mobile
             html = render_to_string(
                 'alunos/partials/lista_alunos_partial.html',
                 {
@@ -234,28 +255,24 @@ class AlunoListView(BaseAlunoView, ListView):
                     'paginator': context['paginator'],
                     'page_obj': context['page_obj'],
                     'is_paginated': context['is_paginated'],
-                    'request': self.request,  # Importante para preservar os parâmetros de busca/filtro
-                },
-                request=self.request
-            )
-            
-            # Renderize também a paginação separadamente para AJAX
-            pagination_html = render_to_string(
-                'alunos/partials/pagination_partial.html',
-                {
-                    'paginator': context['paginator'],
-                    'page_obj': context['page_obj'],
-                    'is_paginated': context['is_paginated'],
                     'request': self.request,
+                    'is_mobile': context.get('is_mobile', False)
                 },
                 request=self.request
             )
             
-            return JsonResponse({
+            # Construir a resposta otimizada
+            response_data = {
                 'html': html,
-                'pagination': pagination_html,
-                'total_alunos': context['paginator'].count
-            })
+                'total_alunos': context['paginator'].count,
+                'current_page': current_page,
+                'total_pages': context['paginator'].num_pages,
+                'has_more': current_page < context['paginator'].num_pages,
+                'mode': 'replace' if current_page == 1 else 'append'
+            }
+            
+            return JsonResponse(response_data)
+        
         return super().render_to_response(context, **response_kwargs)
 
 
