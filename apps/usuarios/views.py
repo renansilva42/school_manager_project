@@ -81,9 +81,19 @@ def settings_view(request):
         
         return redirect('settings')
     
+    # Get photo modification timestamp for cache busting
+    photo_timestamp = None
+    if profile.photo and profile.photo.name:
+        try:
+            photo_path = profile.photo.path
+            photo_timestamp = int(os.path.getmtime(photo_path))
+        except Exception:
+            photo_timestamp = None
+    
     return render(request, 'usuarios/settings.html', {
         'profile': profile,
-        'settings': site_settings
+        'settings': site_settings,
+        'photo_timestamp': photo_timestamp,
     })
 
 def login_view(request):

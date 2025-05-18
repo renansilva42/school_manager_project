@@ -10,8 +10,6 @@ def check_env_variables():
         'DB_USER',
         'DB_PASSWORD',
         'DB_HOST',
-        'SUPABASE_URL',
-        'SUPABASE_KEY'
     ]
     
     missing_vars = [var for var in required_vars if not os.getenv(var)]
@@ -20,17 +18,6 @@ def check_env_variables():
         print(f"WARNING: As seguintes variáveis de ambiente estão faltando: {', '.join(missing_vars)}")
 
 check_env_variables()
-
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-2')
-AWS_DEFAULT_ACL = None
-
-if AWS_STORAGE_BUCKET_NAME:
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-else:
-    AWS_S3_CUSTOM_DOMAIN = None
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
@@ -64,7 +51,6 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
 INSTALLED_APPS = [
-    'supabase',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -79,12 +65,8 @@ INSTALLED_APPS = [
     'apps.relatorios',
     'django_extensions',
     'rest_framework',
-    'storages',
-     'apps.professores', 
+    'apps.professores', 
 ]
-
-SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -101,17 +83,6 @@ try:
     os.chmod(USER_PHOTOS_DIR, 0o755)
 except:
     pass
-
-if not DEBUG:
-    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
-    AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-2')
-    AWS_DEFAULT_ACL = None
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-    
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
@@ -260,14 +231,9 @@ if DEBUG:
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 else:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    
-    if AWS_STORAGE_BUCKET_NAME and AWS_S3_CUSTOM_DOMAIN:
-        DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-        MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
-    else:
-        DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-        MEDIA_URL = '/media/'
-        MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 BACKUP_MEDIA_ROOT = os.path.join(MEDIA_ROOT, 'backup')
 os.makedirs('logs', exist_ok=True)

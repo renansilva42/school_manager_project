@@ -26,7 +26,7 @@
                     <h5 class="card-title">Foto de Perfil</h5>
                     <div class="mb-3">
                         {% if profile.photo %}
-                            <img src="{{ profile.photo.url }}" alt="Foto de perfil" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                            <img src="{{ profile.photo.url }}{% if photo_timestamp %}?v={{ photo_timestamp }}{% endif %}" alt="Foto de perfil" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
                         {% else %}
                             <img src="{% static 'img/default-user.png' %}" alt="Foto de perfil padrão" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
                         {% endif %}
