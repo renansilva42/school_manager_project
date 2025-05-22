@@ -31,6 +31,6 @@ class DisponibilidadeHorarioAdmin(admin.ModelAdmin):
 
 @admin.register(Disciplina)
 class DisciplinaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'carga_horaria', 'ativo')
+    list_display = ('nome', 'carga_horaria_iniciais', 'carga_horaria_finais', 'ativo')
     search_fields = ('nome',)
     list_filter = ('ativo',)

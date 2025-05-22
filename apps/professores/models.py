@@ -6,7 +6,8 @@ from django.contrib.auth.models import User
 
 class Disciplina(models.Model):
     nome = models.CharField(max_length=100)
-    carga_horaria = models.IntegerField()
+    carga_horaria_iniciais = models.IntegerField(verbose_name="Carga Horária - Anos Iniciais", default=0)
+    carga_horaria_finais = models.IntegerField(verbose_name="Carga Horária - Anos Finais", default=0)
     descricao = models.TextField(blank=True, null=True)
     ativo = models.BooleanField(default=True)
 
@@ -19,7 +20,7 @@ class Disciplina(models.Model):
 
 
 class Professor(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     nome = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     data_nascimento = models.DateField(null=True, blank=True)

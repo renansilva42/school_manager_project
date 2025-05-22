@@ -47,10 +47,11 @@ class DisponibilidadeHorarioForm(forms.ModelForm):
 class DisciplinaForm(forms.ModelForm):
     class Meta:
         model = Disciplina
-        fields = ['nome', 'carga_horaria', 'descricao', 'ativo']
+        fields = ['nome', 'carga_horaria_iniciais', 'carga_horaria_finais', 'descricao', 'ativo']
         widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'carga_horaria': forms.NumberInput(attrs={'class': 'form-control'}),
+            'carga_horaria_iniciais': forms.NumberInput(attrs={'class': 'form-control'}),
+            'carga_horaria_finais': forms.NumberInput(attrs={'class': 'form-control'}),
             'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'ativo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }

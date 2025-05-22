@@ -39,6 +39,12 @@ class DisciplinaCreateView(LoginRequiredMixin, CreateView):
     form_class = DisciplinaForm
     template_name = 'professores/disciplina_form.html'
     success_url = reverse_lazy('professores:disciplina_list')
+
+class DisciplinaUpdateView(LoginRequiredMixin, UpdateView):
+    model = Disciplina
+    form_class = DisciplinaForm
+    template_name = 'professores/disciplina_form.html'
+    success_url = reverse_lazy('professores:disciplina_list')
     
 def desativar_professor(request, pk):
     professor = get_object_or_404(Professor, pk=pk)
