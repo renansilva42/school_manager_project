@@ -21,16 +21,61 @@ class ProfessorForm(forms.ModelForm):
             if 'class' not in field.widget.attrs:
                 field.widget.attrs.update({'class': 'form-control'})
 
-class AtribuicaoDisciplinaForm(forms.ModelForm):
-    class Meta:
-        model = AtribuicaoDisciplina
-        fields = ['professor', 'disciplina', 'turma', 'ano_letivo']
-        widgets = {
-            'professor': forms.Select(attrs={'class': 'form-control'}),
-            'disciplina': forms.Select(attrs={'class': 'form-control'}),
-            'turma': forms.Select(attrs={'class': 'form-control'}),
-            'ano_letivo': forms.NumberInput(attrs={'class': 'form-control'}),
-        }
+from django import forms
+from .models import Professor, AtribuicaoDisciplina, DisponibilidadeHorario, Disciplina
+from django.core.exceptions import ValidationError
+
+class AtribuicaoDisciplinaForm(forms.Form):
+    professor = forms.ModelChoiceField(
+        queryset=Professor.objects.filter(),
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=True
+    )
+    disciplinas = forms.ModelMultipleChoiceField(
+        queryset=Disciplina.objects.filter(ativo=True),
+        widget=forms.SelectMultiple(attrs={'class': 'form-control'}),
+        required=True
+    )
+    turmas = forms.CharField(
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Digite as turmas separadas por vírgula'}),
+        required=True,
+        help_text='Digite as turmas separadas por vírgula, ex: 1A, 2B'
+    )
+    ano_letivo = forms.IntegerField(
+        widget=forms.NumberInput(attrs={'class': 'form-control'}),
+        required=True
+    )
+
+    def clean_turmas(self):
+        turmas_str = self.cleaned_data['turmas']
+        turmas_list = [t.strip() for t in turmas_str.split(',') if t.strip()]
+        if not turmas_list:
+            raise ValidationError('Informe pelo menos uma turma válida.')
+        return turmas_list
+
+    def save(self):
+        professor = self.cleaned_data['professor']
+        disciplinas = self.cleaned_data['disciplinas']
+        turmas = self.cleaned_data['turmas']
+        ano_letivo = self.cleaned_data['ano_letivo']
+
+        created_assignments = []
+        errors = []
+        for turma in turmas:
+            for disciplina in disciplinas:
+                atrib, created = AtribuicaoDisciplina.objects.get_or_create(
+                    professor=professor,
+                    disciplina=disciplina,
+                    turma=turma,
+                    ano_letivo=ano_letivo
+                )
+                if created:
+                    created_assignments.append(atrib)
+                else:
+                    errors.append(f'Atribuição já existe: {professor.nome} - {disciplina.nome} - {turma}')
+        if errors:
+            raise ValidationError(errors)
+        return created_assignments
 
 class DisponibilidadeHorarioForm(forms.ModelForm):
     class Meta:

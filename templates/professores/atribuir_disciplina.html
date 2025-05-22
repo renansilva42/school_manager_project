@@ -4,40 +4,54 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Atribuição de Disciplinas</h2>
+
+    <form method="GET" class="form-inline mb-3">
+        <div class="form-group mr-2">
+            <label for="filter_professor">Filtrar por Professor:</label>
+            <select class="form-control ml-2" id="filter_professor" name="professor">
+                <option value="">Todos</option>
+                {% for professor in professores %}
+                    <option value="{{ professor.id }}" {% if professor_filter == professor.id|stringformat:"s" %}selected{% endif %}>{{ professor.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group mr-2">
+            <label for="filter_turma">Filtrar por Turma:</label>
+            <select class="form-control ml-2" id="filter_turma" name="turma">
+                <option value="">Todas</option>
+                {% for turma in turmas %}
+                    <option value="{{ turma }}" {% if turma_filter == turma %}selected{% endif %}>{{ turma }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-secondary">Filtrar</button>
+        <a href="{% url 'professores:atribuicao_create' %}" class="btn btn-link">Limpar filtros</a>
+    </form>
+
     <form method="POST">
         {% csrf_token %}
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group">
-                    <label for="professor">Professor</label>
-                    <select class="form-control" id="professor" name="professor" required>
-                        <option value="">Selecione um professor</option>
-                        {% for professor in professores %}
-                            <option value="{{ professor.id }}">{{ professor.nome }}</option>
-                        {% endfor %}
-                    </select>
+                    <label for="id_professor">Professor</label>
+                    {{ form.professor }}
                 </div>
                 <div class="form-group">
-                    <label for="disciplina">Disciplina</label>
-                    <select class="form-control" id="disciplina" name="disciplina" required>
-                        <option value="">Selecione uma disciplina</option>
-                        {% for disciplina in disciplinas %}
-                            <option value="{{ disciplina.id }}">{{ disciplina.nome }}</option>
-                        {% endfor %}
-                    </select>
+                    <label for="id_disciplinas">Disciplinas</label>
+                    {{ form.disciplinas }}
                 </div>
                 <div class="form-group">
-                    <label for="turma">Turma</label>
-                    <select class="form-control" id="turma" name="turma" required>
-                        <option value="">Selecione uma turma</option>
-                        {% for turma in turmas %}
-                            <option value="{{ turma.id }}">{{ turma.nome }}</option>
-                        {% endfor %}
-                    </select>
+                    <label for="id_turmas">Turmas</label>
+                    {{ form.turmas }}
+                    <small class="form-text text-muted">{{ form.turmas.help_text }}</small>
+                </div>
+                <div class="form-group">
+                    <label for="id_ano_letivo">Ano Letivo</label>
+                    {{ form.ano_letivo }}
                 </div>
             </div>
         </div>
-        <button type="submit" class="btn btn-primary mt-3">Atribuir Disciplina</button>
+        <button type="submit" class="btn btn-primary mt-3">Atribuir Disciplinas</button>
     </form>
 
     <div class="mt-4">
@@ -56,9 +70,12 @@
                 <tr>
                     <td>{{ atribuicao.professor.nome }}</td>
                     <td>{{ atribuicao.disciplina.nome }}</td>
-                    <td>{{ atribuicao.turma.nome }}</td>
+                    <td>{{ atribuicao.turma }}</td>
                     <td>
-                        <button class="btn btn-sm btn-danger">Remover</button>
+                        <form method="POST" action="{% url 'professores:atribuicao_delete' atribuicao.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja remover esta atribuição?');">Remover</button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}

@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, View
 from django.urls import reverse_lazy
 from django.contrib import messages
 from .models import Professor, AtribuicaoDisciplina, DisponibilidadeHorario, Disciplina
@@ -61,21 +61,73 @@ class ProfessorCreateView(LoginRequiredMixin, CreateView):
 
 
 
-class AtribuicaoDisciplinaCreateView(LoginRequiredMixin, CreateView):
-    model = AtribuicaoDisciplina
-    form_class = AtribuicaoDisciplinaForm
+from django.urls import reverse_lazy
+from django.views.generic import DeleteView
+from django.utils import timezone
+from django.contrib import messages
+
+class AtribuicaoDisciplinaCreateView(LoginRequiredMixin, View):
     template_name = 'professores/atribuir_disciplina.html'
-    
-    def form_valid(self, form):
-        try:
-            # Verificar duplicatas antes de salvar
-            atribuicao = form.save(commit=False)
-            atribuicao.clean()  # Executa validações personalizadas
-            return super().form_valid(form)
-        except ValidationError as e:
-            form.add_error(None, e)
-            return self.form_invalid(form)
-        
+    success_url = reverse_lazy('professores:atribuicao_create')
+
+    def get(self, request, *args, **kwargs):
+        professores = Professor.objects.all()
+        disciplinas = Disciplina.objects.filter(ativo=True)
+        turmas = AtribuicaoDisciplina.objects.values_list('turma', flat=True).distinct()
+        atribuicoes = AtribuicaoDisciplina.objects.all()
+
+        # Filtering
+        professor_filter = request.GET.get('professor')
+        turma_filter = request.GET.get('turma')
+
+        if professor_filter:
+            atribuicoes = atribuicoes.filter(professor_id=professor_filter)
+        if turma_filter:
+            atribuicoes = atribuicoes.filter(turma=turma_filter)
+
+        form = AtribuicaoDisciplinaForm()
+
+        context = {
+            'professores': professores,
+            'disciplinas': disciplinas,
+            'turmas': turmas,
+            'atribuicoes': atribuicoes,
+            'form': form,
+            'professor_filter': professor_filter,
+            'turma_filter': turma_filter,
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        form = AtribuicaoDisciplinaForm(request.POST)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, 'Atribuições criadas com sucesso.')
+                return redirect(self.success_url)
+            except ValidationError as e:
+                form.add_error(None, e)
+        professores = Professor.objects.all()
+        disciplinas = Disciplina.objects.filter(ativo=True)
+        turmas = AtribuicaoDisciplina.objects.values_list('turma', flat=True).distinct()
+        atribuicoes = AtribuicaoDisciplina.objects.all()
+        context = {
+            'professores': professores,
+            'disciplinas': disciplinas,
+            'turmas': turmas,
+            'atribuicoes': atribuicoes,
+            'form': form,
+        }
+        return render(request, self.template_name, context)
+
+class AtribuicaoDisciplinaDeleteView(LoginRequiredMixin, DeleteView):
+    model = AtribuicaoDisciplina
+    template_name = 'professores/atribuir_disciplina_confirm_delete.html'
+    success_url = reverse_lazy('professores:atribuicao_create')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Atribuição removida com sucesso.')
+        return super().delete(request, *args, **kwargs)
 
 class DisponibilidadeHorarioCreateView(LoginRequiredMixin, CreateView):
     model = DisponibilidadeHorario
