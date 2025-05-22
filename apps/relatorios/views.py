@@ -45,7 +45,6 @@ def gerar_pdf(data, titulo, colunas):
     return buffer
 
 @login_required
-@user_passes_test(is_teacher_or_admin)
 def relatorios(request):
     # Get total students
     total_alunos = Aluno.objects.filter(ativo=True).count()
@@ -96,13 +95,11 @@ def relatorios(request):
     return render(request, 'relatorios/relatorios.html', context)
 
 @login_required
-@user_passes_test(is_teacher_or_admin)
 def relatorio_media_por_serie(request):
     media_por_serie = Nota.objects.values('aluno__serie').annotate(media=Avg('valor'))
     return render(request, 'relatorios/media_por_serie.html', {'media_por_serie': media_por_serie})
 
 @login_required
-@user_passes_test(is_teacher_or_admin)
 def exportar_media_por_serie_pdf(request):
     media_por_serie = Nota.objects.values('aluno__serie').annotate(media=Avg('valor'))
     data = [[item['aluno__serie'], f"{item['media']:.2f}"] for item in media_por_serie]
@@ -111,13 +108,11 @@ def exportar_media_por_serie_pdf(request):
     return FileResponse(pdf_buffer, as_attachment=True, filename='media_por_serie.pdf')
 
 @login_required
-@user_passes_test(is_teacher_or_admin)
 def relatorio_alunos_por_serie(request):
     alunos_por_serie = Aluno.objects.values('serie').annotate(total=Count('id'))
     return render(request, 'relatorios/alunos_por_serie.html', {'alunos_por_serie': alunos_por_serie})
 
 @login_required
-@user_passes_test(is_teacher_or_admin)
 def exportar_alunos_por_serie_pdf(request):
     alunos_por_serie = Aluno.objects.values('serie').annotate(total=Count('id'))
     data = [[item['serie'], str(item['total'])] for item in alunos_por_serie]
@@ -126,13 +121,11 @@ def exportar_alunos_por_serie_pdf(request):
     return FileResponse(pdf_buffer, as_attachment=True, filename='alunos_por_serie.pdf')
 
 @login_required
-@user_passes_test(is_teacher_or_admin)
 def relatorio_notas_baixas(request):
     notas_baixas = Nota.objects.filter(valor__lt=6).select_related('aluno')
     return render(request, 'relatorios/notas_baixas.html', {'notas_baixas': notas_baixas})
 
 @login_required
-@user_passes_test(is_teacher_or_admin)
 def exportar_notas_baixas_pdf(request):
     notas_baixas = Nota.objects.filter(valor__lt=6).select_related('aluno')
     data = [[nota.aluno.nome, nota.aluno.serie, nota.disciplina, f"{nota.valor:.2f}", nota.data.strftime('%d/%m/%Y')] for nota in notas_baixas]
@@ -141,7 +134,6 @@ def exportar_notas_baixas_pdf(request):
     return FileResponse(pdf_buffer, as_attachment=True, filename='notas_baixas.pdf')
 
 @login_required
-@user_passes_test(lambda u: u.is_staff)
 def relatorio_turmas(request):
     # Get all students grouped by class
     turmas_data = Aluno.objects.values('turma').annotate(
@@ -157,7 +149,6 @@ def relatorio_turmas(request):
     return render(request, 'relatorios/turmas.html', context)
 
 @login_required
-@user_passes_test(lambda u: u.is_staff)
 def exportar_turmas_pdf(request):
     # Create PDF buffer
     buffer = io.BytesIO()
