@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Lista de Professores</h2>
+    {% if professores %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Telefone</th>
+                    <th>Formação</th>
+                    <th>Especialidade</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for professor in professores %}
+                <tr>
+                    <td>{{ professor.nome }}</td>
+                    <td>{{ professor.email }}</td>
+                    <td>{{ professor.telefone }}</td>
+                    <td>{{ professor.formacao }}</td>
+                    <td>{{ professor.especialidade }}</td>
+                    <td>
+                        <a href="{% url 'professores:professor_desativar' professor.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja desativar este professor?');">Desativar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            Nenhum professor cadastrado ainda. Por favor, <a href="{% url 'professores:professor_create' %}">cadastre um professor</a>.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

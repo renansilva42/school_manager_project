@@ -7,14 +7,22 @@ from .models import Professor, AtribuicaoDisciplina, DisponibilidadeHorario, Dis
 from .forms import ProfessorForm, AtribuicaoDisciplinaForm, DisponibilidadeHorarioForm, DisciplinaForm
 from django.core.exceptions import ValidationError
 
+from django.shortcuts import render, redirect
+
 class ProfessorListView(LoginRequiredMixin, ListView):
     model = Professor
     template_name = 'professores/professor_list.html'
     context_object_name = 'professores'
     paginate_by = 10
 
+    def get(self, request, *args, **kwargs):
+        professores = Professor.objects.all()
+        if not professores.exists():
+            return redirect('professores:sem_professores')
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
-        return Professor.objects.filter(ativo=True)
+        return Professor.objects.all()
     
 class DisciplinaListView(LoginRequiredMixin, ListView):
     model = Disciplina
@@ -24,6 +32,8 @@ class DisciplinaListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Disciplina.objects.filter(ativo=True)
 
+def sem_professores(request):
+    return render(request, 'professores/sem_professores.html')
 class DisciplinaCreateView(LoginRequiredMixin, CreateView):
     model = Disciplina
     form_class = DisciplinaForm

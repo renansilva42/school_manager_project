@@ -267,6 +267,41 @@
                             </a>
                         </li>
                         {% endif %}
+
+                        {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {% if 'professores' in request.path %}active{% endif %}" href="#" id="professoresDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-chalkboard-teacher"></i> Professores
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="professoresDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'professores:professor_create' %}">
+                                        <i class="fas fa-user-plus"></i> Cadastrar Professor
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'professores:professor_list' %}">
+                                        <i class="fas fa-list"></i> Listar Professores
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'professores:atribuicao_create' %}">
+                                        <i class="fas fa-tasks"></i> Atribuir Disciplina
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'professores:disponibilidade_create' %}">
+                                        <i class="fas fa-clock"></i> Horários de Disponibilidade
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'professores:disciplina_list' %}">
+                                        <i class="fas fa-book"></i> Disciplinas
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        {% endif %}
                         
                         <li class="nav-item">
                             <a class="nav-link {% if 'chatbot' in request.path %}active{% endif %}" href="{% url 'chatbot' %}">

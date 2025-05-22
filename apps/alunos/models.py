@@ -118,8 +118,10 @@ class Aluno(models.Model):
     )
     
     
+    from django.utils import timezone
+
     created_at = models.DateTimeField(
-        auto_now_add=True,
+        default=timezone.now,
         verbose_name="Data de Criação"
     )
     

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="alert alert-info" role="alert">
+        <h4 class="alert-heading">Nenhum professor cadastrado</h4>
+        <p>Você ainda não possui professores cadastrados. Por favor, cadastre um professor para continuar.</p>
+        <hr>
+        <a href="{% url 'professores:professor_create' %}" class="btn btn-primary">Cadastrar Professor</a>
+    </div>
+</div>
+{% endblock %}
